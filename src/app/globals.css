@@ -1,26 +1,108 @@
 @import "tailwindcss";
 
+@source "../";
+@source "../../node_modules/@heroui/theme/dist/**/*.{js,mjs}";
+
+@plugin "../hero.ts";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --color-primary: #006fee;
+  --color-primary-50: #e6f1fe;
+  --color-primary-100: #cce3fd;
+  --color-primary-200: #99c7fb;
+  --color-primary-300: #66aaf9;
+  --color-primary-400: #338ef7;
+  --color-primary-500: #006fee;
+  --color-primary-600: #005bc4;
+  --color-primary-700: #004493;
+  --color-primary-800: #002e62;
+  --color-primary-900: #001731;
+
+  --color-default: #d4d4d8;
+  --color-default-50: #fafafa;
+  --color-default-100: #f4f4f5;
+  --color-default-200: #e4e4e7;
+  --color-default-300: #d4d4d8;
+  --color-default-400: #a1a1aa;
+  --color-default-500: #71717a;
+  --color-default-600: #52525b;
+  --color-default-700: #3f3f46;
+  --color-default-800: #27272a;
+  --color-default-900: #18181b;
+
+  --color-success: #17c964;
+  --color-warning: #f5a524;
+  --color-danger: #f31260;
+
+  --color-content1: #ffffff;
+  --color-content2: #f4f4f5;
+  --color-content3: #e4e4e7;
+  --color-content4: #d4d4d8;
+
+  --color-foreground: #11181c;
+  --color-background: #ffffff;
+  --color-divider: #e4e4e7;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
+
+  --heroui-foreground: var(--color-foreground);
+  --heroui-background: var(--color-background);
+  --heroui-content1: var(--color-content1);
+  --heroui-content2: var(--color-content2);
+  --heroui-content3: var(--color-content3);
+  --heroui-content4: var(--color-content4);
+  --heroui-default-foreground: var(--color-foreground);
+  --heroui-divider: var(--color-divider);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+.dark {
+  color-scheme: dark;
+
+  --color-foreground: #ecedee;
+  --color-background: #000000;
+
+  --color-content1: #18181b;
+  --color-content2: #27272a;
+  --color-content3: #3f3f46;
+  --color-content4: #52525b;
+
+  --color-default-50: #27272a;
+  --color-default-100: #3f3f46;
+  --color-default-200: #52525b;
+  --color-default-300: #71717a;
+  --color-default-400: #a1a1aa;
+  --color-default-500: #d4d4d8;
+  --color-default-600: #e4e4e7;
+  --color-default-700: #f4f4f5;
+  --color-default-800: #fafafa;
+  --color-default-900: #ffffff;
+
+  --color-divider: #3f3f46;
+
+  --heroui-foreground: var(--color-foreground);
+  --heroui-background: var(--color-background);
+  --heroui-content1: var(--color-content1);
+  --heroui-content2: var(--color-content2);
+  --heroui-content3: var(--color-content3);
+  --heroui-content4: var(--color-content4);
+  --heroui-default-foreground: var(--color-foreground);
+  --heroui-divider: var(--color-divider);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+html,
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  height: 100%;
+  color: var(--color-foreground);
+  background: var(--color-background);
+}
+
+/* Fix default border color for Tailwind */
+*,
+::before,
+::after {
+  border-color: var(--color-divider);
 }
