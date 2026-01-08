@@ -1,20 +1,24 @@
+export type ActionPermissions = {
+  READ?: boolean
+  CREATE?: boolean
+  UPDATE?: boolean
+  DELETE?: boolean
+}
+
+export type ModulePermission = {
+  name: string
+  actions: ActionPermissions
+}
+
+export type PermissionsMap = {
+  [path: string]: ModulePermission
+}
+
 export type SessionMeResponse = {
-  user: {
-    id: string
-    email: string
-    is_active: boolean
-    created_at?: string
-    updated_at?: string
-  }
-  roles: Array<{
-    id: string
-    name: string
-    description?: string
-    is_active?: boolean
-  }>
-  permissions: Array<{
-    module: {id: string; name: string; path: string}
-    action: {id: string; name: string}
-    allowed: boolean
-  }>
+  id: string
+  email: string
+  name: string
+  is_active: boolean
+  roles: string[]
+  permissions: PermissionsMap
 }

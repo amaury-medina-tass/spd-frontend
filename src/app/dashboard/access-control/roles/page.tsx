@@ -1,19 +1,35 @@
 "use client"
 
-import {Button, Card, CardBody, CardHeader} from "@heroui/react"
-import {useMemo, useState} from "react"
-import {RolesTable} from "@/components/tables/RolesTable"
-import {RoleModal} from "@/components/modals/RoleModal"
-import type {Role} from "@/types/role"
+import { Button, Chip, Breadcrumbs, BreadcrumbItem } from "@heroui/react"
+import { useMemo, useState } from "react"
+import { DataTable, ColumnDef, RowAction, TopAction } from "@/components/tables/DataTable"
+import { RoleModal } from "@/components/modals/RoleModal"
+import { Pencil, Trash2, Plus } from "lucide-react"
+import type { Role } from "@/types/role"
+
+const columns: ColumnDef<Role>[] = [
+  { key: "name", label: "Nombre" },
+  { key: "description", label: "Descripción" },
+  {
+    key: "is_active",
+    label: "Estado",
+    render: (item) => (
+      <Chip color={item.is_active ? "success" : "danger"} variant="flat" size="sm">
+        {item.is_active ? "Activo" : "Inactivo"}
+      </Chip>
+    ),
+  },
+]
 
 export default function AccessControlRolesPage() {
   const [items, setItems] = useState<Role[]>(() => [
-    {id: "r1", name: "Admin", description: "Full access", is_active: true, created_at: new Date().toISOString(), updated_at: new Date().toISOString()},
-    {id: "r2", name: "User", description: "Limited access", is_active: true, created_at: new Date().toISOString(), updated_at: new Date().toISOString()},
+    { id: "r1", name: "Administrador", description: "Acceso total al sistema", is_active: true, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+    { id: "r2", name: "Usuario", description: "Acceso limitado", is_active: true, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
   ])
 
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<Role | null>(null)
+  const [search, setSearch] = useState("")
 
   const onCreate = () => {
     setEditing(null)
@@ -25,12 +41,16 @@ export default function AccessControlRolesPage() {
     setOpen(true)
   }
 
-  const onSave = (payload: {name: string; description?: string; is_active: boolean}) => {
+  const onDelete = (r: Role) => {
+    console.log("Delete role", r.id)
+  }
+
+  const onSave = (payload: { name: string; description?: string; is_active: boolean }) => {
     const now = new Date().toISOString()
 
     if (editing) {
       setItems((prev) =>
-        prev.map((x) => (x.id === editing.id ? {...x, ...payload, updated_at: now} : x))
+        prev.map((x) => (x.id === editing.id ? { ...x, ...payload, updated_at: now } : x))
       )
     } else {
       const newItem: Role = {
@@ -48,21 +68,61 @@ export default function AccessControlRolesPage() {
     setEditing(null)
   }
 
-  const title = useMemo(() => (editing ? "Edit role" : "Create role"), [editing])
+  const rowActions: RowAction<Role>[] = [
+    {
+      key: "edit",
+      label: "Editar",
+      icon: <Pencil size={16} />,
+      onClick: onEdit,
+    },
+    {
+      key: "delete",
+      label: "Eliminar",
+      icon: <Trash2 size={16} />,
+      color: "danger",
+      onClick: onDelete,
+    },
+  ]
+
+  const topActions: TopAction[] = [
+    {
+      key: "create",
+      label: "Crear",
+      icon: <Plus size={16} />,
+      color: "primary",
+      onClick: onCreate,
+    },
+  ]
+
+  // Filtrado simple en cliente para mock data
+  const filteredItems = useMemo(() => {
+    if (!search) return items
+    return items.filter(i =>
+      i.name.toLowerCase().includes(search.toLowerCase()) ||
+      (i.description || "").toLowerCase().includes(search.toLowerCase())
+    )
+  }, [items, search])
+
+  const title = useMemo(() => (editing ? "Editar rol" : "Crear rol"), [editing])
 
   return (
     <div className="grid gap-4">
-      <Card>
-        <CardHeader className="flex items-center justify-between">
-          <span className="font-semibold">Access Control • Roles</span>
-          <Button color="primary" onPress={onCreate}>
-            Create
-          </Button>
-        </CardHeader>
-        <CardBody>
-          <RolesTable items={items} onEdit={onEdit} />
-        </CardBody>
-      </Card>
+      <Breadcrumbs>
+        <BreadcrumbItem>Inicio</BreadcrumbItem>
+        <BreadcrumbItem>Control de Acceso</BreadcrumbItem>
+        <BreadcrumbItem>Roles</BreadcrumbItem>
+      </Breadcrumbs>
+
+      <DataTable
+        items={filteredItems}
+        columns={columns}
+        rowActions={rowActions}
+        topActions={topActions}
+        searchValue={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Buscar roles..."
+        ariaLabel="Tabla de roles"
+      />
 
       <RoleModal
         isOpen={open}

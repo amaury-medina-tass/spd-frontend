@@ -8,7 +8,7 @@ export const endpoints = {
     refresh: "/auth/refresh",
   },
   accessControl: {
-    users: "/access-control/users",
+    users: "/users",
     roles: "/access-control/roles",
     modules: "/access-control/modules",
   },

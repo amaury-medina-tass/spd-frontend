@@ -1,15 +1,15 @@
 "use client"
 
-import {Button, Card, CardBody, CardHeader, Input, Link} from "@heroui/react"
-import {useState} from "react"
-import {useRouter} from "next/navigation"
-import {http, HttpError} from "@/lib/http"
-import {endpoints} from "@/lib/endpoints"
-import {useAuth} from "@/components/auth/useAuth"
+import { Button, Card, CardBody, CardHeader, Input, Link } from "@heroui/react"
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { post, HttpError } from "@/lib/http"
+import { endpoints } from "@/lib/endpoints"
+import { useAuth } from "@/components/auth/useAuth"
 
 export default function LoginPage() {
   const router = useRouter()
-  const {refreshMe} = useAuth()
+  const { refreshMe } = useAuth()
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -21,10 +21,7 @@ export default function LoginPage() {
     setError(null)
 
     try {
-      await http(endpoints.auth.login, {
-        method: "POST",
-        body: {email, password},
-      })
+      await post(endpoints.auth.login, { email, password })
 
       await refreshMe()
       router.push("/dashboard")

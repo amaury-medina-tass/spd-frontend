@@ -1,10 +1,10 @@
 "use client"
 
-import {Card, CardBody, CardHeader} from "@heroui/react"
-import {useAuth} from "@/components/auth/useAuth"
+import { Card, CardBody, CardHeader } from "@heroui/react"
+import { useAuth } from "@/components/auth/useAuth"
 
 export default function DashboardHome() {
-  const {me, loading} = useAuth()
+  const { me, loading } = useAuth()
 
   return (
     <div className="grid gap-4">
@@ -15,7 +15,7 @@ export default function DashboardHome() {
             <p className="text-foreground-500">Loading session...</p>
           ) : (
             <p className="text-foreground-500">
-              Welcome {me?.user.email ?? "—"} 👋
+              Welcome {me?.email ?? "—"} 👋
             </p>
           )}
         </CardBody>
