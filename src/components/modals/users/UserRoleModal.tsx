@@ -60,7 +60,7 @@ export function UserRoleModal({
                         <div className="flex flex-col gap-4">
                             <div className="flex flex-col gap-2">
                                 <span className="text-tiny font-semibold text-default-400 uppercase tracking-wide">Usuario Seleccionado</span>
-                                <div className="flex justify-between items-center bg-white p-3 rounded-medium shadow-sm border border-default-100">
+                                <div className="flex justify-between items-center bg-content1 p-3 rounded-medium shadow-sm border border-default-100">
                                     <div className="flex flex-col">
                                         <span className="text-small font-bold text-default-900 leading-tight">
                                             {user?.first_name} {user?.last_name}

@@ -6,9 +6,11 @@ import { DataTable, ColumnDef, RowAction, TopAction } from "@/components/tables/
 import { useDebounce } from "@/hooks/useDebounce"
 import { UserInfoModal } from "@/components/modals/users/UserInfoModal"
 import { UserRoleModal } from "@/components/modals/users/UserRoleModal"
+import { ConfirmationModal } from "@/components/modals/ConfirmationModal"
 import { get, post, patch, del, PaginatedData, PaginationMeta } from "@/lib/http"
 import { endpoints } from "@/lib/endpoints"
-import { Pencil, Trash2, Plus, Shield } from "lucide-react"
+import { Pencil, Trash2, Plus, Shield, RefreshCw } from "lucide-react"
+import { addToast } from "@heroui/toast";
 import type { User } from "@/types/user"
 
 // Definición de columnas
@@ -62,6 +64,8 @@ export default function AccessControlUsersPage() {
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false)
   const [editing, setEditing] = useState<User | null>(null)
   const [selectedUserForRole, setSelectedUserForRole] = useState<User | null>(null)
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+  const [userToDelete, setUserToDelete] = useState<User | null>(null)
 
   const fetchUsers = useCallback(async () => {
     setLoading(true)
@@ -127,10 +131,7 @@ export default function AccessControlUsersPage() {
     }
   }
 
-  const onDelete = (user: User) => {
-    // TODO: Implementar confirmación y llamada al API para eliminar
-    console.log("Eliminar usuario:", user.id)
-  }
+
 
   const onSaveInfo = async (payload: any) => {
     setSaving(true)
@@ -148,21 +149,30 @@ export default function AccessControlUsersPage() {
       } else {
         // En modo creación se envía todo el payload original
         const createPayload = {
-          first_name: payload.firstName,
-          last_name: payload.lastName,
-          document_number: payload.documentNumber,
+          firstName: payload.firstName,
+          lastName: payload.lastName,
+          documentNumber: payload.documentNumber,
           email: payload.email,
           password: payload.password,
-          is_active: payload.is_active,
+          system: process.env.NEXT_PUBLIC_SYSTEM,
         }
-        await post(endpoints.accessControl.users, createPayload)
+        await post(endpoints.auth.register, createPayload)
       }
+
+
+      addToast({
+        title: editing ? "Usuario actualizado correctamente" : "Usuario creado correctamente",
+        color: "success",
+      })
       setIsInfoModalOpen(false)
       setEditing(null)
       fetchUsers()
     } catch (error) {
       console.error("Error saving user:", error)
-      // Aquí podrías setear un estado de error para mostrar en el modal o un toast
+      addToast({
+        title: "Error al guardar el usuario",
+        color: "danger",
+      })
     } finally {
       setSaving(false)
     }
@@ -172,16 +182,18 @@ export default function AccessControlUsersPage() {
     if (!selectedUserForRole) return
     setSaving(true)
     try {
-      // TODO: Implement actual assignment if endpoint is available.
-      // For now simulating delay.
-      console.log("Updating role:", selectedUserForRole.id, roleId)
-      await new Promise(resolve => setTimeout(resolve, 100000))
+      await post(endpoints.accessControl.roles.assign, {
+        userId: selectedUserForRole.id,
+        roleId: roleId,
+      })
 
       setIsRoleModalOpen(false)
       setSelectedUserForRole(null)
       fetchUsers()
+      addToast({ title: "Rol asignado correctamente", color: "success" })
     } catch (e) {
       console.error(e)
+      addToast({ title: "Error al asignar rol", color: "danger" })
     } finally {
       setSaving(false)
     }
@@ -200,8 +212,32 @@ export default function AccessControlUsersPage() {
       const freshUser = await get<User>(`${endpoints.accessControl.users}/${selectedUserForRole.id}`)
       setSelectedUserForRole(freshUser)
       fetchUsers()
+      addToast({ title: "Rol removido correctamente", color: "success" })
     } catch (error) {
       console.error("Error unassigning role:", error)
+      addToast({ title: "Error al remover rol", color: "danger" })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const onDelete = (user: User) => {
+    setUserToDelete(user)
+    setIsDeleteModalOpen(true)
+  }
+
+  const onConfirmDelete = async () => {
+    if (!userToDelete) return
+    setSaving(true)
+    try {
+      await del(`${endpoints.accessControl.users}/${userToDelete.id}`)
+      setIsDeleteModalOpen(false)
+      setUserToDelete(null)
+      fetchUsers()
+      addToast({ title: "Usuario eliminado correctamente", color: "success" })
+    } catch (error) {
+      console.error("Error deleting user:", error)
+      addToast({ title: "Error al eliminar usuario", color: "danger" })
     } finally {
       setSaving(false)
     }
@@ -232,6 +268,13 @@ export default function AccessControlUsersPage() {
 
   // Acciones de barra superior
   const topActions: TopAction[] = [
+    {
+      key: "refresh",
+      label: "Actualizar",
+      icon: <RefreshCw size={16} />,
+      color: "default",
+      onClick: fetchUsers,
+    },
     {
       key: "create",
       label: "Crear",
@@ -306,6 +349,20 @@ export default function AccessControlUsersPage() {
         }}
         onSave={onSaveRole}
         onUnassign={onUnassignRole}
+      />
+
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false)
+          setUserToDelete(null)
+        }}
+        onConfirm={onConfirmDelete}
+        title="Eliminar Usuario"
+        description={`¿Estás seguro que deseas eliminar al usuario ${userToDelete?.first_name} ${userToDelete?.last_name}? Esta acción no se puede deshacer.`}
+        confirmText="Eliminar"
+        confirmColor="danger"
+        isLoading={saving}
       />
     </div>
   )

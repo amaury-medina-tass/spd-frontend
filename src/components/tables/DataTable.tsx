@@ -253,9 +253,16 @@ export function DataTable<T extends { id: string }>({
 
             <TableBody
                 items={isLoading ? [] : items}
-                emptyContent={isLoading ? " " : (emptyContent ?? defaultEmptyContent)}
-                isLoading={isLoading}
-                loadingContent={<Spinner size="lg" label="Cargando..." />}
+                emptyContent={
+                    isLoading ? (
+                        <div className="flex items-center justify-center h-48 w-full text-default-500">
+                            <Spinner size="lg" label="Cargando..." color="current" />
+                        </div>
+                    ) : (
+                        emptyContent ?? defaultEmptyContent
+                    )
+                }
+                isLoading={false}
             >
                 {(item) => (
                     <TableRow key={item.id}>

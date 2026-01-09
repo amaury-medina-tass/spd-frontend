@@ -11,6 +11,7 @@ export const endpoints = {
     roles: {
       base: "/access-control/roles",
       all: "/access-control/roles/all",
+      assign: "/users/assign-role",
       unassign: "/users/unassign-role",
     },
     modules: "/access-control/modules",
