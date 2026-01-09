@@ -1,4 +1,3 @@
-// src/components/tables/DataTable.tsx
 "use client"
 
 import {
@@ -17,8 +16,9 @@ import {
     DropdownTrigger,
     DropdownMenu,
     DropdownItem,
+    SortDescriptor,
 } from "@heroui/react"
-import { MoreVertical, Inbox } from "lucide-react"
+import { MoreVertical, Inbox, ChevronDown } from "lucide-react"
 import { ReactNode } from "react"
 
 /** Definición de columna */
@@ -26,6 +26,7 @@ export interface ColumnDef<T> {
     key: string
     label: string
     render?: (item: T) => ReactNode
+    sortable?: boolean
 }
 
 /** Acción de fila (para cada elemento) */
@@ -51,6 +52,9 @@ export interface PaginationProps {
     page: number
     totalPages: number
     onChange: (page: number) => void
+    pageSize?: number
+    onPageSizeChange?: (size: number) => void
+    pageSizeOptions?: number[]
 }
 
 interface DataTableProps<T extends { id: string }> {
@@ -58,6 +62,10 @@ interface DataTableProps<T extends { id: string }> {
     columns: ColumnDef<T>[]
     /** Estado de carga */
     isLoading?: boolean
+    /** Descriptor de ordenamiento */
+    sortDescriptor?: SortDescriptor
+    /** Callback de cambio de ordenamiento */
+    onSortChange?: (descriptor: SortDescriptor) => void
     /** Acciones para cada fila (aparecen en menú dropdown) */
     rowActions?: RowAction<T>[]
     /** Acciones en la barra superior (junto al buscador) */
@@ -78,6 +86,8 @@ export function DataTable<T extends { id: string }>({
     items,
     columns,
     isLoading = false,
+    sortDescriptor,
+    onSortChange,
     rowActions,
     topActions,
     searchValue,
@@ -176,27 +186,53 @@ export function DataTable<T extends { id: string }>({
         </div>
     )
 
-    const bottomContent = pagination && pagination.totalPages > 1 ? (
-        <div className="flex justify-center py-2">
-            <Pagination
-                total={pagination.totalPages}
-                page={pagination.page}
-                onChange={pagination.onChange}
-                showControls
-            />
+    const bottomContent = pagination && pagination.totalPages > 0 ? (
+        <div className="flex justify-between items-center px-2 py-2">
+            <div className="flex-1 w-[30%]" /> {/* Spacer to center pagination */}
+            <div className="flex justify-center flex-1">
+                <Pagination
+                    total={pagination.totalPages}
+                    page={pagination.page}
+                    onChange={pagination.onChange}
+                    showControls
+                    color="primary"
+                    variant="light"
+                />
+            </div>
+            <div className="flex justify-end items-center gap-2 flex-1 w-[30%]">
+                {pagination.onPageSizeChange && (
+                    <div className="flex items-center gap-2 text-small text-default-400">
+                        <span>Filas por página:</span>
+                        <Dropdown>
+                            <DropdownTrigger>
+                                <Button
+                                    variant="flat"
+                                    color="default"
+                                    size="sm"
+                                    className="min-w-16"
+                                    endContent={<ChevronDown size={14} className="text-default-500" />}
+                                >
+                                    {pagination.pageSize ?? 10}
+                                </Button>
+                            </DropdownTrigger>
+                            <DropdownMenu
+                                aria-label="Seleccionar filas por página"
+                                onAction={(key) => pagination.onPageSizeChange?.(Number(key))}
+                                selectionMode="single"
+                                selectedKeys={new Set([String(pagination.pageSize ?? 10)])}
+                            >
+                                {(pagination.pageSizeOptions ?? [5, 10, 20, 50]).map((option) => (
+                                    <DropdownItem key={option} textValue={String(option)}>
+                                        {option}
+                                    </DropdownItem>
+                                ))}
+                            </DropdownMenu>
+                        </Dropdown>
+                    </div>
+                )}
+            </div>
         </div>
     ) : null
-
-    // Loading content
-    const loadingContent = (
-        <TableRow key="loading">
-            <TableCell colSpan={allColumns.length}>
-                <div className="flex justify-center py-8">
-                    <Spinner size="lg" />
-                </div>
-            </TableCell>
-        </TableRow>
-    )
 
     return (
         <Table
@@ -204,9 +240,15 @@ export function DataTable<T extends { id: string }>({
             topContent={topContent}
             bottomContent={bottomContent}
             bottomContentPlacement="outside"
+            sortDescriptor={sortDescriptor}
+            onSortChange={onSortChange}
         >
             <TableHeader columns={allColumns}>
-                {(column) => <TableColumn key={column.key}>{column.label}</TableColumn>}
+                {(column) => (
+                    <TableColumn key={column.key} allowsSorting={column.sortable}>
+                        {column.label}
+                    </TableColumn>
+                )}
             </TableHeader>
 
             <TableBody

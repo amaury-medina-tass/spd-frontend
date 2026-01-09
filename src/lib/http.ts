@@ -141,6 +141,11 @@ export async function put<T>(path: string, body?: any, options?: Omit<RequestOpt
   return request<T>(path, "PUT", { ...options, body })
 }
 
+/** PATCH request */
+export async function patch<T>(path: string, body?: any, options?: Omit<RequestOptions, "body">): Promise<T> {
+  return request<T>(path, "PATCH", { ...options, body })
+}
+
 /** DELETE request */
 export async function del<T>(path: string, options?: RequestOptions): Promise<T> {
   return request<T>(path, "DELETE", options)

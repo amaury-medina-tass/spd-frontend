@@ -1,3 +1,8 @@
+export type Role = {
+  id: string
+  name: string
+}
+
 export type User = {
   id: string
   email: string
@@ -7,4 +12,5 @@ export type User = {
   is_active: boolean
   created_at: string
   updated_at: string
+  roles: Role[]
 }

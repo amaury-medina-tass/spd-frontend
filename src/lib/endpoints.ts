@@ -1,4 +1,3 @@
-// src/lib/endpoints.ts
 export const endpoints = {
   auth: {
     login: "/auth/login",
@@ -9,7 +8,11 @@ export const endpoints = {
   },
   accessControl: {
     users: "/users",
-    roles: "/access-control/roles",
+    roles: {
+      base: "/access-control/roles",
+      all: "/access-control/roles/all",
+      unassign: "/users/unassign-role",
+    },
     modules: "/access-control/modules",
   },
   masters: {
