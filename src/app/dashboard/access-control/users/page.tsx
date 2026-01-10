@@ -12,8 +12,8 @@ import { endpoints } from "@/lib/endpoints"
 import { Pencil, Trash2, Plus, Shield, RefreshCw } from "lucide-react"
 import { addToast } from "@heroui/toast";
 import type { User } from "@/types/user"
+import { getErrorMessage } from "@/lib/error-codes"
 
-// Definición de columnas
 const columns: ColumnDef<User>[] = [
   { key: "first_name", label: "Nombre", sortable: true },
   { key: "last_name", label: "Apellido", sortable: true },
@@ -45,13 +45,14 @@ const columns: ColumnDef<User>[] = [
 ]
 
 export default function AccessControlUsersPage() {
+  // Data State
   const [items, setItems] = useState<User[]>([])
   const [meta, setMeta] = useState<PaginationMeta | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Filtros y paginación
+  // Filter & Pagination State
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState("")
   const [limit, setLimit] = useState(10)
@@ -59,12 +60,17 @@ export default function AccessControlUsersPage() {
     column: "created_at",
     direction: "descending",
   })
+  const [searchInput, setSearchInput] = useState("")
+  const debouncedSearch = useDebounce(searchInput, 400)
 
+  // Modal State
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false)
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false)
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+
+  // Selection State
   const [editing, setEditing] = useState<User | null>(null)
   const [selectedUserForRole, setSelectedUserForRole] = useState<User | null>(null)
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [userToDelete, setUserToDelete] = useState<User | null>(null)
 
   const fetchUsers = useCallback(async () => {
@@ -88,7 +94,9 @@ export default function AccessControlUsersPage() {
       setItems(result.data)
       setMeta(result.meta)
     } catch (e: any) {
-      setError(e.message ?? "Error al cargar usuarios")
+      const errorCode = e.data?.errors?.code
+      const message = errorCode ? getErrorMessage(errorCode) : (e.message ?? "Error al cargar usuarios")
+      setError(message)
     } finally {
       setLoading(false)
     }
@@ -98,12 +106,9 @@ export default function AccessControlUsersPage() {
     fetchUsers()
   }, [fetchUsers])
 
-  const [searchInput, setSearchInput] = useState("")
-  const debouncedSearch = useDebounce(searchInput, 400)
-
   useEffect(() => {
     setSearch(debouncedSearch)
-    setPage(1) // Reset page on search
+    setPage(1)
   }, [debouncedSearch])
 
   const onCreate = () => {
@@ -116,8 +121,10 @@ export default function AccessControlUsersPage() {
       const freshUser = await get<User>(`${endpoints.accessControl.users}/${user.id}`)
       setEditing(freshUser)
       setIsInfoModalOpen(true)
-    } catch (error) {
-      console.error("Error fetching user details:", error)
+    } catch (e: any) {
+      const errorCode = e.data?.errors?.code
+      const message = errorCode ? getErrorMessage(errorCode) : "Error al obtener detalles del usuario"
+      addToast({ title: message, color: "danger" })
     }
   }
 
@@ -126,18 +133,17 @@ export default function AccessControlUsersPage() {
       const freshUser = await get<User>(`${endpoints.accessControl.users}/${user.id}`)
       setSelectedUserForRole(freshUser)
       setIsRoleModalOpen(true)
-    } catch (error) {
-      console.error("Error fetching user details:", error)
+    } catch (e: any) {
+      const errorCode = e.data?.errors?.code
+      const message = errorCode ? getErrorMessage(errorCode) : "Error al obtener detalles del usuario"
+      addToast({ title: message, color: "danger" })
     }
   }
-
-
 
   const onSaveInfo = async (payload: any) => {
     setSaving(true)
     try {
       if (editing) {
-        // En modo edición solo enviamos los campos permitidos
         const updatePayload = {
           first_name: payload.firstName,
           last_name: payload.lastName,
@@ -147,7 +153,6 @@ export default function AccessControlUsersPage() {
         }
         await patch(`${endpoints.accessControl.users}/${editing.id}`, updatePayload)
       } else {
-        // En modo creación se envía todo el payload original
         const createPayload = {
           firstName: payload.firstName,
           lastName: payload.lastName,
@@ -159,7 +164,6 @@ export default function AccessControlUsersPage() {
         await post(endpoints.auth.register, createPayload)
       }
 
-
       addToast({
         title: editing ? "Usuario actualizado correctamente" : "Usuario creado correctamente",
         color: "success",
@@ -167,12 +171,10 @@ export default function AccessControlUsersPage() {
       setIsInfoModalOpen(false)
       setEditing(null)
       fetchUsers()
-    } catch (error) {
-      console.error("Error saving user:", error)
-      addToast({
-        title: "Error al guardar el usuario",
-        color: "danger",
-      })
+    } catch (e: any) {
+      const errorCode = e.data?.errors?.code
+      const message = errorCode ? getErrorMessage(errorCode) : "Error al guardar el usuario"
+      addToast({ title: message, color: "danger" })
     } finally {
       setSaving(false)
     }
@@ -191,9 +193,10 @@ export default function AccessControlUsersPage() {
       setSelectedUserForRole(null)
       fetchUsers()
       addToast({ title: "Rol asignado correctamente", color: "success" })
-    } catch (e) {
-      console.error(e)
-      addToast({ title: "Error al asignar rol", color: "danger" })
+    } catch (e: any) {
+      const errorCode = e.data?.errors?.code
+      const message = errorCode ? getErrorMessage(errorCode) : "Error al asignar rol"
+      addToast({ title: message, color: "danger" })
     } finally {
       setSaving(false)
     }
@@ -213,9 +216,10 @@ export default function AccessControlUsersPage() {
       setSelectedUserForRole(freshUser)
       fetchUsers()
       addToast({ title: "Rol removido correctamente", color: "success" })
-    } catch (error) {
-      console.error("Error unassigning role:", error)
-      addToast({ title: "Error al remover rol", color: "danger" })
+    } catch (e: any) {
+      const errorCode = e.data?.errors?.code
+      const message = errorCode ? getErrorMessage(errorCode) : "Error al remover rol"
+      addToast({ title: message, color: "danger" })
     } finally {
       setSaving(false)
     }
@@ -235,15 +239,15 @@ export default function AccessControlUsersPage() {
       setUserToDelete(null)
       fetchUsers()
       addToast({ title: "Usuario eliminado correctamente", color: "success" })
-    } catch (error) {
-      console.error("Error deleting user:", error)
-      addToast({ title: "Error al eliminar usuario", color: "danger" })
+    } catch (e: any) {
+      const errorCode = e.data?.errors?.code
+      const message = errorCode ? getErrorMessage(errorCode) : "Error al eliminar usuario"
+      addToast({ title: message, color: "danger" })
     } finally {
       setSaving(false)
     }
   }
 
-  // Acciones de fila
   const rowActions: RowAction<User>[] = [
     {
       key: "edit",
@@ -266,7 +270,6 @@ export default function AccessControlUsersPage() {
     },
   ]
 
-  // Acciones de barra superior
   const topActions: TopAction[] = [
     {
       key: "refresh",

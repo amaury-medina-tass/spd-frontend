@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@heroui/input-otp": "^2.1.29",
     "@heroui/react": "^2.8.7",
     "axios": "^1.13.2",
     "class-variance-authority": "^0.7.1",
