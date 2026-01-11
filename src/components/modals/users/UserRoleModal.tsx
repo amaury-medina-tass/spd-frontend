@@ -12,10 +12,8 @@ import {
     Chip,
     Spinner,
 } from "@heroui/react"
-import { useEffect, useState, useMemo } from "react"
-import type { User, Role } from "@/types/user"
-import { get } from "@/lib/http"
-import { endpoints } from "@/lib/endpoints"
+import { useState } from "react"
+import type { Role, UserWithRoles } from "@/types/user"
 
 export function UserRoleModal({
     isOpen,
@@ -26,30 +24,15 @@ export function UserRoleModal({
     onUnassign,
 }: {
     isOpen: boolean
-    user: User | null
+    user: UserWithRoles | null
     isLoading?: boolean
     onClose: () => void
     onSave: (roleId: string) => void
     onUnassign: (roleId: string) => void
 }) {
     const [roleId, setRoleId] = useState("")
-    const [roles, setRoles] = useState<Role[]>([])
 
-    useEffect(() => {
-        if (isOpen) {
-            get<Role[]>(endpoints.accessControl.roles.all)
-                .then((res) => setRoles(res))
-                .catch(console.error)
-
-            setRoleId("")
-        }
-    }, [isOpen, user])
-
-    const availableRoles = useMemo(() => {
-        if (!user) return roles
-        const userRoleIds = new Set(user.roles?.map(r => r.id) || [])
-        return roles.filter(r => !userRoleIds.has(r.id))
-    }, [roles, user])
+    const availableRoles = user?.missingRoles ?? []
 
     return (
         <Modal isOpen={isOpen} onOpenChange={() => !isLoading && onClose()} size="md" placement="center" isDismissable={!isLoading}>
@@ -85,6 +68,7 @@ export function UserRoleModal({
                                                 variant="flat"
                                                 color="primary"
                                                 onClose={() => onUnassign(role.id)}
+                                                isDisabled={isLoading}
                                             >
                                                 {role.name}
                                             </Chip>
@@ -122,7 +106,10 @@ export function UserRoleModal({
                     </Button>
                     <Button
                         color="primary"
-                        onPress={() => onSave(roleId)}
+                        onPress={() => {
+                            onSave(roleId)
+                            setRoleId("")
+                        }}
                         isDisabled={!roleId || isLoading}
                         startContent={isLoading ? <Spinner size="sm" color="current" /> : undefined}
                     >

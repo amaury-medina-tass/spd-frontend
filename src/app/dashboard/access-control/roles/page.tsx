@@ -110,12 +110,19 @@ export default function AccessControlRolesPage() {
     setIsModalOpen(true)
   }
 
-  const onEdit = (role: Role) => {
-    setEditing(role)
-    setIsModalOpen(true)
+  const onEdit = async (role: Role) => {
+    try {
+      const freshRole = await get<Role>(`${endpoints.accessControl.roles.base}/${role.id}`)
+      setEditing(freshRole)
+      setIsModalOpen(true)
+    } catch (e: any) {
+      const errorCode = e.data?.errors?.code
+      const message = errorCode ? getErrorMessage(errorCode) : "Error al obtener detalles del rol"
+      addToast({ title: message, color: "danger" })
+    }
   }
 
-  const onSave = async (payload: { name: string; description?: string; is_active: boolean }) => {
+  const onSave = async (payload: { name: string; description?: string; is_active: boolean; permissions?: import("@/types/role").RolePermissions }) => {
     setSaving(true)
     try {
       if (editing) {

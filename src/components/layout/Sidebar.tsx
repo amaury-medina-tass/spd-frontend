@@ -16,6 +16,7 @@ import {
   Users,
   ShieldCheck,
   Layers,
+  Zap,
   X,
 } from "lucide-react"
 
@@ -60,6 +61,12 @@ const menuSections: MenuSection[] = [
         href: "/dashboard/access-control/modules",
         permissionPath: "/access-control/modules",
         icon: <Layers size={20} />,
+      },
+      {
+        label: "Acciones",
+        href: "/dashboard/access-control/actions",
+        permissionPath: "/access-control/actions",
+        icon: <Zap size={20} />,
       },
     ],
   },

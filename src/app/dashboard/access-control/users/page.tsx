@@ -11,7 +11,7 @@ import { get, post, patch, del, PaginatedData, PaginationMeta } from "@/lib/http
 import { endpoints } from "@/lib/endpoints"
 import { Pencil, Trash2, Plus, Shield, RefreshCw } from "lucide-react"
 import { addToast } from "@heroui/toast";
-import type { User } from "@/types/user"
+import type { User, UserWithRoles } from "@/types/user"
 import { getErrorMessage } from "@/lib/error-codes"
 
 const columns: ColumnDef<User>[] = [
@@ -70,7 +70,7 @@ export default function AccessControlUsersPage() {
 
   // Selection State
   const [editing, setEditing] = useState<User | null>(null)
-  const [selectedUserForRole, setSelectedUserForRole] = useState<User | null>(null)
+  const [selectedUserForRole, setSelectedUserForRole] = useState<UserWithRoles | null>(null)
   const [userToDelete, setUserToDelete] = useState<User | null>(null)
 
   const fetchUsers = useCallback(async () => {
@@ -130,12 +130,12 @@ export default function AccessControlUsersPage() {
 
   const onManageRole = async (user: User) => {
     try {
-      const freshUser = await get<User>(`${endpoints.accessControl.users}/${user.id}`)
-      setSelectedUserForRole(freshUser)
+      const userWithRoles = await get<UserWithRoles>(`${endpoints.accessControl.users}/${user.id}/roles`)
+      setSelectedUserForRole(userWithRoles)
       setIsRoleModalOpen(true)
     } catch (e: any) {
       const errorCode = e.data?.errors?.code
-      const message = errorCode ? getErrorMessage(errorCode) : "Error al obtener detalles del usuario"
+      const message = errorCode ? getErrorMessage(errorCode) : "Error al obtener roles del usuario"
       addToast({ title: message, color: "danger" })
     }
   }
@@ -184,13 +184,13 @@ export default function AccessControlUsersPage() {
     if (!selectedUserForRole) return
     setSaving(true)
     try {
-      await post(endpoints.accessControl.roles.assign, {
-        userId: selectedUserForRole.id,
+      await post(`${endpoints.accessControl.users}/${selectedUserForRole.id}/roles`, {
         roleId: roleId,
       })
 
-      setIsRoleModalOpen(false)
-      setSelectedUserForRole(null)
+      // Refresh user roles data
+      const userWithRoles = await get<UserWithRoles>(`${endpoints.accessControl.users}/${selectedUserForRole.id}/roles`)
+      setSelectedUserForRole(userWithRoles)
       fetchUsers()
       addToast({ title: "Rol asignado correctamente", color: "success" })
     } catch (e: any) {
@@ -206,14 +206,11 @@ export default function AccessControlUsersPage() {
     if (!selectedUserForRole) return
     setSaving(true)
     try {
-      await del(endpoints.accessControl.roles.unassign, {
-        body: {
-          userId: selectedUserForRole.id,
-          roleId: roleId
-        }
-      })
-      const freshUser = await get<User>(`${endpoints.accessControl.users}/${selectedUserForRole.id}`)
-      setSelectedUserForRole(freshUser)
+      await del(`${endpoints.accessControl.users}/${selectedUserForRole.id}/roles/${roleId}`)
+
+      // Refresh user roles data
+      const userWithRoles = await get<UserWithRoles>(`${endpoints.accessControl.users}/${selectedUserForRole.id}/roles`)
+      setSelectedUserForRole(userWithRoles)
       fetchUsers()
       addToast({ title: "Rol removido correctamente", color: "success" })
     } catch (e: any) {
