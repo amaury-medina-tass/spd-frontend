@@ -76,7 +76,7 @@ export function Sidebar() {
     if (!permissionPath) return true // Si no requiere permiso, mostrar siempre
     if (!me?.permissions) return false
     const modulePermission = me.permissions[permissionPath]
-    return modulePermission?.actions?.READ === true
+    return modulePermission?.actions?.READ?.allowed === true
   }
 
   // Filtrar items del menú basado en permisos
