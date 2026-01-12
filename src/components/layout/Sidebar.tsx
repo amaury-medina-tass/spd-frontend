@@ -10,68 +10,8 @@ import {
   Button,
   Tooltip,
 } from "@heroui/react"
-import {
-  Home,
-  Database,
-  Users,
-  ShieldCheck,
-  Layers,
-  Zap,
-  X,
-} from "lucide-react"
-
-
-type MenuItem = {
-  label: string
-  href: string
-  permissionPath?: string // Path del módulo para verificar permisos
-  icon: React.ReactNode
-}
-
-type MenuSection = {
-  title: string
-  items: MenuItem[]
-}
-
-const menuSections: MenuSection[] = [
-  {
-    title: "General",
-    items: [
-      { label: "Inicio", href: "/dashboard", icon: <Home size={20} /> },
-      { label: "Masters", href: "/dashboard/masters", icon: <Database size={20} /> },
-    ],
-  },
-  {
-    title: "Administration",
-    items: [
-      {
-        label: "Usuarios",
-        href: "/dashboard/access-control/users",
-        permissionPath: "/access-control/users",
-        icon: <Users size={20} />,
-      },
-      {
-        label: "Roles",
-        href: "/dashboard/access-control/roles",
-        permissionPath: "/access-control/roles",
-        icon: <ShieldCheck size={20} />,
-      },
-      {
-        label: "Módulos",
-        href: "/dashboard/access-control/modules",
-        permissionPath: "/access-control/modules",
-        icon: <Layers size={20} />,
-      },
-      {
-        label: "Acciones",
-        href: "/dashboard/access-control/actions",
-        permissionPath: "/access-control/actions",
-        icon: <Zap size={20} />,
-      },
-    ],
-  },
-
-]
+import { X } from "lucide-react"
+import { menuSections, MenuItem } from "@/config/navigation"
 
 export function Sidebar() {
   const pathname = usePathname()
@@ -183,6 +123,8 @@ export function Sidebar() {
                 src="/images/dagrd.png"
                 alt="DAGRD"
                 fill
+                sizes="(max-width: 768px) 80px, 80px"
+                loading="eager"
                 className="object-contain"
               />
             </div>
@@ -193,6 +135,7 @@ export function Sidebar() {
                 src="/images/bomberos.png"
                 alt="Bomberos"
                 fill
+                sizes="(max-width: 768px) 80px, 80px"
                 className="object-contain"
               />
             </div>
@@ -204,6 +147,8 @@ export function Sidebar() {
               src="/images/alcaldia.jpg"
               alt="Alcaldía"
               fill
+              sizes="(max-width: 768px) 192px, 192px"
+              loading="eager"
               className="object-contain"
             />
           </div>

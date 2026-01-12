@@ -4,6 +4,7 @@ import { Button, Breadcrumbs, BreadcrumbItem, SortDescriptor } from "@heroui/rea
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { DataTable, ColumnDef, RowAction, TopAction } from "@/components/tables/DataTable"
 import { useDebounce } from "@/hooks/useDebounce"
+import { usePermissions } from "@/hooks/usePermissions"
 import { ActionModal } from "@/components/modals/ActionModal"
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal"
 import { get, post, patch, del, PaginatedData, PaginationMeta } from "@/lib/http"
@@ -17,7 +18,6 @@ const columns: ColumnDef<Action>[] = [
     { key: "code_action", label: "Código", sortable: true },
     { key: "name", label: "Nombre", sortable: true },
     { key: "description", label: "Descripción", sortable: true },
-    { key: "system", label: "Sistema", sortable: true },
     {
         key: "created_at",
         label: "Creado",
@@ -33,6 +33,9 @@ const columns: ColumnDef<Action>[] = [
 ]
 
 export default function AccessControlActionsPage() {
+    // Permissions
+    const { canRead, canCreate, canUpdate, canDelete } = usePermissions("/access-control/actions")
+
     // Data State
     const [items, setItems] = useState<Action[]>([])
     const [meta, setMeta] = useState<PaginationMeta | null>(null)
@@ -162,38 +165,49 @@ export default function AccessControlActionsPage() {
         }
     }
 
-    const rowActions: RowAction<Action>[] = [
-        {
-            key: "edit",
-            label: "Editar",
-            icon: <Pencil size={16} />,
-            onClick: onEdit,
-        },
-        {
-            key: "delete",
-            label: "Eliminar",
-            icon: <Trash2 size={16} />,
-            color: "danger",
-            onClick: onDelete,
-        },
-    ]
+    const rowActions: RowAction<Action>[] = useMemo(() => {
+        const actions: RowAction<Action>[] = []
+        if (canUpdate) {
+            actions.push({
+                key: "edit",
+                label: "Editar",
+                icon: <Pencil size={16} />,
+                onClick: onEdit,
+            })
+        }
+        if (canDelete) {
+            actions.push({
+                key: "delete",
+                label: "Eliminar",
+                icon: <Trash2 size={16} />,
+                color: "danger",
+                onClick: onDelete,
+            })
+        }
+        return actions
+    }, [canUpdate, canDelete])
 
-    const topActions: TopAction[] = [
-        {
-            key: "refresh",
-            label: "Actualizar",
-            icon: <RefreshCw size={16} />,
-            color: "default",
-            onClick: fetchActions,
-        },
-        {
-            key: "create",
-            label: "Crear",
-            icon: <Plus size={16} />,
-            color: "primary",
-            onClick: onCreate,
-        },
-    ]
+    const topActions: TopAction[] = useMemo(() => {
+        const actions: TopAction[] = [
+            {
+                key: "refresh",
+                label: "Actualizar",
+                icon: <RefreshCw size={16} />,
+                color: "default",
+                onClick: fetchActions,
+            },
+        ]
+        if (canCreate) {
+            actions.push({
+                key: "create",
+                label: "Crear",
+                icon: <Plus size={16} />,
+                color: "primary",
+                onClick: onCreate,
+            })
+        }
+        return actions
+    }, [canCreate, fetchActions])
 
     const title = useMemo(() => (editing ? "Editar acción" : "Crear acción"), [editing])
 
@@ -205,7 +219,12 @@ export default function AccessControlActionsPage() {
                 <BreadcrumbItem>Acciones</BreadcrumbItem>
             </Breadcrumbs>
 
-            {error ? (
+            {!canRead ? (
+                <div className="text-center py-16">
+                    <p className="text-xl font-semibold text-danger">Acceso Denegado</p>
+                    <p className="text-default-500 mt-2">No tienes permisos para ver este módulo.</p>
+                </div>
+            ) : error ? (
                 <div className="text-center py-8 text-danger">
                     <p>{error}</p>
                     <Button variant="flat" className="mt-2" onPress={fetchActions}>

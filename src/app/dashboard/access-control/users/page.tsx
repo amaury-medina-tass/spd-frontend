@@ -4,6 +4,7 @@ import { Button, Breadcrumbs, BreadcrumbItem, Chip, SortDescriptor } from "@hero
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { DataTable, ColumnDef, RowAction, TopAction } from "@/components/tables/DataTable"
 import { useDebounce } from "@/hooks/useDebounce"
+import { usePermissions } from "@/hooks/usePermissions"
 import { UserInfoModal } from "@/components/modals/users/UserInfoModal"
 import { UserRoleModal } from "@/components/modals/users/UserRoleModal"
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal"
@@ -45,6 +46,9 @@ const columns: ColumnDef<User>[] = [
 ]
 
 export default function AccessControlUsersPage() {
+  // Permissions
+  const { canRead, canCreate, canUpdate, canDelete, canAssignRole } = usePermissions("/access-control/users")
+
   // Data State
   const [items, setItems] = useState<User[]>([])
   const [meta, setMeta] = useState<PaginationMeta | null>(null)
@@ -245,44 +249,57 @@ export default function AccessControlUsersPage() {
     }
   }
 
-  const rowActions: RowAction<User>[] = [
-    {
-      key: "edit",
-      label: "Editar",
-      icon: <Pencil size={16} />,
-      onClick: onEdit,
-    },
-    {
-      key: "role",
-      label: "Gestionar Rol",
-      icon: <Shield size={16} />,
-      onClick: onManageRole,
-    },
-    {
-      key: "delete",
-      label: "Eliminar",
-      icon: <Trash2 size={16} />,
-      color: "danger",
-      onClick: onDelete,
-    },
-  ]
+  const rowActions: RowAction<User>[] = useMemo(() => {
+    const actions: RowAction<User>[] = []
+    if (canUpdate) {
+      actions.push({
+        key: "edit",
+        label: "Editar",
+        icon: <Pencil size={16} />,
+        onClick: onEdit,
+      })
+    }
+    if (canAssignRole) {
+      actions.push({
+        key: "role",
+        label: "Gestionar Rol",
+        icon: <Shield size={16} />,
+        onClick: onManageRole,
+      })
+    }
+    if (canDelete) {
+      actions.push({
+        key: "delete",
+        label: "Eliminar",
+        icon: <Trash2 size={16} />,
+        color: "danger",
+        onClick: onDelete,
+      })
+    }
+    return actions
+  }, [canUpdate, canDelete, canAssignRole])
 
-  const topActions: TopAction[] = [
-    {
-      key: "refresh",
-      label: "Actualizar",
-      icon: <RefreshCw size={16} />,
-      color: "default",
-      onClick: fetchUsers,
-    },
-    {
-      key: "create",
-      label: "Crear",
-      icon: <Plus size={16} />,
-      color: "primary",
-      onClick: onCreate,
-    },
-  ]
+  const topActions: TopAction[] = useMemo(() => {
+    const actions: TopAction[] = [
+      {
+        key: "refresh",
+        label: "Actualizar",
+        icon: <RefreshCw size={16} />,
+        color: "default",
+        onClick: fetchUsers,
+      },
+    ]
+    if (canCreate) {
+      actions.push({
+        key: "create",
+        label: "Crear",
+        icon: <Plus size={16} />,
+        color: "primary",
+        onClick: onCreate,
+      })
+    }
+    return actions
+  }, [canCreate, fetchUsers])
 
   const title = useMemo(() => (editing ? "Editar usuario" : "Crear usuario"), [editing])
 
@@ -294,7 +311,12 @@ export default function AccessControlUsersPage() {
         <BreadcrumbItem>Usuarios</BreadcrumbItem>
       </Breadcrumbs>
 
-      {error ? (
+      {!canRead ? (
+        <div className="text-center py-16">
+          <p className="text-xl font-semibold text-danger">Acceso Denegado</p>
+          <p className="text-default-500 mt-2">No tienes permisos para ver este módulo.</p>
+        </div>
+      ) : error ? (
         <div className="text-center py-8 text-danger">
           <p>{error}</p>
           <Button variant="flat" className="mt-2" onPress={fetchUsers}>

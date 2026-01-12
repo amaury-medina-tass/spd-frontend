@@ -22,5 +22,29 @@ export type Role = {
   system?: string
   created_at: string
   updated_at: string
-  permissions?: RolePermissions
+}
+
+// Types for role permissions endpoint response
+export type RolePermissionAction = {
+  permissionId: string
+  actionId: string
+  code: string
+  name: string
+  allowed: boolean
+}
+
+export type RoleModulePermissions = {
+  moduleId: string
+  moduleName: string
+  actions: RolePermissionAction[]
+}
+
+export type RolePermissionsData = {
+  role: {
+    id: string
+    name: string
+  }
+  permissions: {
+    [modulePath: string]: RoleModulePermissions
+  }
 }

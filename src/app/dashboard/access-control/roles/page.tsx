@@ -4,13 +4,15 @@ import { Button, Breadcrumbs, BreadcrumbItem, Chip, SortDescriptor } from "@hero
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { DataTable, ColumnDef, RowAction, TopAction } from "@/components/tables/DataTable"
 import { useDebounce } from "@/hooks/useDebounce"
+import { usePermissions } from "@/hooks/usePermissions"
 import { RoleModal } from "@/components/modals/RoleModal"
+import { RolePermissionsModal } from "@/components/modals/RolePermissionsModal"
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal"
 import { get, post, patch, del, PaginatedData, PaginationMeta } from "@/lib/http"
 import { endpoints } from "@/lib/endpoints"
-import { Pencil, Trash2, Plus, RefreshCw } from "lucide-react"
+import { Pencil, Trash2, Plus, RefreshCw, Shield } from "lucide-react"
 import { addToast } from "@heroui/toast"
-import type { Role } from "@/types/role"
+import type { Role, RolePermissionsData, RoleModulePermissions } from "@/types/role"
 import { getErrorMessage } from "@/lib/error-codes"
 
 const columns: ColumnDef<Role>[] = [
@@ -41,6 +43,9 @@ const columns: ColumnDef<Role>[] = [
 ]
 
 export default function AccessControlRolesPage() {
+  // Permissions
+  const { canRead, canCreate, canUpdate, canDelete, canAssignPermission } = usePermissions("/access-control/roles")
+
   // Data State
   const [items, setItems] = useState<Role[]>([])
   const [meta, setMeta] = useState<PaginationMeta | null>(null)
@@ -61,10 +66,12 @@ export default function AccessControlRolesPage() {
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isPermissionsModalOpen, setIsPermissionsModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
 
   // Selection State
   const [editing, setEditing] = useState<Role | null>(null)
+  const [selectedRolePermissions, setSelectedRolePermissions] = useState<RolePermissionsData | null>(null)
   const [roleToDelete, setRoleToDelete] = useState<Role | null>(null)
 
   const fetchRoles = useCallback(async () => {
@@ -122,7 +129,19 @@ export default function AccessControlRolesPage() {
     }
   }
 
-  const onSave = async (payload: { name: string; description?: string; is_active: boolean; permissions?: import("@/types/role").RolePermissions }) => {
+  const onManagePermissions = async (role: Role) => {
+    try {
+      const permissionsData = await get<RolePermissionsData>(`${endpoints.accessControl.roles.base}/${role.id}/permissions`)
+      setSelectedRolePermissions(permissionsData)
+      setIsPermissionsModalOpen(true)
+    } catch (e: any) {
+      const errorCode = e.data?.errors?.code
+      const message = errorCode ? getErrorMessage(errorCode) : "Error al obtener permisos del rol"
+      addToast({ title: message, color: "danger" })
+    }
+  }
+
+  const onSave = async (payload: { name: string; description?: string; is_active: boolean }) => {
     setSaving(true)
     try {
       if (editing) {
@@ -141,6 +160,36 @@ export default function AccessControlRolesPage() {
     } catch (e: any) {
       const errorCode = e.data?.errors?.code
       const message = errorCode ? getErrorMessage(errorCode) : "Error al guardar el rol"
+      addToast({ title: message, color: "danger" })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const onSavePermissions = async (permissions: { [modulePath: string]: RoleModulePermissions }) => {
+    if (!selectedRolePermissions) return
+    setSaving(true)
+    try {
+      // Collect only the permissionIds that are allowed
+      const permissionIds: string[] = []
+      Object.values(permissions).forEach((module) => {
+        module.actions.forEach((action) => {
+          if (action.allowed) {
+            permissionIds.push(action.permissionId)
+          }
+        })
+      })
+
+      await patch(`${endpoints.accessControl.roles.base}/${selectedRolePermissions.role.id}/permissions`, {
+        permissionIds,
+      })
+
+      addToast({ title: "Permisos actualizados correctamente", color: "success" })
+      setIsPermissionsModalOpen(false)
+      setSelectedRolePermissions(null)
+    } catch (e: any) {
+      const errorCode = e.data?.errors?.code
+      const message = errorCode ? getErrorMessage(errorCode) : "Error al guardar permisos"
       addToast({ title: message, color: "danger" })
     } finally {
       setSaving(false)
@@ -170,38 +219,57 @@ export default function AccessControlRolesPage() {
     }
   }
 
-  const rowActions: RowAction<Role>[] = [
-    {
-      key: "edit",
-      label: "Editar",
-      icon: <Pencil size={16} />,
-      onClick: onEdit,
-    },
-    {
-      key: "delete",
-      label: "Eliminar",
-      icon: <Trash2 size={16} />,
-      color: "danger",
-      onClick: onDelete,
-    },
-  ]
+  const rowActions: RowAction<Role>[] = useMemo(() => {
+    const actions: RowAction<Role>[] = []
+    if (canUpdate) {
+      actions.push({
+        key: "edit",
+        label: "Editar",
+        icon: <Pencil size={16} />,
+        onClick: onEdit,
+      })
+    }
+    if (canAssignPermission) {
+      actions.push({
+        key: "permissions",
+        label: "Gestionar Permisos",
+        icon: <Shield size={16} />,
+        onClick: onManagePermissions,
+      })
+    }
+    if (canDelete) {
+      actions.push({
+        key: "delete",
+        label: "Eliminar",
+        icon: <Trash2 size={16} />,
+        color: "danger",
+        onClick: onDelete,
+      })
+    }
+    return actions
+  }, [canUpdate, canDelete, canAssignPermission])
 
-  const topActions: TopAction[] = [
-    {
-      key: "refresh",
-      label: "Actualizar",
-      icon: <RefreshCw size={16} />,
-      color: "default",
-      onClick: fetchRoles,
-    },
-    {
-      key: "create",
-      label: "Crear",
-      icon: <Plus size={16} />,
-      color: "primary",
-      onClick: onCreate,
-    },
-  ]
+  const topActions: TopAction[] = useMemo(() => {
+    const actions: TopAction[] = [
+      {
+        key: "refresh",
+        label: "Actualizar",
+        icon: <RefreshCw size={16} />,
+        color: "default",
+        onClick: fetchRoles,
+      },
+    ]
+    if (canCreate) {
+      actions.push({
+        key: "create",
+        label: "Crear",
+        icon: <Plus size={16} />,
+        color: "primary",
+        onClick: onCreate,
+      })
+    }
+    return actions
+  }, [canCreate, fetchRoles])
 
   const title = useMemo(() => (editing ? "Editar rol" : "Crear rol"), [editing])
 
@@ -213,7 +281,12 @@ export default function AccessControlRolesPage() {
         <BreadcrumbItem>Roles</BreadcrumbItem>
       </Breadcrumbs>
 
-      {error ? (
+      {!canRead ? (
+        <div className="text-center py-16">
+          <p className="text-xl font-semibold text-danger">Acceso Denegado</p>
+          <p className="text-default-500 mt-2">No tienes permisos para ver este módulo.</p>
+        </div>
+      ) : error ? (
         <div className="text-center py-8 text-danger">
           <p>{error}</p>
           <Button variant="flat" className="mt-2" onPress={fetchRoles}>
@@ -256,6 +329,17 @@ export default function AccessControlRolesPage() {
           setEditing(null)
         }}
         onSave={onSave}
+      />
+
+      <RolePermissionsModal
+        isOpen={isPermissionsModalOpen}
+        permissionsData={selectedRolePermissions}
+        isLoading={saving}
+        onClose={() => {
+          setIsPermissionsModalOpen(false)
+          setSelectedRolePermissions(null)
+        }}
+        onSave={onSavePermissions}
       />
 
       <ConfirmationModal
