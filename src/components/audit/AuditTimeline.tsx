@@ -1,13 +1,14 @@
 "use client"
 
 import { useEffect, useRef, useCallback } from "react"
-import { Spinner, Button, Input, Chip, Select, SelectItem } from "@heroui/react"
+import { Spinner, Button, Input, Chip, Select, SelectItem, DateRangePicker } from "@heroui/react"
 import { AuditLog } from "@/types/audit"
 import { AuditTimelineItem } from "./AuditTimelineItem"
 import { PaginationMeta } from "@/lib/http"
 import { AuditFilters } from "@/hooks/useInfiniteAuditLogs"
 import { AuditActions, ACTION_LABELS, AuditEntityTypes, ENTITY_TYPE_LABELS } from "@/lib/audit-codes"
-import { FileText, Search, RefreshCw, Loader2, X } from "lucide-react"
+import { FileText, Search, RefreshCw, Loader2, X, ArrowUpDown } from "lucide-react"
+import { parseDate, CalendarDate } from "@internationalized/date"
 
 interface AuditTimelineProps {
   logs: AuditLog[]
@@ -37,6 +38,12 @@ const ENTITY_OPTIONS = [
     key: type,
     label: ENTITY_TYPE_LABELS[type] || type,
   })),
+]
+
+const SORT_OPTIONS = [
+  { key: "timestamp", label: "Fecha" },
+  { key: "action", label: "Acción" },
+  { key: "entityType", label: "Tipo" },
 ]
 
 export function AuditTimeline({
@@ -81,7 +88,29 @@ export function AuditTimeline({
     }
   }, [handleObserver])
 
-  const hasActiveFilters = filters.search || filters.action || filters.entityType
+  const hasActiveFilters = filters.search || filters.action || filters.entityType || 
+    filters.system || filters.startDate || filters.endDate
+
+  // Parse dates for DateRangePicker
+  const dateRangeValue = filters.startDate && filters.endDate ? {
+    start: parseDate(filters.startDate.split("T")[0]),
+    end: parseDate(filters.endDate.split("T")[0]),
+  } : null
+
+  const handleDateRangeChange = (range: { start: CalendarDate; end: CalendarDate } | null) => {
+    if (range) {
+      onFiltersChange({
+        startDate: range.start.toString() + "T00:00:00.000Z",
+        endDate: range.end.toString() + "T23:59:59.999Z",
+      })
+    } else {
+      onFiltersChange({ startDate: "", endDate: "" })
+    }
+  }
+
+  const toggleSortOrder = () => {
+    onFiltersChange({ sortOrder: filters.sortOrder === "ASC" ? "DESC" : "ASC" })
+  }
 
   // Initial loading state
   if (isLoading && logs.length === 0) {
@@ -95,8 +124,8 @@ export function AuditTimeline({
 
   return (
     <div className="space-y-4">
-      {/* Filters */}
-      <div className="flex flex-wrap items-end gap-3 pb-4 border-b border-default-200">
+      {/* Filters - Row 1 */}
+      <div className="flex flex-wrap items-end gap-3 pb-2">
         {/* Search */}
         <Input
           placeholder="Buscar..."
@@ -142,6 +171,47 @@ export function AuditTimeline({
             <SelectItem key={opt.key}>{opt.label}</SelectItem>
           ))}
         </Select>
+      </div>
+
+      {/* Filters - Row 2 */}
+      <div className="flex flex-wrap items-end gap-3 pb-4 border-b border-default-200">
+        {/* Date range */}
+        <DateRangePicker
+          aria-label="Rango de fechas"
+          size="sm"
+          className="w-64"
+          value={dateRangeValue}
+          onChange={handleDateRangeChange}
+          granularity="day"
+        />
+
+        {/* Sort */}
+        <div className="flex items-center gap-1">
+          <Select
+            aria-label="Ordenar por"
+            placeholder="Ordenar por"
+            size="sm"
+            className="w-32"
+            selectedKeys={filters.sortBy ? [filters.sortBy] : ["timestamp"]}
+            onSelectionChange={(keys) => {
+              const value = Array.from(keys)[0] as string
+              onFiltersChange({ sortBy: value || "timestamp" })
+            }}
+          >
+            {SORT_OPTIONS.map((opt) => (
+              <SelectItem key={opt.key}>{opt.label}</SelectItem>
+            ))}
+          </Select>
+          <Button
+            isIconOnly
+            size="sm"
+            variant="flat"
+            onPress={toggleSortOrder}
+            aria-label={filters.sortOrder === "ASC" ? "Orden ascendente" : "Orden descendente"}
+          >
+            <ArrowUpDown size={14} className={filters.sortOrder === "ASC" ? "rotate-180" : ""} />
+          </Button>
+        </div>
 
         {/* Reset & Refresh */}
         <div className="flex items-center gap-2 ml-auto">
@@ -173,6 +243,11 @@ export function AuditTimeline({
       {meta && (
         <div className="flex items-center gap-2 text-small text-default-500">
           <Chip variant="flat" size="sm">{meta.total} registro{meta.total !== 1 ? "s" : ""}</Chip>
+          {filters.sortBy && (
+            <span className="text-tiny">
+              Ordenado por {SORT_OPTIONS.find(o => o.key === filters.sortBy)?.label?.toLowerCase()} ({filters.sortOrder === "ASC" ? "↑" : "↓"})
+            </span>
+          )}
         </div>
       )}
 

@@ -9,6 +9,11 @@ export interface AuditFilters {
   search: string
   action: string
   entityType: string
+  system: string
+  startDate: string
+  endDate: string
+  sortBy: string
+  sortOrder: "ASC" | "DESC"
 }
 
 interface UseInfiniteAuditLogsReturn {
@@ -31,6 +36,11 @@ const DEFAULT_FILTERS: AuditFilters = {
   search: "",
   action: "",
   entityType: "",
+  system: "",
+  startDate: "",
+  endDate: "",
+  sortBy: "timestamp",
+  sortOrder: "DESC",
 }
 
 export function useInfiniteAuditLogs(): UseInfiniteAuditLogsReturn {
@@ -64,6 +74,8 @@ export function useInfiniteAuditLogs(): UseInfiniteAuditLogsReturn {
         page: pageNum.toString(),
         limit: PAGE_SIZE.toString(),
       })
+      
+      // Add filters
       if (filters.search.trim()) {
         params.set("search", filters.search.trim())
       }
@@ -72,6 +84,21 @@ export function useInfiniteAuditLogs(): UseInfiniteAuditLogsReturn {
       }
       if (filters.entityType) {
         params.set("entityType", filters.entityType)
+      }
+      if (filters.system) {
+        params.set("system", filters.system)
+      }
+      if (filters.startDate) {
+        params.set("startDate", filters.startDate)
+      }
+      if (filters.endDate) {
+        params.set("endDate", filters.endDate)
+      }
+      if (filters.sortBy) {
+        params.set("sortBy", filters.sortBy)
+      }
+      if (filters.sortOrder) {
+        params.set("sortOrder", filters.sortOrder)
       }
 
       const result = await get<PaginatedData<AuditLog>>(`${endpoints.audit}?${params}`)
