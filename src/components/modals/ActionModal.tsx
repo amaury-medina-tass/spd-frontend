@@ -51,7 +51,7 @@ export function ActionModal({
                     <Input
                         label="Código"
                         value={codeAction}
-                        onValueChange={setCodeAction}
+                        onValueChange={(value) => setCodeAction(value.toUpperCase().replace(/\s/g, "_"))}
                         isDisabled={isLoading || isEditing}
                         description={isEditing ? "El código no puede ser modificado" : "Código único de la acción (ej: READ, CREATE)"}
                     />

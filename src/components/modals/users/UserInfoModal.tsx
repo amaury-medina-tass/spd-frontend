@@ -161,8 +161,10 @@ export function UserInfoModal({
                     <Input
                         label="Documento"
                         value={documentNumber}
-                        onValueChange={setDocumentNumber}
+                        onValueChange={(value) => setDocumentNumber(value.replace(/\D/g, ""))}
                         isRequired
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                     />
                     <Input
                         label="Email"
