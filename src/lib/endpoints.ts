@@ -22,4 +22,5 @@ export const endpoints = {
   masters: {
     root: "/masters",
   },
+  audit: "/audit",
 }

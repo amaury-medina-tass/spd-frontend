@@ -6,6 +6,7 @@ import {
     ShieldCheck,
     Layers,
     Zap,
+    ClipboardList,
 } from "lucide-react"
 import React from "react"
 
@@ -55,6 +56,12 @@ export const menuSections: MenuSection[] = [
                 href: "/dashboard/access-control/actions",
                 permissionPath: "/access-control/actions",
                 icon: React.createElement(Zap, { size: 20 }),
+            },
+            {
+                label: "Auditoría",
+                href: "/dashboard/audit",
+                permissionPath: "/audit",
+                icon: React.createElement(ClipboardList, { size: 20 }),
             },
         ],
     },
