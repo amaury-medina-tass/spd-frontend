@@ -30,16 +30,18 @@ export function AuditChangesDisplay({ changes }: AuditChangesDisplayProps) {
           key={`${change.field}-${index}`}
           className="p-3 bg-default-50 rounded-lg border border-default-200"
         >
-          <div className="font-medium text-small mb-2 text-default-700">
+        <div className="font-medium text-small mb-3 text-foreground">
             {change.fieldLabel || change.field}
           </div>
           <div className="flex items-center gap-3 text-small">
-            <div className="flex-1 p-2 bg-danger-50 text-danger-600 rounded border border-danger-200">
-              <span className="font-mono">{formatValue(change.oldValue)}</span>
+            <div className="flex-1 p-3 bg-default-100 rounded border border-default-200">
+              <div className="text-tiny text-default-400 mb-1">Anterior</div>
+              <span className="font-mono text-default-600">{formatValue(change.oldValue)}</span>
             </div>
             <ArrowRight size={16} className="text-default-400 flex-shrink-0" />
-            <div className="flex-1 p-2 bg-success-50 text-success-600 rounded border border-success-200">
-              <span className="font-mono">{formatValue(change.newValue)}</span>
+            <div className="flex-1 p-3 bg-default-100 rounded border border-default-200">
+              <div className="text-tiny text-default-400 mb-1">Nuevo</div>
+              <span className="font-mono text-foreground">{formatValue(change.newValue)}</span>
             </div>
           </div>
         </div>

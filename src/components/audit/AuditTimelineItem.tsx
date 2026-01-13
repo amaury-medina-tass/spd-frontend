@@ -2,7 +2,9 @@
 
 import { AuditLog } from "@/types/audit"
 import { getActionColor, getEntityTypeLabel } from "@/lib/audit-codes"
-import { ChevronRight } from "lucide-react"
+import { ChevronRight, Copy, Check } from "lucide-react"
+import { addToast } from "@heroui/react"
+import { useState } from "react"
 
 interface AuditTimelineItemProps {
   log: AuditLog
@@ -120,11 +122,14 @@ export function AuditTimelineItem({ log, onClick, isLast = false }: AuditTimelin
             )}
 
             {/* Time */}
-            <div className="text-tiny text-default-400 mt-1">
-              {formatRelativeTime(log.timestamp)}
+            <div className="text-tiny text-default-400 mt-1 flex items-center gap-2">
+              <span>{formatRelativeTime(log.timestamp)}</span>
               {!log.success && (
-                <span className="text-danger ml-2">• Fallido</span>
+                <span className="text-danger">• Fallido</span>
               )}
+              
+              {/* Copy ID Button - Visible on hover */}
+              <CopyIdButton id={log.id} />
             </div>
           </div>
 
@@ -136,5 +141,31 @@ export function AuditTimelineItem({ log, onClick, isLast = false }: AuditTimelin
         </div>
       </div>
     </div>
+  )
+}
+
+function CopyIdButton({ id }: { id: string }) {
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    navigator.clipboard.writeText(id)
+    setCopied(true)
+    addToast({
+      title: "ID copiado",
+      color: "success",
+    })
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <button
+      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-default-200 rounded-full text-default-400 hover:text-default-600 focus:opacity-100"
+      onClick={handleCopy}
+      title="Copiar ID del registro"
+      aria-label="Copiar ID del registro"
+    >
+      {copied ? <Check size={12} className="text-success" /> : <Copy size={12} />}
+    </button>
   )
 }

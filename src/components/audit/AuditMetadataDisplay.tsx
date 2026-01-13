@@ -87,14 +87,16 @@ export function AuditMetadataDisplay({
 
           {/* Added IDs */}
           {hasAddedIds && (
-            <div className="p-3 bg-success-50 border border-success-200 rounded-lg">
-              <div className="flex items-center gap-2 mb-2">
-                <Plus size={14} className="text-success-600" />
-                <span className="text-small font-medium text-success-700">
+            <div className="p-4 bg-default-50 border border-default-200 rounded-lg">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-5 h-5 rounded-full bg-success-100 flex items-center justify-center">
+                  <Plus size={12} className="text-success-600" />
+                </div>
+                <span className="text-small font-medium text-foreground">
                   Permisos Agregados ({addedIds.length})
                 </span>
               </div>
-              <div className="flex flex-wrap gap-1">
+              <div className="flex flex-wrap gap-2 pl-7">
                 {addedIds.map((id) => (
                   <Chip key={id} size="sm" variant="flat" className="font-mono text-tiny">
                     {id}
@@ -106,16 +108,18 @@ export function AuditMetadataDisplay({
 
           {/* Removed IDs */}
           {hasRemovedIds && (
-            <div className="p-3 bg-warning-50 border border-warning-200 rounded-lg">
-              <div className="flex items-center gap-2 mb-2">
-                <Minus size={14} className="text-warning-600" />
-                <span className="text-small font-medium text-warning-700">
+            <div className="p-4 bg-default-50 border border-default-200 rounded-lg">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-5 h-5 rounded-full bg-warning-100 flex items-center justify-center">
+                  <Minus size={12} className="text-warning-600" />
+                </div>
+                <span className="text-small font-medium text-foreground">
                   Permisos Removidos ({removedIds.length})
                 </span>
               </div>
-              <div className="flex flex-wrap gap-1">
+              <div className="flex flex-wrap gap-2 pl-7">
                 {removedIds.map((id) => (
-                  <Chip key={id} size="sm" variant="flat" color="warning" className="font-mono text-tiny">
+                  <Chip key={id} size="sm" variant="flat" className="font-mono text-tiny">
                     {id}
                   </Chip>
                 ))}
@@ -130,11 +134,15 @@ export function AuditMetadataDisplay({
         <Accordion
           defaultExpandedKeys={defaultExpanded && !hasPermissionChanges ? ["metadata"] : []}
           variant="bordered"
-          className="p-0"
+          className="bg-transparent"
         >
           <AccordionItem
             key="metadata"
             aria-label="Metadatos"
+            classNames={{
+              trigger: "px-4 py-3",
+              content: "px-4 pb-4 pt-0",
+            }}
             title={
               <div className="flex items-center gap-2">
                 <span className="font-medium">{hasPermissionChanges ? "Otros Metadatos" : "Metadatos"}</span>
@@ -144,16 +152,16 @@ export function AuditMetadataDisplay({
               </div>
             }
           >
-            <div className="space-y-2 pb-2">
+            <div className="space-y-2 pb-3 pt-1">
               {otherEntries.map(([key, value]) => (
                 <div
                   key={key}
-                  className="flex justify-between items-start gap-4 py-2 px-3 bg-default-50 rounded-lg"
+                  className="flex justify-between items-start gap-4 py-3 px-4 bg-default-50 rounded-lg"
                 >
-                  <span className="text-small font-medium text-default-600 min-w-[140px]">
+                  <span className="text-small font-medium text-default-500 min-w-[140px]">
                     {getMetadataLabel(key)}
                   </span>
-                  <span className="text-small text-default-800 text-right break-all font-mono">
+                  <span className="text-small text-foreground text-right break-all font-mono">
                     {formatMetadataValue(value)}
                   </span>
                 </div>
