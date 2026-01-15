@@ -110,8 +110,6 @@ async function request<T>(
       throw new HttpError(res.status, body, body?.errors ?? null, body?.message ?? "Request failed")
     }
 
-    // API returns wrapped response: { success, data, ... }
-    // Extract the data field if present
     return (body?.data ?? body) as T
   }
 

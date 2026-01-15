@@ -3,7 +3,7 @@
 import { AuditLog } from "@/types/audit"
 import { getActionColor, getEntityTypeLabel } from "@/lib/audit-codes"
 import { ChevronRight, Copy, Check } from "lucide-react"
-import { addToast } from "@heroui/react"
+import { addToast, Tooltip } from "@heroui/react"
 import { useState } from "react"
 
 interface AuditTimelineItemProps {
@@ -54,7 +54,7 @@ export function AuditTimelineItem({ log, onClick, isLast = false }: AuditTimelin
       }
       return `${log.changes.length} campos modificados`
     }
-    
+
     // For permissions
     if (log.metadata) {
       if (log.metadata.added && log.metadata.addedIds) {
@@ -83,7 +83,7 @@ export function AuditTimelineItem({ log, onClick, isLast = false }: AuditTimelin
   const detailText = getDetailText()
 
   return (
-    <div 
+    <div
       className="flex gap-3 group cursor-pointer hover:bg-default-100/50 rounded-md py-2.5 px-2 -mx-2 transition-colors"
       onClick={() => onClick?.(log)}
     >
@@ -127,16 +127,16 @@ export function AuditTimelineItem({ log, onClick, isLast = false }: AuditTimelin
               {!log.success && (
                 <span className="text-danger">• Fallido</span>
               )}
-              
+
               {/* Copy ID Button - Visible on hover */}
               <CopyIdButton id={log.id} />
             </div>
           </div>
 
           {/* Arrow */}
-          <ChevronRight 
-            size={16} 
-            className="text-default-300 opacity-0 group-hover:opacity-100 flex-shrink-0 transition-opacity mt-0.5" 
+          <ChevronRight
+            size={16}
+            className="text-default-300 opacity-0 group-hover:opacity-100 flex-shrink-0 transition-opacity mt-0.5"
           />
         </div>
       </div>
@@ -147,8 +147,7 @@ export function AuditTimelineItem({ log, onClick, isLast = false }: AuditTimelin
 function CopyIdButton({ id }: { id: string }) {
   const [copied, setCopied] = useState(false)
 
-  const handleCopy = (e: React.MouseEvent) => {
-    e.stopPropagation()
+  const handleCopy = () => {
     navigator.clipboard.writeText(id)
     setCopied(true)
     addToast({
@@ -159,13 +158,17 @@ function CopyIdButton({ id }: { id: string }) {
   }
 
   return (
-    <button
-      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-default-200 rounded-full text-default-400 hover:text-default-600 focus:opacity-100"
-      onClick={handleCopy}
-      title="Copiar ID del registro"
-      aria-label="Copiar ID del registro"
-    >
-      {copied ? <Check size={12} className="text-success" /> : <Copy size={12} />}
-    </button>
+    <Tooltip content="Copiar ID del registro" delay={0} closeDelay={0}>
+      <button
+        className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-default-200 rounded-full text-default-400 hover:text-default-600 focus:opacity-100"
+        onClick={(e) => {
+          e.stopPropagation()
+          handleCopy()
+        }}
+        aria-label="Copiar ID del registro"
+      >
+        {copied ? <Check size={12} className="text-success" /> : <Copy size={12} />}
+      </button>
+    </Tooltip>
   )
 }

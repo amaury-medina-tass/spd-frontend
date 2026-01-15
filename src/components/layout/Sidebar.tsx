@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react"
+import React, { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
@@ -9,14 +9,18 @@ import { useSidebar } from "@/context/SidebarContext"
 import {
   Button,
   Tooltip,
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
 } from "@heroui/react"
-import { X } from "lucide-react"
-import { menuSections, MenuItem } from "@/config/navigation"
+import { X, ChevronDown } from "lucide-react"
+import { menuItems, MenuItem, MenuGroup, isMenuGroup } from "@/config/navigation"
 
 export function Sidebar() {
   const pathname = usePathname()
   const { me } = useAuth()
   const { isOpen, isMobile, closeSidebar } = useSidebar()
+  const [expandedMenus, setExpandedMenus] = useState<string[]>(["Control de Acceso"])
 
   // Verificar si el usuario tiene permiso READ para un módulo
   const hasReadPermission = (permissionPath?: string) => {
@@ -31,6 +35,15 @@ export function Sidebar() {
     return items.filter((item) => hasReadPermission(item.permissionPath))
   }
 
+  // Toggle menu expansion
+  const toggleMenu = (label: string) => {
+    setExpandedMenus((prev) =>
+      prev.includes(label)
+        ? prev.filter((l) => l !== label)
+        : [...prev, label]
+    )
+  }
+
   // Cerrar sidebar al hacer clic en un item (solo en móvil)
   const handleItemClick = () => {
     if (isMobile) {
@@ -38,13 +51,13 @@ export function Sidebar() {
     }
   }
 
-  const renderItem = (item: MenuItem) => {
+  const isCollapsedDesktop = !isMobile && !isOpen
+
+  const renderMenuItem = (item: MenuItem, isSubmenu = false) => {
     const isActive =
       item.href === "/dashboard"
         ? pathname === "/dashboard"
         : pathname.startsWith(item.href)
-
-    const isCollapsedDesktop = !isMobile && !isOpen;
 
     return (
       <Tooltip
@@ -53,45 +66,165 @@ export function Sidebar() {
         placement="right"
         delay={0}
         closeDelay={0}
-        isDisabled={!isCollapsedDesktop} // Mostrar tooltip solo cuando está colapsado en desktop
+        isDisabled={!isCollapsedDesktop || isSubmenu}
       >
         <Button
           as={Link}
           href={item.href}
           variant={isActive ? "flat" : "light"}
           color={isActive ? "primary" : "default"}
-          className={`justify-start w-full ${isCollapsedDesktop ? "justify-center px-0" : ""}`}
-          isIconOnly={isCollapsedDesktop}
-          startContent={!isCollapsedDesktop ? item.icon : undefined} // hide startContent if iconOnly, manually render icon children
+          className={`
+            justify-start w-full
+            ${isCollapsedDesktop && !isSubmenu ? "!justify-center !px-0 mx-auto" : ""}
+            ${isSubmenu && !isCollapsedDesktop ? "pl-10 text-sm" : ""}
+          `}
+          isIconOnly={isCollapsedDesktop && !isSubmenu}
+          startContent={(!isCollapsedDesktop || isSubmenu) ? item.icon : undefined}
           onPress={handleItemClick}
         >
-          {isCollapsedDesktop ? item.icon : item.label}
+          {isCollapsedDesktop && !isSubmenu ? item.icon : item.label}
         </Button>
       </Tooltip>
     )
   }
 
+  const renderMenuGroup = (group: MenuGroup) => {
+    const visibleItems = filterMenuItems(group.items)
+    if (visibleItems.length === 0) return null
+
+    const isExpanded = expandedMenus.includes(group.label)
+    const hasActiveChild = visibleItems.some((item) =>
+      item.href === "/dashboard"
+        ? pathname === "/dashboard"
+        : pathname.startsWith(item.href)
+    )
+
+    // Collapsed desktop mode - show popover menu to the right
+    if (isCollapsedDesktop) {
+      return (
+        <Popover
+          key={group.label}
+          placement="right-start"
+          offset={35}
+          showArrow
+        >
+          <PopoverTrigger>
+            <Button
+              variant={hasActiveChild ? "flat" : "light"}
+              color={hasActiveChild ? "primary" : "default"}
+              className="!justify-center !px-0 mx-auto"
+              isIconOnly
+            >
+              {group.icon}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="p-0 overflow-hidden">
+            <div className="flex flex-col min-w-[200px]">
+              {/* Header con gradiente */}
+              <div className="px-3 py-2.5 bg-gradient-to-r from-primary/10 to-primary/5 border-b border-divider">
+                <div className="flex items-center gap-2">
+                  <span className="p-1.5 rounded-lg bg-primary/20 text-primary">
+                    {group.icon}
+                  </span>
+                  <span className="text-sm font-semibold text-foreground">
+                    {group.label}
+                  </span>
+                </div>
+              </div>
+
+              {/* Menu items */}
+              <div className="p-1.5 flex flex-col gap-0.5">
+                {visibleItems.map((item) => {
+                  const isActive =
+                    item.href === "/dashboard"
+                      ? pathname === "/dashboard"
+                      : pathname.startsWith(item.href)
+
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={`
+                        flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-150
+                        ${isActive
+                          ? "bg-primary text-primary-foreground"
+                          : "hover:bg-default-100 text-foreground"
+                        }
+                      `}
+                    >
+                      <span className={`
+                        flex-shrink-0 p-1 rounded-md
+                        ${isActive ? "bg-primary-foreground/20" : "bg-default-200/50"}
+                      `}>
+                        {item.icon}
+                      </span>
+                      <span className="text-sm font-medium">{item.label}</span>
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
+      )
+    }
+
+    // Expanded mode - show full menu with submenus
+    return (
+      <div key={group.label} className="flex flex-col gap-1 w-full">
+        <Button
+          variant={hasActiveChild ? "flat" : "light"}
+          color={hasActiveChild ? "primary" : "default"}
+          className="justify-between w-full"
+          startContent={group.icon}
+          endContent={
+            <ChevronDown
+              size={16}
+              className={`transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
+            />
+          }
+          onPress={() => toggleMenu(group.label)}
+        >
+          {group.label}
+        </Button>
+
+        {/* Submenu items with animated container */}
+        <div
+          className={`
+            flex flex-col gap-1 overflow-hidden transition-all duration-200 ease-in-out
+            ${isExpanded ? "max-h-96 opacity-100" : "max-h-0 opacity-0"}
+          `}
+        >
+          <div className="relative pl-3 ml-3 border-l-2 border-divider">
+            {visibleItems.map((item) => {
+              const isActive =
+                item.href === "/dashboard"
+                  ? pathname === "/dashboard"
+                  : pathname.startsWith(item.href)
+
+              return (
+                <Button
+                  key={item.href}
+                  as={Link}
+                  href={item.href}
+                  variant={isActive ? "flat" : "light"}
+                  color={isActive ? "primary" : "default"}
+                  className="justify-start w-full text-sm pl-3"
+                  startContent={item.icon}
+                  onPress={handleItemClick}
+                >
+                  {item.label}
+                </Button>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   // Define styles based on state
   const sidebarWidth = isMobile ? "w-64" : (isOpen ? "w-64" : "w-20");
-  const sidebarTransform = isMobile ? (isOpen ? "translate-x-0" : "-translate-x-full") : "translate-x-0"; // Desktop always visible (just width changes), Mobile slides in/out
-
-  // Desktop:
-  // Open: w-64
-  // Closed: w-20
-
-  // Mobile:
-  // Open: Translate-0 (Overlay)
-  // Closed: Translate-full-negative (Hidden)
-
-  // NOTE: Logic in SidebarContext says:
-  // Mobile initial: Closed (isOpen=false)
-  // Desktop initial: Open (isOpen=true)
-
-  // If Mobile & Closed: translate-x-full (hidden)
-  // If Mobile & Open: translate-x-0 (shown)
-
-  // If Desktop & Closed: w-20
-  // If Desktop & Open: w-64
 
   const sidebarClasses = `
     h-full bg-background flex flex-col flex-shrink-0
@@ -161,7 +294,7 @@ export function Sidebar() {
             variant="light"
             size="sm"
             onPress={closeSidebar}
-            className="text-default-500 absolute top-4 right-2" // Absolute adjustments for better layout
+            className="text-default-500 absolute top-4 right-2"
           >
             <X size={20} />
           </Button>
@@ -169,32 +302,12 @@ export function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <div className="flex flex-col gap-4 p-2 overflow-y-auto flex-1 overflow-x-hidden">
-        {menuSections.map((section) => {
-          const visibleItems = filterMenuItems(section.items)
-          // No mostrar la sección si no hay items visibles
-          if (visibleItems.length === 0) return null
-
-          return (
-            <div key={section.title} className="flex flex-col gap-1 w-full">
-              {/* Separator for collapsed state */}
-              {(!isMobile && !isOpen) && (
-                <div className="w-full px-2 py-1">
-                  <div className="h-px bg-divider w-full" />
-                </div>
-              )}
-
-              {(isMobile || isOpen) && (
-                <span className="px-2 text-xs font-semibold text-default-500 uppercase mb-1 whitespace-nowrap opacity-100 transition-opacity duration-200">
-                  {section.title}
-                </span>
-              )}
-
-              <div className="flex flex-col gap-1">
-                {visibleItems.map((item) => renderItem(item))}
-              </div>
-            </div>
-          )
+      <div className="flex flex-col gap-2 p-2 overflow-y-auto flex-1 overflow-x-hidden">
+        {menuItems.map((item) => {
+          if (isMenuGroup(item)) {
+            return renderMenuGroup(item)
+          }
+          return renderMenuItem(item)
         })}
       </div>
     </>

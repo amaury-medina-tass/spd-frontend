@@ -1,12 +1,12 @@
 import { ReactNode } from "react"
 import {
     Home,
-    Database,
     Users,
     ShieldCheck,
     Layers,
     Zap,
     ClipboardList,
+    Lock,
 } from "lucide-react"
 import React from "react"
 
@@ -17,58 +17,66 @@ export type MenuItem = {
     icon: ReactNode
 }
 
-export type MenuSection = {
-    title: string
+export type MenuGroup = {
+    label: string
+    icon: ReactNode
     items: MenuItem[]
 }
 
-export const menuSections: MenuSection[] = [
+export const menuItems: (MenuItem | MenuGroup)[] = [
+    // Inicio - Item principal
+    { label: "Inicio", href: "/dashboard", icon: React.createElement(Home, { size: 20 }) },
+
+    // Menú Control de Acceso con submenús
     {
-        title: "General",
-        items: [
-            { label: "Inicio", href: "/dashboard", icon: React.createElement(Home, { size: 20 }) },
-            { label: "Masters", href: "/dashboard/masters", icon: React.createElement(Database, { size: 20 }) },
-        ],
-    },
-    {
-        title: "Administration",
+        label: "Control de Acceso",
+        icon: React.createElement(Lock, { size: 20 }),
         items: [
             {
                 label: "Usuarios",
                 href: "/dashboard/access-control/users",
                 permissionPath: "/access-control/users",
-                icon: React.createElement(Users, { size: 20 }),
+                icon: React.createElement(Users, { size: 18 }),
             },
             {
                 label: "Roles",
                 href: "/dashboard/access-control/roles",
                 permissionPath: "/access-control/roles",
-                icon: React.createElement(ShieldCheck, { size: 20 }),
+                icon: React.createElement(ShieldCheck, { size: 18 }),
             },
             {
                 label: "Módulos",
                 href: "/dashboard/access-control/modules",
                 permissionPath: "/access-control/modules",
-                icon: React.createElement(Layers, { size: 20 }),
+                icon: React.createElement(Layers, { size: 18 }),
             },
             {
                 label: "Acciones",
                 href: "/dashboard/access-control/actions",
                 permissionPath: "/access-control/actions",
-                icon: React.createElement(Zap, { size: 20 }),
-            },
-            {
-                label: "Auditoría",
-                href: "/dashboard/audit",
-                permissionPath: "/audit",
-                icon: React.createElement(ClipboardList, { size: 20 }),
+                icon: React.createElement(Zap, { size: 18 }),
             },
         ],
     },
+
+    // Auditoría - Item principal
+    {
+        label: "Auditoría",
+        href: "/dashboard/audit",
+        permissionPath: "/audit",
+        icon: React.createElement(ClipboardList, { size: 20 }),
+    },
 ]
 
+// Helper to check if an item is a group
+export const isMenuGroup = (item: MenuItem | MenuGroup): item is MenuGroup => {
+    return "items" in item
+}
+
 // Flat list of all menu items for easy access
-export const allMenuItems: MenuItem[] = menuSections.flatMap((section) => section.items)
+export const allMenuItems: MenuItem[] = menuItems.flatMap((item) =>
+    isMenuGroup(item) ? item.items : [item]
+)
 
 // Get all available routes with permission paths (for module selection)
 export const getAvailableRoutes = () => {

@@ -115,30 +115,30 @@ export default function ProfilePage() {
                     </CardHeader>
                     <Divider />
                     <CardBody>
-                        <div className="grid sm:grid-cols-2 gap-4">
-                            <div className="p-4 rounded-lg bg-default-50 dark:bg-default-50/30">
-                                <p className="text-xs font-medium text-foreground-400 uppercase tracking-wider mb-1">
+                        <div className="grid sm:grid-cols-2 gap-3">
+                            <div className="flex flex-col gap-1 p-3 rounded-lg border border-divider/50 bg-content1">
+                                <span className="text-xs text-foreground-400">
                                     Nombre
-                                </p>
-                                <p className="font-medium">{me.first_name}</p>
+                                </span>
+                                <span className="text-foreground">{me.first_name}</span>
                             </div>
-                            <div className="p-4 rounded-lg bg-default-50 dark:bg-default-50/30">
-                                <p className="text-xs font-medium text-foreground-400 uppercase tracking-wider mb-1">
+                            <div className="flex flex-col gap-1 p-3 rounded-lg border border-divider/50 bg-content1">
+                                <span className="text-xs text-foreground-400">
                                     Apellido
-                                </p>
-                                <p className="font-medium">{me.last_name}</p>
+                                </span>
+                                <span className="text-foreground">{me.last_name}</span>
                             </div>
-                            <div className="p-4 rounded-lg bg-default-50 dark:bg-default-50/30">
-                                <p className="text-xs font-medium text-foreground-400 uppercase tracking-wider mb-1">
+                            <div className="flex flex-col gap-1 p-3 rounded-lg border border-divider/50 bg-content1">
+                                <span className="text-xs text-foreground-400">
                                     Correo Electrónico
-                                </p>
-                                <p className="font-medium">{me.email}</p>
+                                </span>
+                                <span className="text-foreground">{me.email}</span>
                             </div>
-                            <div className="p-4 rounded-lg bg-default-50 dark:bg-default-50/30">
-                                <p className="text-xs font-medium text-foreground-400 uppercase tracking-wider mb-1">
+                            <div className="flex flex-col gap-1 p-3 rounded-lg border border-divider/50 bg-content1">
+                                <span className="text-xs text-foreground-400">
                                     Número de Documento
-                                </p>
-                                <p className="font-mono font-medium">{me.document_number}</p>
+                                </span>
+                                <span className="text-foreground font-mono text-sm">{me.document_number}</span>
                             </div>
                         </div>
                     </CardBody>
