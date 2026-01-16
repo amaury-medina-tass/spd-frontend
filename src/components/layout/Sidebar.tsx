@@ -185,7 +185,7 @@ export function Sidebar() {
           }
           onPress={() => toggleMenu(group.label)}
         >
-          {group.label}
+          <span className="flex-1 text-left">{group.label}</span>
         </Button>
 
         {/* Submenu items with animated container */}

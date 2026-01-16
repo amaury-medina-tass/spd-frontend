@@ -23,4 +23,7 @@ export const endpoints = {
     root: "/masters",
   },
   audit: "/audit",
+  financial: {
+    needs: "/financial/needs",
+  },
 }

@@ -1,4 +1,3 @@
-import { ReactNode } from "react"
 import {
     Home,
     Users,
@@ -7,8 +6,10 @@ import {
     Zap,
     ClipboardList,
     Lock,
+    DollarSign,
+    FileText,
 } from "lucide-react"
-import React from "react"
+import React, { ReactNode } from "react"
 
 export type MenuItem = {
     label: string
@@ -65,6 +66,20 @@ export const menuItems: (MenuItem | MenuGroup)[] = [
         href: "/dashboard/audit",
         permissionPath: "/audit",
         icon: React.createElement(ClipboardList, { size: 20 }),
+    },
+
+    // Menú Financiero con submenús
+    {
+        label: "Financiero",
+        icon: React.createElement(DollarSign, { size: 20 }),
+        items: [
+            {
+                label: "Necesidades",
+                href: "/dashboard/financial/needs",
+                permissionPath: "/financial/needs",
+                icon: React.createElement(FileText, { size: 18 }),
+            },
+        ],
     },
 ]
 
