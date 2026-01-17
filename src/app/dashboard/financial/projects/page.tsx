@@ -5,12 +5,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { DataTable, ColumnDef, RowAction, TopAction } from "@/components/tables/DataTable"
 import { useDebounce } from "@/hooks/useDebounce"
 import { usePermissions } from "@/hooks/usePermissions"
-import { NeedDetailModal } from "@/components/modals/financial/NeedDetailModal"
+import { ProjectDetailModal } from "@/components/modals/financial/ProjectDetailModal"
 import { get, PaginatedData, PaginationMeta } from "@/lib/http"
 import { endpoints } from "@/lib/endpoints"
 import { Eye, RefreshCw } from "lucide-react"
 import { addToast } from "@heroui/toast"
-import type { FinancialNeed } from "@/types/financial"
+import type { Project } from "@/types/financial"
 import { getErrorMessage } from "@/lib/error-codes"
 
 const formatCurrency = (amount: string) => {
@@ -22,96 +22,68 @@ const formatCurrency = (amount: string) => {
     }).format(parseFloat(amount))
 }
 
-function DescriptionCell({ description }: { description: string }) {
-    const textRef = useRef<HTMLSpanElement>(null)
-    const [isTruncated, setIsTruncated] = useState(false)
-
-    useEffect(() => {
-        const element = textRef.current
-        if (element) {
-            setIsTruncated(element.scrollHeight > element.clientHeight)
-        }
-    }, [description])
-
-    const content = (
-        <span ref={textRef} className="line-clamp-2 max-w-md">
-            {description}
-        </span>
-    )
-
-    if (isTruncated) {
-        return (
-            <Tooltip content={description} delay={300} closeDelay={0}>
-                <span className="cursor-help">{content}</span>
-            </Tooltip>
-        )
-    }
-
-    return content
-}
-
-
-const columns: ColumnDef<FinancialNeed>[] = [
+const columns: ColumnDef<Project>[] = [
     { key: "code", label: "Código", sortable: true },
+    { key: "name", label: "Nombre", sortable: true },
     {
-        key: "amount",
-        label: "Monto",
+        key: "currentBudget",
+        label: "P. Actual",
         sortable: true,
-        render: (need) => (
-            <span className="font-medium">{formatCurrency(need.amount)}</span>
+        render: (project) => (
+            <span className="font-medium">{formatCurrency(project.currentBudget)}</span>
         ),
     },
     {
-        key: "description",
-        label: "Descripción",
+        key: "execution",
+        label: "Ejecución",
         sortable: true,
-        render: (need) => <DescriptionCell description={need.description} />,
+        render: (project) => (
+            <span className="font-medium">{formatCurrency(project.execution)}</span>
+        ),
     },
     {
-        key: "previousStudy.code",
-        label: "Código Estudio",
+        key: "financialExecutionPercentage",
+        label: "% Ejecución",
         sortable: true,
-        render: (need) => need.previousStudy?.code ?? "N/A",
+        render: (project) => (
+            <span className="font-medium">
+                {new Intl.NumberFormat("en-US", {
+                    style: "percent",
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 2,
+                }).format(project.financialExecutionPercentage)}
+            </span>
+        ),
     },
+    { key: "origin", label: "Origen", sortable: true },
     {
-        key: "previousStudy.status",
-        label: "Estado Estudio",
+        key: "state",
+        label: "Estado",
         sortable: true,
-        render: (need) => {
-            const status = need.previousStudy?.status ?? "N/A"
-            const statusLower = status.toLowerCase()
-            let color: "success" | "warning" | "danger" | "default" = "default"
-            if (statusLower === "aprobado" || statusLower === "approved") color = "success"
-            else if (statusLower === "pendiente" || statusLower === "pending") color = "warning"
-            else if (statusLower === "rechazado" || statusLower === "rejected") color = "danger"
-
+        render: (project) => {
+            const color = project.state ? "success" : "danger"
             return (
                 <Chip color={color} variant="flat" size="sm">
-                    {status}
+                    {project.state ? "Activo" : "Inactivo"}
                 </Chip>
             )
         },
     },
     {
-        key: "createAt",
-        label: "Creado",
-        sortable: true,
-        render: (need) => new Date(need.createAt).toLocaleString(),
-    },
-    {
-        key: "updateAt",
-        label: "Actualizado",
-        sortable: true,
-        render: (need) => new Date(need.updateAt).toLocaleString(),
-    },
+        key: "dependency",
+        label: "Dependencia",
+        render: (project) => project.dependency?.name ?? "N/A",
+    }
 ]
 
-export default function FinancialNeedsPage() {
+export default function FinancialProjectsPage() {
     // Permissions
-    const { canRead } = usePermissions("/financial/needs")
+    // Not explicitly defined in permission path, likely "/financial/projects" or needs to be added
+    // For now using a likely path, user might need to grant permission later
+    const { canRead } = usePermissions("/financial/projects")
 
     // Data State
-    const [items, setItems] = useState<FinancialNeed[]>([])
+    const [items, setItems] = useState<Project[]>([])
     const [meta, setMeta] = useState<PaginationMeta | null>(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
@@ -131,9 +103,9 @@ export default function FinancialNeedsPage() {
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
 
     // Selection State
-    const [selectedNeed, setSelectedNeed] = useState<FinancialNeed | null>(null)
+    const [selectedProject, setSelectedProject] = useState<Project | null>(null)
 
-    const fetchNeeds = useCallback(async () => {
+    const fetchProjects = useCallback(async () => {
         setLoading(true)
         setError(null)
         try {
@@ -150,12 +122,12 @@ export default function FinancialNeedsPage() {
                 params.set("sortOrder", sortDescriptor.direction === "ascending" ? "ASC" : "DESC")
             }
 
-            const result = await get<PaginatedData<FinancialNeed>>(`${endpoints.financial.needs}?${params}`)
+            const result = await get<PaginatedData<Project>>(`${endpoints.financial.projects}?${params}`)
             setItems(result.data)
             setMeta(result.meta)
         } catch (e: any) {
             const errorCode = e.data?.errors?.code
-            const message = errorCode ? getErrorMessage(errorCode) : (e.message ?? "Error al cargar necesidades")
+            const message = errorCode ? getErrorMessage(errorCode) : (e.message ?? "Error al cargar proyectos")
             setError(message)
         } finally {
             setLoading(false)
@@ -163,28 +135,28 @@ export default function FinancialNeedsPage() {
     }, [page, search, limit, sortDescriptor])
 
     useEffect(() => {
-        fetchNeeds()
-    }, [fetchNeeds])
+        fetchProjects()
+    }, [fetchProjects])
 
     useEffect(() => {
         setSearch(debouncedSearch)
         setPage(1)
     }, [debouncedSearch])
 
-    const onViewDetails = async (need: FinancialNeed) => {
+    const onViewDetails = async (project: Project) => {
         try {
-            const freshNeed = await get<FinancialNeed>(`${endpoints.financial.needs}/${need.id}`)
-            setSelectedNeed(freshNeed)
+            const freshProject = await get<Project>(`${endpoints.financial.projects}/${project.id}`)
+            setSelectedProject(freshProject)
             setIsDetailModalOpen(true)
         } catch (e: any) {
             const errorCode = e.data?.errors?.code
-            const message = errorCode ? getErrorMessage(errorCode) : "Error al cargar detalles de la necesidad"
+            const message = errorCode ? getErrorMessage(errorCode) : "Error al cargar detalles del proyecto"
             addToast({ title: message, color: "danger" })
         }
     }
 
-    const rowActions: RowAction<FinancialNeed>[] = useMemo(() => {
-        const actions: RowAction<FinancialNeed>[] = []
+    const rowActions: RowAction<Project>[] = useMemo(() => {
+        const actions: RowAction<Project>[] = []
         if (canRead) {
             actions.push({
                 key: "view",
@@ -203,17 +175,17 @@ export default function FinancialNeedsPage() {
                 label: "Actualizar",
                 icon: <RefreshCw size={16} />,
                 color: "default",
-                onClick: fetchNeeds,
+                onClick: fetchProjects,
             },
         ]
-    }, [fetchNeeds])
+    }, [fetchProjects])
 
     return (
         <div className="grid gap-4">
             <Breadcrumbs>
                 <BreadcrumbItem>Inicio</BreadcrumbItem>
                 <BreadcrumbItem>Financiero</BreadcrumbItem>
-                <BreadcrumbItem>Necesidades</BreadcrumbItem>
+                <BreadcrumbItem>Proyectos</BreadcrumbItem>
             </Breadcrumbs>
 
             {!canRead ? (
@@ -224,7 +196,7 @@ export default function FinancialNeedsPage() {
             ) : error ? (
                 <div className="text-center py-8 text-danger">
                     <p>{error}</p>
-                    <Button variant="flat" className="mt-2" onPress={fetchNeeds}>
+                    <Button variant="flat" className="mt-2" onPress={fetchProjects}>
                         Reintentar
                     </Button>
                 </div>
@@ -237,8 +209,8 @@ export default function FinancialNeedsPage() {
                     topActions={topActions}
                     searchValue={searchInput}
                     onSearchChange={setSearchInput}
-                    searchPlaceholder="Buscar necesidades..."
-                    ariaLabel="Tabla de necesidades financieras"
+                    searchPlaceholder="Buscar proyectos..."
+                    ariaLabel="Tabla de proyectos financieros"
                     pagination={meta ? {
                         page,
                         totalPages: meta.totalPages,
@@ -254,15 +226,14 @@ export default function FinancialNeedsPage() {
                 />
             )}
 
-            <NeedDetailModal
+            <ProjectDetailModal
                 isOpen={isDetailModalOpen}
-                need={selectedNeed}
+                project={selectedProject}
                 onClose={() => {
                     setIsDetailModalOpen(false)
-                    setSelectedNeed(null)
+                    setSelectedProject(null)
                 }}
             />
         </div>
     )
 }
-

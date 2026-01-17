@@ -25,5 +25,8 @@ export const endpoints = {
   audit: "/audit",
   financial: {
     needs: "/financial/needs",
+    previousStudies: "/financial/previous-studies",
+    masterContracts: "/financial/master-contracts",
+    projects: "/financial/projects",
   },
 }

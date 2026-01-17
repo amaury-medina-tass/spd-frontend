@@ -21,12 +21,14 @@ import {
 import { MoreVertical, Inbox, ChevronDown } from "lucide-react"
 import { ReactNode } from "react"
 
+
 /** Definición de columna */
 export interface ColumnDef<T> {
     key: string
     label: string
     render?: (item: T) => ReactNode
     sortable?: boolean
+    className?: string
 }
 
 /** Acción de fila (para cada elemento) */
@@ -162,7 +164,7 @@ export function DataTable<T extends { id: string }>({
                 <Input
                     placeholder={searchPlaceholder}
                     size="sm"
-                    className="w-64"
+                    className="w-full sm:w-64"
                     value={searchValue}
                     onValueChange={onSearchChange}
                 />
@@ -177,8 +179,20 @@ export function DataTable<T extends { id: string }>({
                             color={action.color ?? "primary"}
                             onPress={action.onClick}
                             startContent={action.icon}
+                            className="hidden sm:flex"
                         >
                             {action.label}
+                        </Button>
+                    ))}
+                    {topActions.map((action) => (
+                        <Button
+                            key={action.key + "-mobile"}
+                            isIconOnly
+                            color={action.color ?? "primary"}
+                            onPress={action.onClick}
+                            className="flex sm:hidden"
+                        >
+                            {action.icon}
                         </Button>
                     ))}
                 </div>
@@ -187,8 +201,8 @@ export function DataTable<T extends { id: string }>({
     )
 
     const bottomContent = pagination && pagination.totalPages > 0 ? (
-        <div className="flex justify-between items-center px-2 py-2">
-            <div className="flex-1 w-[30%]" /> {/* Spacer to center pagination */}
+        <div className="flex flex-col sm:flex-row justify-between items-center px-2 py-2 gap-2">
+            <div className="hidden sm:flex flex-1 w-[30%]" /> {/* Spacer only on desktop */}
             <div className="flex justify-center flex-1">
                 <Pagination
                     total={pagination.totalPages}
@@ -197,11 +211,13 @@ export function DataTable<T extends { id: string }>({
                     showControls
                     color="primary"
                     variant="light"
+                    size="sm"
+                    className="gap-1 sm:gap-2"
                 />
             </div>
-            <div className="flex justify-end items-center gap-2 flex-1 w-[30%]">
+            <div className="flex justify-end items-center gap-2 flex-1 w-full sm:w-[30%]">
                 {pagination.onPageSizeChange && (
-                    <div className="flex items-center gap-2 text-small text-default-400">
+                    <div className="flex items-center gap-2 text-small text-default-400 w-full justify-center sm:justify-end">
                         <span>Filas por página:</span>
                         <Dropdown>
                             <DropdownTrigger>
@@ -242,10 +258,20 @@ export function DataTable<T extends { id: string }>({
             bottomContentPlacement="outside"
             sortDescriptor={sortDescriptor}
             onSortChange={onSortChange}
+            isHeaderSticky
+            classNames={{
+                wrapper: "min-h-[222px] overflow-x-auto max-w-[calc(100vw-2rem)] md:max-w-full",
+                table: "min-w-[600px]",
+                th: "bg-default-100 text-default-600 font-medium shadow-none group-data-[sticky=true]:shadow-none",
+            }}
         >
             <TableHeader columns={allColumns}>
                 {(column) => (
-                    <TableColumn key={column.key} allowsSorting={column.sortable}>
+                    <TableColumn
+                        key={column.key}
+                        allowsSorting={column.sortable}
+                        className={(column as any).className}
+                    >
                         {column.label}
                     </TableColumn>
                 )}
@@ -266,7 +292,14 @@ export function DataTable<T extends { id: string }>({
             >
                 {(item) => (
                     <TableRow key={item.id}>
-                        {(columnKey) => <TableCell>{renderCell(item, columnKey as string)}</TableCell>}
+                        {(columnKey) => {
+                            const column = allColumns.find(c => c.key === columnKey)
+                            return (
+                                <TableCell className={(column as any)?.className}>
+                                    {renderCell(item, columnKey as string)}
+                                </TableCell>
+                            )
+                        }}
                     </TableRow>
                 )}
             </TableBody>

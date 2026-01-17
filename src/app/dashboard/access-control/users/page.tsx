@@ -19,7 +19,12 @@ const columns: ColumnDef<User>[] = [
   { key: "first_name", label: "Nombre", sortable: true },
   { key: "last_name", label: "Apellido", sortable: true },
   { key: "email", label: "Email", sortable: true },
-  { key: "roles", label: "Roles", sortable: false, render: (user) => user.roles?.map((r) => r.name).join(", ") ?? "N/A" },
+  {
+    key: "roles",
+    label: "Roles",
+    sortable: false,
+    render: (user) => user.roles?.map((r) => r.name).join(", ") ?? "N/A",
+  },
   { key: "document_number", label: "Documento", sortable: true },
   {
     key: "created_at",

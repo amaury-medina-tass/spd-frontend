@@ -8,7 +8,17 @@ import {
     ModalHeader,
     Button,
     Chip,
+    Divider,
 } from "@heroui/react"
+import {
+    FileText,
+    DollarSign,
+    Clock,
+    BookOpen,
+    ClipboardList,
+    Calendar,
+    CheckCircle,
+} from "lucide-react"
 import type { FinancialNeed } from "@/types/financial"
 
 export function NeedDetailModal({
@@ -31,7 +41,7 @@ export function NeedDetailModal({
         }).format(parseFloat(amount))
     }
 
-    const formatDate = (dateStr: string) => {
+    const formatDateTime = (dateStr: string) => {
         return new Date(dateStr).toLocaleString("es-CO", {
             year: "numeric",
             month: "long",
@@ -50,78 +60,140 @@ export function NeedDetailModal({
     }
 
     return (
-        <Modal isOpen={isOpen} onOpenChange={() => onClose()} size="2xl">
+        <Modal
+            isOpen={isOpen}
+            onOpenChange={() => onClose()}
+            size="lg"
+            scrollBehavior="inside"
+            classNames={{
+                base: "bg-content1",
+                header: "border-b border-divider",
+                footer: "border-t border-divider",
+            }}
+        >
             <ModalContent>
-                <ModalHeader className="font-semibold">Need Details</ModalHeader>
-                <ModalBody className="gap-5">
-                    {/* Need Information */}
-                    <div className="space-y-4">
-                        <h3 className="text-lg font-medium text-default-700">Need Information</h3>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-1">
-                                <span className="text-small text-default-500">Code</span>
-                                <p className="text-medium font-medium">{need.code}</p>
-                            </div>
-                            <div className="space-y-1">
-                                <span className="text-small text-default-500">Amount</span>
-                                <p className="text-medium font-medium text-primary">
-                                    {formatCurrency(need.amount)}
-                                </p>
-                            </div>
+                <ModalHeader className="flex flex-col gap-1">
+                    <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-lg bg-default-100 flex items-center justify-center">
+                            <ClipboardList size={18} className="text-default-600" />
                         </div>
-                        <div className="space-y-1">
-                            <span className="text-small text-default-500">Description</span>
-                            <p className="text-medium">{need.description}</p>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-1">
-                                <span className="text-small text-default-500">Created At</span>
-                                <p className="text-small">{formatDate(need.createAt)}</p>
-                            </div>
-                            <div className="space-y-1">
-                                <span className="text-small text-default-500">Updated At</span>
-                                <p className="text-small">{formatDate(need.updateAt)}</p>
-                            </div>
+                        <div>
+                            <span className="text-lg font-semibold text-foreground">
+                                Necesidad {need.code}
+                            </span>
+                            <p className="text-tiny text-default-400 font-normal">
+                                Detalle de la necesidad financiera
+                            </p>
                         </div>
                     </div>
+                </ModalHeader>
 
-                    {/* Divider */}
-                    <div className="border-t border-default-200" />
-
-                    {/* Previous Study Information */}
-                    <div className="space-y-4">
-                        <h3 className="text-lg font-medium text-default-700">Previous Study</h3>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-1">
-                                <span className="text-small text-default-500">Study Code</span>
-                                <p className="text-medium font-medium">{need.previousStudy.code}</p>
+                <ModalBody className="py-5">
+                    <div className="space-y-5">
+                        {/* Información Principal - Grid 2 columnas */}
+                        <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+                            {/* Monto */}
+                            <div className="flex items-start gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-default-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                    <DollarSign size={16} className="text-default-500" />
+                                </div>
+                                <div>
+                                    <span className="text-tiny text-default-400 uppercase tracking-wide">
+                                        Monto
+                                    </span>
+                                    <p className="text-medium font-semibold text-foreground">
+                                        {formatCurrency(need.amount)}
+                                    </p>
+                                </div>
                             </div>
-                            <div className="space-y-1">
-                                <span className="text-small text-default-500">Status</span>
-                                <Chip
-                                    color={getStatusColor(need.previousStudy.status)}
-                                    variant="flat"
-                                    size="sm"
-                                >
-                                    {need.previousStudy.status}
-                                </Chip>
+
+                            {/* Estudio Previo */}
+                            <div className="flex items-start gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-default-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                    <BookOpen size={16} className="text-default-500" />
+                                </div>
+                                <div>
+                                    <span className="text-tiny text-default-400 uppercase tracking-wide">
+                                        Estudio Previo
+                                    </span>
+                                    <p className="text-small font-medium text-foreground font-mono">
+                                        {need.previousStudy.code}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Estado del Estudio */}
+                            <div className="flex items-start gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-default-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                    <CheckCircle size={16} className="text-default-500" />
+                                </div>
+                                <div>
+                                    <span className="text-tiny text-default-400 uppercase tracking-wide">
+                                        Estado del Estudio
+                                    </span>
+                                    <div className="mt-0.5">
+                                        <Chip
+                                            color={getStatusColor(need.previousStudy.status)}
+                                            variant="flat"
+                                            size="sm"
+                                        >
+                                            {need.previousStudy.status}
+                                        </Chip>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Fecha de Creación */}
+                            <div className="flex items-start gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-default-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                    <Calendar size={16} className="text-default-500" />
+                                </div>
+                                <div>
+                                    <span className="text-tiny text-default-400 uppercase tracking-wide">
+                                        Creación
+                                    </span>
+                                    <p className="text-small text-foreground">
+                                        {formatDateTime(need.createAt)}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Última Actualización */}
+                            <div className="flex items-start gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-default-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                    <Clock size={16} className="text-default-500" />
+                                </div>
+                                <div>
+                                    <span className="text-tiny text-default-400 uppercase tracking-wide">
+                                        Actualización
+                                    </span>
+                                    <p className="text-small text-foreground">
+                                        {formatDateTime(need.updateAt)}
+                                    </p>
+                                </div>
                             </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-1">
-                                <span className="text-small text-default-500">Study Created At</span>
-                                <p className="text-small">{formatDate(need.previousStudy.createAt)}</p>
+
+                        <Divider />
+
+                        {/* Descripción - Ancho completo */}
+                        <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                                <FileText size={16} className="text-default-500" />
+                                <span className="text-small font-medium text-foreground">
+                                    Descripción
+                                </span>
                             </div>
-                            <div className="space-y-1">
-                                <span className="text-small text-default-500">Study Updated At</span>
-                                <p className="text-small">{formatDate(need.previousStudy.updateAt)}</p>
-                            </div>
+                            <p className="text-small text-default-600 leading-relaxed bg-default-50 dark:bg-default-100/50 rounded-lg p-3">
+                                {need.description}
+                            </p>
                         </div>
                     </div>
                 </ModalBody>
+
                 <ModalFooter>
-                    <Button color="primary" variant="light" onPress={onClose}>
-                        Close
+                    <Button variant="flat" onPress={onClose}>
+                        Cerrar
                     </Button>
                 </ModalFooter>
             </ModalContent>

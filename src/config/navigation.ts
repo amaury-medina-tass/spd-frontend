@@ -8,6 +8,9 @@ import {
     Lock,
     DollarSign,
     FileText,
+    FileClock,
+    FileSignature,
+    FolderKanban,
 } from "lucide-react"
 import React, { ReactNode } from "react"
 
@@ -78,6 +81,24 @@ export const menuItems: (MenuItem | MenuGroup)[] = [
                 href: "/dashboard/financial/needs",
                 permissionPath: "/financial/needs",
                 icon: React.createElement(FileText, { size: 18 }),
+            },
+            {
+                label: "Estudios Previos",
+                href: "/dashboard/financial/previous-studies",
+                permissionPath: "/financial/previous-studies",
+                icon: React.createElement(FileClock, { size: 18 }),
+            },
+            {
+                label: "Proyectos",
+                href: "/dashboard/financial/projects",
+                permissionPath: "/financial/projects",
+                icon: React.createElement(FolderKanban, { size: 18 }),
+            },
+            {
+                label: "Contratos Marco",
+                href: "/dashboard/financial/master-contracts",
+                permissionPath: "/financial/master-contracts",
+                icon: React.createElement(FileSignature, { size: 18 }),
             },
         ],
     },

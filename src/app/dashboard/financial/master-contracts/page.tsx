@@ -5,12 +5,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { DataTable, ColumnDef, RowAction, TopAction } from "@/components/tables/DataTable"
 import { useDebounce } from "@/hooks/useDebounce"
 import { usePermissions } from "@/hooks/usePermissions"
-import { NeedDetailModal } from "@/components/modals/financial/NeedDetailModal"
+import { MasterContractDetailModal } from "@/components/modals/financial/MasterContractDetailModal"
 import { get, PaginatedData, PaginationMeta } from "@/lib/http"
 import { endpoints } from "@/lib/endpoints"
 import { Eye, RefreshCw } from "lucide-react"
 import { addToast } from "@heroui/toast"
-import type { FinancialNeed } from "@/types/financial"
+import type { MasterContract } from "@/types/financial"
 import { getErrorMessage } from "@/lib/error-codes"
 
 const formatCurrency = (amount: string) => {
@@ -22,7 +22,7 @@ const formatCurrency = (amount: string) => {
     }).format(parseFloat(amount))
 }
 
-function DescriptionCell({ description }: { description: string }) {
+function ObjectCell({ text }: { text: string }) {
     const textRef = useRef<HTMLSpanElement>(null)
     const [isTruncated, setIsTruncated] = useState(false)
 
@@ -31,17 +31,17 @@ function DescriptionCell({ description }: { description: string }) {
         if (element) {
             setIsTruncated(element.scrollHeight > element.clientHeight)
         }
-    }, [description])
+    }, [text])
 
     const content = (
         <span ref={textRef} className="line-clamp-2 max-w-md">
-            {description}
+            {text}
         </span>
     )
 
     if (isTruncated) {
         return (
-            <Tooltip content={description} delay={300} closeDelay={0}>
+            <Tooltip content={text} delay={300} closeDelay={0}>
                 <span className="cursor-help">{content}</span>
             </Tooltip>
         )
@@ -50,68 +50,79 @@ function DescriptionCell({ description }: { description: string }) {
     return content
 }
 
-
-const columns: ColumnDef<FinancialNeed>[] = [
-    { key: "code", label: "Código", sortable: true },
+const columns: ColumnDef<MasterContract>[] = [
+    { key: "number", label: "Número", sortable: true },
     {
-        key: "amount",
-        label: "Monto",
+        key: "object",
+        label: "Objeto",
         sortable: true,
-        render: (need) => (
-            <span className="font-medium">{formatCurrency(need.amount)}</span>
+        render: (contract) => <ObjectCell text={contract.object} />,
+    },
+    {
+        key: "totalValue",
+        label: "Valor Total",
+        sortable: true,
+        render: (contract) => (
+            <span className="font-medium">{formatCurrency(contract.totalValue)}</span>
         ),
     },
     {
-        key: "description",
-        label: "Descripción",
+        key: "state",
+        label: "Estado",
         sortable: true,
-        render: (need) => <DescriptionCell description={need.description} />,
-    },
-    {
-        key: "previousStudy.code",
-        label: "Código Estudio",
-        sortable: true,
-        render: (need) => need.previousStudy?.code ?? "N/A",
-    },
-    {
-        key: "previousStudy.status",
-        label: "Estado Estudio",
-        sortable: true,
-        render: (need) => {
-            const status = need.previousStudy?.status ?? "N/A"
-            const statusLower = status.toLowerCase()
+        render: (contract) => {
+            const stateLower = contract.state.toLowerCase()
+            const isExecution = stateLower === "en ejecución"
+
             let color: "success" | "warning" | "danger" | "default" = "default"
-            if (statusLower === "aprobado" || statusLower === "approved") color = "success"
-            else if (statusLower === "pendiente" || statusLower === "pending") color = "warning"
-            else if (statusLower === "rechazado" || statusLower === "rejected") color = "danger"
+            if (stateLower === "legalizado" || stateLower === "active") color = "success"
+            else if (stateLower === "pendiente" || stateLower === "pending") color = "warning"
+            else if (stateLower === "terminado" || stateLower === "closed") color = "default"
 
             return (
-                <Chip color={color} variant="flat" size="sm">
-                    {status}
+                <Chip
+                    color={isExecution ? "default" : color}
+                    variant="flat"
+                    size="sm"
+                    className={isExecution ? "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-400" : ""}
+                >
+                    {contract.state}
                 </Chip>
             )
         },
     },
     {
+        key: "contractor.name",
+        label: "Contratista",
+        sortable: true,
+        render: (contract) => contract.contractor.name,
+    },
+    {
+        key: "startDate",
+        label: "Fecha Inicio",
+        sortable: false,
+        render: (contract) => new Date(contract.startDate).toLocaleDateString("es-CO"),
+    },
+    {
         key: "createAt",
         label: "Creado",
         sortable: true,
-        render: (need) => new Date(need.createAt).toLocaleString(),
+        render: (contract) => new Date(contract.createAt).toLocaleString(),
     },
     {
         key: "updateAt",
         label: "Actualizado",
         sortable: true,
-        render: (need) => new Date(need.updateAt).toLocaleString(),
+        render: (contract) => new Date(contract.updateAt).toLocaleString(),
     },
 ]
 
-export default function FinancialNeedsPage() {
+export default function MasterContractsPage() {
     // Permissions
-    const { canRead } = usePermissions("/financial/needs")
+    const { canRead } = usePermissions("/financial/master-contracts")
 
     // Data State
-    const [items, setItems] = useState<FinancialNeed[]>([])
+    const [items, setItems] = useState<MasterContract[]>([])
     const [meta, setMeta] = useState<PaginationMeta | null>(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
@@ -121,7 +132,7 @@ export default function FinancialNeedsPage() {
     const [search, setSearch] = useState("")
     const [limit, setLimit] = useState(10)
     const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({
-        column: "createAt",
+        column: "totalValue",
         direction: "descending",
     })
     const [searchInput, setSearchInput] = useState("")
@@ -129,11 +140,9 @@ export default function FinancialNeedsPage() {
 
     // Modal State
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
+    const [selectedContract, setSelectedContract] = useState<MasterContract | null>(null)
 
-    // Selection State
-    const [selectedNeed, setSelectedNeed] = useState<FinancialNeed | null>(null)
-
-    const fetchNeeds = useCallback(async () => {
+    const fetchContracts = useCallback(async () => {
         setLoading(true)
         setError(null)
         try {
@@ -150,12 +159,12 @@ export default function FinancialNeedsPage() {
                 params.set("sortOrder", sortDescriptor.direction === "ascending" ? "ASC" : "DESC")
             }
 
-            const result = await get<PaginatedData<FinancialNeed>>(`${endpoints.financial.needs}?${params}`)
+            const result = await get<PaginatedData<MasterContract>>(`${endpoints.financial.masterContracts}?${params}`)
             setItems(result.data)
             setMeta(result.meta)
         } catch (e: any) {
             const errorCode = e.data?.errors?.code
-            const message = errorCode ? getErrorMessage(errorCode) : (e.message ?? "Error al cargar necesidades")
+            const message = errorCode ? getErrorMessage(errorCode) : (e.message ?? "Error al cargar contratos marco")
             setError(message)
         } finally {
             setLoading(false)
@@ -163,28 +172,29 @@ export default function FinancialNeedsPage() {
     }, [page, search, limit, sortDescriptor])
 
     useEffect(() => {
-        fetchNeeds()
-    }, [fetchNeeds])
+        fetchContracts()
+    }, [fetchContracts])
 
     useEffect(() => {
         setSearch(debouncedSearch)
         setPage(1)
     }, [debouncedSearch])
 
-    const onViewDetails = async (need: FinancialNeed) => {
+    const onViewDetails = async (contract: MasterContract) => {
         try {
-            const freshNeed = await get<FinancialNeed>(`${endpoints.financial.needs}/${need.id}`)
-            setSelectedNeed(freshNeed)
+            // Fetch fresh details if needed, or use existing. Recommended to fetch.
+            const freshContract = await get<MasterContract>(`${endpoints.financial.masterContracts}/${contract.id}`)
+            setSelectedContract(freshContract)
             setIsDetailModalOpen(true)
         } catch (e: any) {
             const errorCode = e.data?.errors?.code
-            const message = errorCode ? getErrorMessage(errorCode) : "Error al cargar detalles de la necesidad"
+            const message = errorCode ? getErrorMessage(errorCode) : "Error al cargar detalles del contrato"
             addToast({ title: message, color: "danger" })
         }
     }
 
-    const rowActions: RowAction<FinancialNeed>[] = useMemo(() => {
-        const actions: RowAction<FinancialNeed>[] = []
+    const rowActions: RowAction<MasterContract>[] = useMemo(() => {
+        const actions: RowAction<MasterContract>[] = []
         if (canRead) {
             actions.push({
                 key: "view",
@@ -203,17 +213,17 @@ export default function FinancialNeedsPage() {
                 label: "Actualizar",
                 icon: <RefreshCw size={16} />,
                 color: "default",
-                onClick: fetchNeeds,
+                onClick: fetchContracts,
             },
         ]
-    }, [fetchNeeds])
+    }, [fetchContracts])
 
     return (
         <div className="grid gap-4">
             <Breadcrumbs>
                 <BreadcrumbItem>Inicio</BreadcrumbItem>
                 <BreadcrumbItem>Financiero</BreadcrumbItem>
-                <BreadcrumbItem>Necesidades</BreadcrumbItem>
+                <BreadcrumbItem>Contratos Marco</BreadcrumbItem>
             </Breadcrumbs>
 
             {!canRead ? (
@@ -224,7 +234,7 @@ export default function FinancialNeedsPage() {
             ) : error ? (
                 <div className="text-center py-8 text-danger">
                     <p>{error}</p>
-                    <Button variant="flat" className="mt-2" onPress={fetchNeeds}>
+                    <Button variant="flat" className="mt-2" onPress={fetchContracts}>
                         Reintentar
                     </Button>
                 </div>
@@ -237,8 +247,8 @@ export default function FinancialNeedsPage() {
                     topActions={topActions}
                     searchValue={searchInput}
                     onSearchChange={setSearchInput}
-                    searchPlaceholder="Buscar necesidades..."
-                    ariaLabel="Tabla de necesidades financieras"
+                    searchPlaceholder="Buscar contratos marco..."
+                    ariaLabel="Tabla de contratos marco"
                     pagination={meta ? {
                         page,
                         totalPages: meta.totalPages,
@@ -254,15 +264,14 @@ export default function FinancialNeedsPage() {
                 />
             )}
 
-            <NeedDetailModal
+            <MasterContractDetailModal
                 isOpen={isDetailModalOpen}
-                need={selectedNeed}
+                contract={selectedContract}
                 onClose={() => {
                     setIsDetailModalOpen(false)
-                    setSelectedNeed(null)
+                    setSelectedContract(null)
                 }}
             />
         </div>
     )
 }
-
