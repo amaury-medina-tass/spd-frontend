@@ -60,3 +60,30 @@ export type MGAActivity = {
     createAt: string
     updateAt: string
 }
+
+export type BudgetModification = {
+    id: string
+    modificationType: "ADDITION" | "REDUCTION" | "TRANSFER"
+    legalDocument: string | null
+    dateIssue: string
+    value: string
+    previousBalance: string
+    newBalance: string
+    description: string
+    createdAt: string
+    detailedActivity: {
+        id: string
+        code: string
+        name: string
+    }
+    previousRubric?: {
+        id: string
+        code: string
+        accountName: string
+    }
+    newRubric?: {
+        id: string
+        code: string
+        accountName: string
+    }
+}

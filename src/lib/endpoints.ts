@@ -23,6 +23,7 @@ export const endpoints = {
     root: "/masters",
     detailedActivities: "/masters/detailed-activities",
     rubricsSelect: "/masters/rubrics/select",
+    budgetModifications: "/masters/budget-modifications",
   },
   audit: "/audit",
   financial: {

@@ -14,6 +14,7 @@ import {
 } from "@heroui/react"
 import { FileBarChart, Plus } from "lucide-react"
 import { useState, useEffect, useCallback } from "react"
+import { useDebounce } from "@/hooks/useDebounce"
 import { get } from "@/lib/http"
 import { endpoints } from "@/lib/endpoints"
 import type { RelatedProject, Rubric } from "@/types/activity"
@@ -67,7 +68,6 @@ export function CreateDetailedActivityModal({
     const [name, setName] = useState("")
     const [observations, setObservations] = useState("")
     const [budgetCeiling, setBudgetCeiling] = useState("")
-    const [balance, setBalance] = useState("")
     const [cpc, setCpc] = useState("")
     const [projectId, setProjectId] = useState("")
     const [rubricId, setRubricId] = useState("")
@@ -75,10 +75,14 @@ export function CreateDetailedActivityModal({
     // Projects state
     const [projects, setProjects] = useState<RelatedProject[]>([])
     const [loadingProjects, setLoadingProjects] = useState(false)
+    const [projectSearch, setProjectSearch] = useState("")
+    const debouncedProjectSearch = useDebounce(projectSearch, 300)
 
     // Rubrics state
     const [rubrics, setRubrics] = useState<Rubric[]>([])
     const [loadingRubrics, setLoadingRubrics] = useState(false)
+    const [rubricSearch, setRubricSearch] = useState("")
+    const debouncedRubricSearch = useDebounce(rubricSearch, 300)
 
     // Reset form when modal opens/closes
     useEffect(() => {
@@ -87,7 +91,6 @@ export function CreateDetailedActivityModal({
             setName("")
             setObservations("")
             setBudgetCeiling("")
-            setBalance("")
             setCpc("")
             setProjectId("")
             setRubricId("")
@@ -96,10 +99,14 @@ export function CreateDetailedActivityModal({
         }
     }, [isOpen])
 
-    const fetchProjects = useCallback(async () => {
+    const fetchProjects = useCallback(async (search: string = "") => {
         setLoadingProjects(true)
         try {
-            const result = await get<ProjectSelectResponse>(`${endpoints.financial.projectsSelect}?limit=100`)
+            const params = new URLSearchParams({
+                limit: "20",
+                search: search
+            })
+            const result = await get<ProjectSelectResponse>(`${endpoints.financial.projectsSelect}?${params.toString()}`)
             setProjects(result.data)
         } catch (e) {
             console.error("Error fetching projects:", e)
@@ -108,10 +115,18 @@ export function CreateDetailedActivityModal({
         }
     }, [])
 
-    const fetchRubrics = useCallback(async () => {
+    useEffect(() => {
+        fetchProjects(debouncedProjectSearch)
+    }, [debouncedProjectSearch, fetchProjects])
+
+    const fetchRubrics = useCallback(async (search: string = "") => {
         setLoadingRubrics(true)
         try {
-            const result = await get<RubricSelectResponse>(`${endpoints.masters.rubricsSelect}?limit=100`)
+            const params = new URLSearchParams({
+                limit: "20",
+                search: search
+            })
+            const result = await get<RubricSelectResponse>(`${endpoints.masters.rubricsSelect}?${params.toString()}`)
             setRubrics(result.data)
         } catch (e) {
             console.error("Error fetching rubrics:", e)
@@ -120,13 +135,18 @@ export function CreateDetailedActivityModal({
         }
     }, [])
 
+    useEffect(() => {
+        fetchRubrics(debouncedRubricSearch)
+    }, [debouncedRubricSearch, fetchRubrics])
+
     const handleSave = () => {
+        const value = parseFloat(budgetCeiling) || 0
         const payload: CreateDetailedActivityPayload = {
             code: code.trim(),
             name: name.trim(),
             observations: observations.trim(),
-            budgetCeiling: parseFloat(budgetCeiling) || 0,
-            balance: parseFloat(balance) || 0,
+            budgetCeiling: value,
+            balance: value,
             cpc: cpc.trim(),
             projectId,
             rubricId,
@@ -138,7 +158,6 @@ export function CreateDetailedActivityModal({
         code.trim() !== "" &&
         name.trim() !== "" &&
         budgetCeiling !== "" &&
-        balance !== "" &&
         cpc.trim() !== "" &&
         projectId !== "" &&
         rubricId !== ""
@@ -218,6 +237,8 @@ export function CreateDetailedActivityModal({
                                 isLoading={loadingProjects}
                                 selectedKey={projectId}
                                 onSelectionChange={(key) => setProjectId(key as string || "")}
+                                onInputChange={setProjectSearch}
+                                inputValue={projectSearch}
                             >
                                 {projects.map((project) => (
                                     <AutocompleteItem key={project.id} textValue={`${project.code} - ${project.name}`}>
@@ -240,6 +261,8 @@ export function CreateDetailedActivityModal({
                                 isLoading={loadingRubrics}
                                 selectedKey={rubricId}
                                 onSelectionChange={(key) => setRubricId(key as string || "")}
+                                onInputChange={setRubricSearch}
+                                inputValue={rubricSearch}
                             >
                                 {rubrics.map((rubric) => (
                                     <AutocompleteItem key={rubric.id} textValue={`${rubric.code} - ${rubric.accountName}`}>
@@ -252,31 +275,15 @@ export function CreateDetailedActivityModal({
                             </Autocomplete>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4 pt-1">
-                            {/* Techo Presupuestal */}
+                        <div className="pt-1">
+                            {/* Valor */}
                             <Input
-                                label="Techo Presupuestal"
+                                label="Valor"
                                 placeholder="0"
                                 value={budgetCeiling ? new Intl.NumberFormat('es-CO').format(parseFloat(budgetCeiling.replace(/[^\d]/g, '')) || 0) : ''}
                                 onValueChange={(val) => {
                                     const numericValue = val.replace(/[^\d]/g, '')
                                     setBudgetCeiling(numericValue)
-                                }}
-                                isRequired
-                                labelPlacement="outside"
-                                startContent={
-                                    <span className="text-default-400 text-small">$</span>
-                                }
-                            />
-
-                            {/* Saldo */}
-                            <Input
-                                label="Saldo"
-                                placeholder="0"
-                                value={balance ? new Intl.NumberFormat('es-CO').format(parseFloat(balance.replace(/[^\d]/g, '')) || 0) : ''}
-                                onValueChange={(val) => {
-                                    const numericValue = val.replace(/[^\d]/g, '')
-                                    setBalance(numericValue)
                                 }}
                                 isRequired
                                 labelPlacement="outside"

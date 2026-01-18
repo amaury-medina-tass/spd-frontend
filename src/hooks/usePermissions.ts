@@ -4,7 +4,7 @@
 import { useAuth } from "@/components/auth/useAuth"
 import { useCallback, useMemo } from "react"
 
-export type ActionCode = "CREATE" | "READ" | "UPDATE" | "DELETE" | "ASSIGN_ROLE" | "ASSIGN_PERMISSION" | "ASSIGN_ACTION"
+export type ActionCode = "CREATE" | "READ" | "UPDATE" | "DELETE" | "ASSIGN_ROLE" | "ASSIGN_PERMISSION" | "ASSIGN_ACTION" | "BUDGET_MODIFICATION"
 
 export function usePermissions(modulePath: string) {
     const { me } = useAuth()
