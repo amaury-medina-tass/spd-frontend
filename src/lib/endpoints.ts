@@ -21,6 +21,8 @@ export const endpoints = {
   },
   masters: {
     root: "/masters",
+    detailedActivities: "/masters/detailed-activities",
+    rubricsSelect: "/masters/rubrics/select",
   },
   audit: "/audit",
   financial: {
@@ -28,5 +30,6 @@ export const endpoints = {
     previousStudies: "/financial/previous-studies",
     masterContracts: "/financial/master-contracts",
     projects: "/financial/projects",
+    projectsSelect: "/financial/projects/select",
   },
 }

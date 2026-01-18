@@ -11,6 +11,8 @@ import {
     FileClock,
     FileSignature,
     FolderKanban,
+    Database,
+    Activity,
 } from "lucide-react"
 import React, { ReactNode } from "react"
 
@@ -99,6 +101,20 @@ export const menuItems: (MenuItem | MenuGroup)[] = [
                 href: "/dashboard/financial/master-contracts",
                 permissionPath: "/financial/master-contracts",
                 icon: React.createElement(FileSignature, { size: 18 }),
+            },
+        ],
+    },
+
+    // Menú Maestros con submenús
+    {
+        label: "Maestros",
+        icon: React.createElement(Database, { size: 20 }),
+        items: [
+            {
+                label: "Actividades",
+                href: "/dashboard/masters/activities",
+                permissionPath: "/masters/activities",
+                icon: React.createElement(Activity, { size: 18 }),
             },
         ],
     },
