@@ -94,8 +94,8 @@ export function CreateDetailedActivityModal({
             setCpc("")
             setProjectId("")
             setRubricId("")
-            fetchProjects()
-            fetchRubrics()
+            setProjectSearch("")
+            setRubricSearch("")
         }
     }, [isOpen])
 
@@ -116,8 +116,10 @@ export function CreateDetailedActivityModal({
     }, [])
 
     useEffect(() => {
-        fetchProjects(debouncedProjectSearch)
-    }, [debouncedProjectSearch, fetchProjects])
+        if (isOpen) {
+            fetchProjects(debouncedProjectSearch)
+        }
+    }, [debouncedProjectSearch, fetchProjects, isOpen])
 
     const fetchRubrics = useCallback(async (search: string = "") => {
         setLoadingRubrics(true)
@@ -136,8 +138,10 @@ export function CreateDetailedActivityModal({
     }, [])
 
     useEffect(() => {
-        fetchRubrics(debouncedRubricSearch)
-    }, [debouncedRubricSearch, fetchRubrics])
+        if (isOpen) {
+            fetchRubrics(debouncedRubricSearch)
+        }
+    }, [debouncedRubricSearch, fetchRubrics, isOpen])
 
     const handleSave = () => {
         const value = parseFloat(budgetCeiling) || 0

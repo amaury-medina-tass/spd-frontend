@@ -251,59 +251,61 @@ export function DataTable<T extends { id: string }>({
     ) : null
 
     return (
-        <Table
-            aria-label={ariaLabel}
-            topContent={topContent}
-            topContentPlacement="outside"
-            bottomContent={bottomContent}
-            bottomContentPlacement="outside"
-            sortDescriptor={sortDescriptor}
-            onSortChange={onSortChange}
-            isHeaderSticky
-            classNames={{
-                wrapper: "min-h-[222px] overflow-x-auto max-w-[calc(100vw-2rem)] md:max-w-full",
-                table: "min-w-[600px]",
-                th: "bg-default-100 text-default-600 font-medium shadow-none group-data-[sticky=true]:shadow-none",
-            }}
-        >
-            <TableHeader columns={allColumns}>
-                {(column) => (
-                    <TableColumn
-                        key={column.key}
-                        allowsSorting={column.sortable}
-                        className={(column as any).className}
-                    >
-                        {column.label}
-                    </TableColumn>
-                )}
-            </TableHeader>
-
-            <TableBody
-                items={isLoading ? [] : items}
-                emptyContent={
-                    isLoading ? (
-                        <div className="flex items-center justify-center h-48 w-full text-default-500">
-                            <Spinner size="lg" label="Cargando..." color="current" />
-                        </div>
-                    ) : (
-                        emptyContent ?? defaultEmptyContent
-                    )
-                }
-                isLoading={false}
+        <div className="w-full overflow-hidden p-1">
+            <Table
+                aria-label={ariaLabel}
+                topContent={topContent}
+                topContentPlacement="outside"
+                bottomContent={bottomContent}
+                bottomContentPlacement="outside"
+                sortDescriptor={sortDescriptor}
+                onSortChange={onSortChange}
+                isHeaderSticky
+                classNames={{
+                    wrapper: "min-h-[222px] overflow-x-auto max-w-full",
+                    table: "min-w-[600px]",
+                    th: "bg-default-100 text-default-600 font-medium shadow-none group-data-[sticky=true]:shadow-none",
+                }}
             >
-                {(item) => (
-                    <TableRow key={item.id}>
-                        {(columnKey) => {
-                            const column = allColumns.find(c => c.key === columnKey)
-                            return (
-                                <TableCell className={(column as any)?.className}>
-                                    {renderCell(item, columnKey as string)}
-                                </TableCell>
-                            )
-                        }}
-                    </TableRow>
-                )}
-            </TableBody>
-        </Table >
+                <TableHeader columns={allColumns}>
+                    {(column) => (
+                        <TableColumn
+                            key={column.key}
+                            allowsSorting={column.sortable}
+                            className={(column as any).className}
+                        >
+                            {column.label}
+                        </TableColumn>
+                    )}
+                </TableHeader>
+
+                <TableBody
+                    items={isLoading ? [] : items}
+                    emptyContent={
+                        isLoading ? (
+                            <div className="flex items-center justify-center h-48 w-full text-default-500">
+                                <Spinner size="lg" label="Cargando..." color="current" />
+                            </div>
+                        ) : (
+                            emptyContent ?? defaultEmptyContent
+                        )
+                    }
+                    isLoading={false}
+                >
+                    {(item) => (
+                        <TableRow key={item.id}>
+                            {(columnKey) => {
+                                const column = allColumns.find(c => c.key === columnKey)
+                                return (
+                                    <TableCell className={(column as any)?.className}>
+                                        {renderCell(item, columnKey as string)}
+                                    </TableCell>
+                                )
+                            }}
+                        </TableRow>
+                    )}
+                </TableBody>
+            </Table >
+        </div>
     )
 }

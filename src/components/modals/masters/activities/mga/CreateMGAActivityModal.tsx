@@ -126,9 +126,6 @@ export function CreateMGAActivityModal({
             setDetailedActivities([])
             setDetailedOffset(0)
             setHasMoreDetailed(false)
-            // Initial fetches
-            fetchProjects()
-            fetchProducts()
         }
     }, [isOpen])
 
@@ -195,12 +192,16 @@ export function CreateMGAActivityModal({
     // --- Effects ---
 
     useEffect(() => {
-        fetchProjects(debouncedProjectSearch)
-    }, [debouncedProjectSearch, fetchProjects])
+        if (isOpen) {
+            fetchProjects(debouncedProjectSearch)
+        }
+    }, [debouncedProjectSearch, fetchProjects, isOpen])
 
     useEffect(() => {
-        fetchProducts(debouncedProductSearch)
-    }, [debouncedProductSearch, fetchProducts])
+        if (isOpen) {
+            fetchProducts(debouncedProductSearch)
+        }
+    }, [debouncedProductSearch, fetchProducts, isOpen])
 
     // Initial fetch or search change for detailed activities
     useEffect(() => {

@@ -14,6 +14,7 @@ import {
     Database,
     Activity,
     BarChart3,
+    FileCheck,
 } from "lucide-react"
 import React, { ReactNode } from "react"
 
@@ -108,6 +109,12 @@ export const menuItems: (MenuItem | MenuGroup)[] = [
                 href: "/dashboard/financial/poai-ppa",
                 permissionPath: "/financial/poai-ppa",
                 icon: React.createElement(BarChart3, { size: 18 }),
+            },
+            {
+                label: "CDPs",
+                href: "/dashboard/financial/cdps",
+                permissionPath: "/financial/cdps",
+                icon: React.createElement(FileCheck, { size: 18 }),
             },
         ],
     },

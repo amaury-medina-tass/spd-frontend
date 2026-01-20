@@ -44,5 +44,7 @@ export const endpoints = {
     poaiPpaProjectSummary: (projectId: string) => `/financial/poai-ppa/project/${projectId}/summary`,
     poaiPpaProjectEvolution: (projectId: string) => `/financial/poai-ppa/project/${projectId}/evolution`,
     poaiPpaTrends: "/financial/poai-ppa/trends",
+    cdpsTable: "/financial/cdps/positions/table",
+    cdpPositionDetail: (id: string) => `/financial/cdps/positions/${id}`,
   },
 }
