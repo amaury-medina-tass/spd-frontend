@@ -236,7 +236,14 @@ export function CreateDetailedActivityModal({
                                 isRequired
                                 isLoading={loadingProjects}
                                 selectedKey={projectId}
-                                onSelectionChange={(key) => setProjectId(key as string || "")}
+                                onSelectionChange={(key) => {
+                                    const k = String(key)
+                                    setProjectId(k)
+                                    const selected = projects.find(p => p.id === k)
+                                    if (selected) {
+                                        setProjectSearch(selected.code)
+                                    }
+                                }}
                                 onInputChange={setProjectSearch}
                                 inputValue={projectSearch}
                             >
@@ -260,7 +267,14 @@ export function CreateDetailedActivityModal({
                                 isRequired
                                 isLoading={loadingRubrics}
                                 selectedKey={rubricId}
-                                onSelectionChange={(key) => setRubricId(key as string || "")}
+                                onSelectionChange={(key) => {
+                                    const k = String(key)
+                                    setRubricId(k)
+                                    const selected = rubrics.find(r => r.id === k)
+                                    if (selected) {
+                                        setRubricSearch(selected.code)
+                                    }
+                                }}
                                 onInputChange={setRubricSearch}
                                 inputValue={rubricSearch}
                             >

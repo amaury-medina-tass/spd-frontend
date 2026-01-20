@@ -11,11 +11,11 @@ import { RefreshCw, Eye, Pencil, Plus, Trash2, ArrowLeftRight } from "lucide-rea
 import { addToast } from "@heroui/toast"
 import type { DetailedActivity, FullDetailedActivity } from "@/types/activity"
 import { getErrorMessage } from "@/lib/error-codes"
-import { DetailedActivityModal } from "@/components/modals/masters/DetailedActivityModal"
-import { CreateDetailedActivityModal, CreateDetailedActivityPayload } from "@/components/modals/masters/CreateDetailedActivityModal"
+import { DetailedActivityModal } from "@/components/modals/masters/activities/detailed/DetailedActivityModal"
+import { CreateDetailedActivityModal, CreateDetailedActivityPayload } from "@/components/modals/masters/activities/detailed/CreateDetailedActivityModal"
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal"
-import { CreateBudgetModificationModal, CreateBudgetModificationPayload } from "@/components/modals/masters/CreateBudgetModificationModal"
-import { BudgetModificationHistoryModal } from "@/components/modals/masters/BudgetModificationHistoryModal"
+import { CreateBudgetModificationModal, CreateBudgetModificationPayload } from "@/components/modals/masters/activities/detailed/CreateBudgetModificationModal"
+import { BudgetModificationHistoryModal } from "@/components/modals/masters/activities/detailed/BudgetModificationHistoryModal"
 import { History } from "lucide-react"
 
 // Columns for Detailed Activities

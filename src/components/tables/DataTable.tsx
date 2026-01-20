@@ -254,6 +254,7 @@ export function DataTable<T extends { id: string }>({
         <Table
             aria-label={ariaLabel}
             topContent={topContent}
+            topContentPlacement="outside"
             bottomContent={bottomContent}
             bottomContentPlacement="outside"
             sortDescriptor={sortDescriptor}
@@ -303,6 +304,6 @@ export function DataTable<T extends { id: string }>({
                     </TableRow>
                 )}
             </TableBody>
-        </Table>
+        </Table >
     )
 }

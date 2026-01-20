@@ -13,6 +13,7 @@ import {
     FolderKanban,
     Database,
     Activity,
+    BarChart3,
 } from "lucide-react"
 import React, { ReactNode } from "react"
 
@@ -101,6 +102,12 @@ export const menuItems: (MenuItem | MenuGroup)[] = [
                 href: "/dashboard/financial/master-contracts",
                 permissionPath: "/financial/master-contracts",
                 icon: React.createElement(FileSignature, { size: 18 }),
+            },
+            {
+                label: "POAI PPA",
+                href: "/dashboard/financial/poai-ppa",
+                permissionPath: "/financial/poai-ppa",
+                icon: React.createElement(BarChart3, { size: 18 }),
             },
         ],
     },

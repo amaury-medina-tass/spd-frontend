@@ -50,15 +50,25 @@ export type FullDetailedActivity = Omit<DetailedActivity, 'project'> & {
     project: FullRelatedProject
 }
 
+export type RelatedProduct = {
+    id: string
+    productCode: string
+    productName: string
+}
+
 export type MGAActivity = {
     id: string
     code: string
     name: string
-    description: string
-    budgetCeiling: string
-    balance: string
+    observations: string | null
+    activityDate: string
+    productId: string
+    projectId: string
     createAt: string
     updateAt: string
+    project: RelatedProject
+    product: RelatedProduct
+    detailedActivitiesCount: number
 }
 
 export type BudgetModification = {

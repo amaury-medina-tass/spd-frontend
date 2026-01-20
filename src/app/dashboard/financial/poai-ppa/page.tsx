@@ -3,20 +3,20 @@
 import { Breadcrumbs, BreadcrumbItem } from "@heroui/react"
 import { useState } from "react"
 import { usePermissions } from "@/hooks/usePermissions"
-import { Eye, AlertCircle } from "lucide-react"
-import { DetailedActivitiesTab } from "./DetailedActivitiesTab"
-import { MGAActivitiesTab } from "./MGAActivitiesTab"
+import { Table, BarChart3 } from "lucide-react"
+import { PoaiPpaTableTab } from "./PoaiPpaTableTab"
+import { PoaiPpaChartsTab } from "./PoaiPpaChartsTab"
 
-export default function MastersActivitiesPage() {
-    const { canRead } = usePermissions("/masters/activities")
-    const [selectedTab, setSelectedTab] = useState<string>("mga")
+export default function PoaiPpaPage() {
+    const { canRead } = usePermissions("/financial/poai-ppa")
+    const [selectedTab, setSelectedTab] = useState<string>("registro")
 
     return (
         <div className="grid gap-4">
             <Breadcrumbs>
                 <BreadcrumbItem>Inicio</BreadcrumbItem>
-                <BreadcrumbItem>Maestros</BreadcrumbItem>
-                <BreadcrumbItem>Actividades</BreadcrumbItem>
+                <BreadcrumbItem>Financiero</BreadcrumbItem>
+                <BreadcrumbItem>POAI PPA</BreadcrumbItem>
             </Breadcrumbs>
 
             {!canRead ? (
@@ -29,31 +29,31 @@ export default function MastersActivitiesPage() {
                     {/* Selection Pills */}
                     <div className="flex gap-3">
                         <div
-                            onClick={() => setSelectedTab("mga")}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-full cursor-pointer transition-all ${selectedTab === "mga"
+                            onClick={() => setSelectedTab("registro")}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-full cursor-pointer transition-all ${selectedTab === "registro"
                                 ? "bg-primary text-white shadow-sm"
                                 : "bg-default-100 text-default-600 hover:bg-default-200"
                                 }`}
                         >
-                            <AlertCircle size={16} />
-                            <span className="text-sm font-medium">MGA</span>
+                            <Table size={16} />
+                            <span className="text-sm font-medium">Registro</span>
                         </div>
 
                         <div
-                            onClick={() => setSelectedTab("detailed")}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-full cursor-pointer transition-all ${selectedTab === "detailed"
+                            onClick={() => setSelectedTab("graficas")}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-full cursor-pointer transition-all ${selectedTab === "graficas"
                                 ? "bg-primary text-white shadow-sm"
                                 : "bg-default-100 text-default-600 hover:bg-default-200"
                                 }`}
                         >
-                            <Eye size={16} />
-                            <span className="text-sm font-medium">Detalladas</span>
+                            <BarChart3 size={16} />
+                            <span className="text-sm font-medium">Gráficas</span>
                         </div>
                     </div>
 
                     {/* Content based on selected tab */}
-                    {selectedTab === "mga" && <MGAActivitiesTab />}
-                    {selectedTab === "detailed" && <DetailedActivitiesTab />}
+                    {selectedTab === "registro" && <PoaiPpaTableTab />}
+                    {selectedTab === "graficas" && <PoaiPpaChartsTab />}
                 </>
             )}
         </div>

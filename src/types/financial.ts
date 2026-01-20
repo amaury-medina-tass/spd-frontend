@@ -65,3 +65,97 @@ export type Project = {
     financialExecutionPercentage: number
 }
 
+// POAI PPA Types
+export type ProjectBasic = {
+    id: string
+    code: string
+    name: string
+    financialExecutionPercentage: number
+}
+
+export type PoaiPpa = {
+    id: string
+    projectCode: string
+    year: number
+    projectedPoai: string
+    assignedPoai: string
+    createAt: string
+    updateAt: string
+    project: ProjectBasic
+}
+
+export type PoaiPpaYearsData = {
+    data: PoaiPpa[]
+    summary: {
+        totalYears: number
+        years: number[]
+        totalProjected: number
+        totalAssigned: number
+    }
+}
+
+export type PoaiPpaSummary = {
+    project: {
+        id: string
+        code: string
+        name: string
+    }
+    summary: {
+        yearCount: number
+        totalProjected: number
+        totalAssigned: number
+        avgProjected: number
+        avgAssigned: number
+        minYear: number
+        maxYear: number
+        executionRate: number
+    }
+}
+
+export type PoaiPpaEvolutionItem = {
+    year: number
+    projectedPoai: number
+    assignedPoai: number
+    variance: number
+    variancePercentage: number
+    yoyProjectedChange: number | null
+    yoyAssignedChange: number | null
+}
+
+export type PoaiPpaEvolution = {
+    project: {
+        id: string
+        code: string
+        name: string
+    }
+    evolution: PoaiPpaEvolutionItem[]
+}
+
+export type PoaiPpaTrendItem = {
+    year: number
+    projectCount: number
+    totalProjected: number
+    totalAssigned: number
+    avgProjected: number
+    avgAssigned: number
+    executionRate: number
+}
+
+export type PoaiPpaTrends = {
+    data: PoaiPpaTrendItem[]
+    meta: {
+        totalYears: number
+        yearRange: {
+            start: number
+            end: number
+        }
+    }
+}
+
+export type ProjectSelectItem = {
+    id: string
+    code: string
+    name: string
+    financialExecutionPercentage: number
+}
+
