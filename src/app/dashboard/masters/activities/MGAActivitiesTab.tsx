@@ -4,9 +4,10 @@ import { Button, SortDescriptor } from "@heroui/react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { DataTable, ColumnDef, RowAction, TopAction } from "@/components/tables/DataTable"
 import { useDebounce } from "@/hooks/useDebounce"
+import { usePermissions } from "@/hooks/usePermissions"
 import { get, PaginatedData, PaginationMeta } from "@/lib/http"
 import { endpoints } from "@/lib/endpoints"
-import { RefreshCw, Eye, Link2, Plus } from "lucide-react"
+import { RefreshCw, Eye, Link2, Plus, Pencil } from "lucide-react"
 import { addToast } from "@heroui/toast"
 import type { MGAActivity } from "@/types/activity"
 import { getErrorMessage } from "@/lib/error-codes"
@@ -19,10 +20,22 @@ const mgaActivityColumns: ColumnDef<MGAActivity>[] = [
     { key: "code", label: "Código", sortable: true },
     { key: "name", label: "Nombre", sortable: true },
     {
+        key: "project.code",
+        label: "Cód. Proyecto",
+        sortable: false,
+        render: (activity) => activity.project?.code ?? "N/A",
+    },
+    {
         key: "project.name",
         label: "Proyecto",
         sortable: false,
         render: (activity) => activity.project?.name ?? "N/A",
+    },
+    {
+        key: "product.productCode",
+        label: "Cód. Producto",
+        sortable: false,
+        render: (activity) => activity.product?.productCode ?? "N/A",
     },
     {
         key: "product.productName",
@@ -53,11 +66,15 @@ const mgaActivityColumns: ColumnDef<MGAActivity>[] = [
 ]
 
 export function MGAActivitiesTab() {
+    // Permissions
+    const { canRead, canCreate, canUpdate } = usePermissions("/masters/activities")
+
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
     const [isManageModalOpen, setIsManageModalOpen] = useState(false)
     const [selectedActivity, setSelectedActivity] = useState<MGAActivity | null>(null)
+    const [isEditMode, setIsEditMode] = useState(false)
 
     // Table State
     const [items, setItems] = useState<MGAActivity[]>([])
@@ -66,7 +83,7 @@ export function MGAActivitiesTab() {
     const [error, setError] = useState<string | null>(null)
     const [page, setPage] = useState(1)
     const [search, setSearch] = useState("")
-    const [limit, setLimit] = useState(10)
+    const [limit, setLimit] = useState(5)
     const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({
         column: "code",
         direction: "ascending",
@@ -116,22 +133,29 @@ export function MGAActivitiesTab() {
         setPage(1)
     }, [debouncedSearch])
 
-    const topActions: TopAction[] = useMemo(() => [
-        {
-            key: "refresh",
-            label: "Actualizar",
-            icon: <RefreshCw size={16} />,
-            color: "default",
-            onClick: fetchActivities,
-        },
-        {
-            key: "create",
-            label: "Crear",
-            icon: <Plus size={16} />,
-            color: "primary",
-            onClick: () => setIsCreateModalOpen(true),
-        },
-    ], [fetchActivities])
+    const topActions: TopAction[] = useMemo(() => {
+        const actions: TopAction[] = [
+            {
+                key: "refresh",
+                label: "Actualizar",
+                icon: <RefreshCw size={16} />,
+                color: "default",
+                onClick: fetchActivities,
+            },
+        ]
+        
+        if (canCreate) {
+            actions.push({
+                key: "create",
+                label: "Crear",
+                icon: <Plus size={16} />,
+                color: "primary",
+                onClick: () => setIsCreateModalOpen(true),
+            })
+        }
+        
+        return actions
+    }, [fetchActivities, canCreate])
 
     // View handler
     const onViewActivity = async (activity: MGAActivity) => {
@@ -147,23 +171,49 @@ export function MGAActivitiesTab() {
         }
     }
 
-    const rowActions: RowAction<MGAActivity>[] = useMemo(() => [
-        {
-            key: "view",
-            label: "Ver Detalles",
-            icon: <Eye size={16} />,
-            onClick: onViewActivity,
-        },
-        {
-            key: "manage",
-            label: "Gestionar Actividades",
-            icon: <Link2 size={16} />,
-            onClick: (activity) => {
-                setSelectedActivity(activity)
-                setIsManageModalOpen(true)
+    const rowActions: RowAction<MGAActivity>[] = useMemo(() => {
+        const actions: RowAction<MGAActivity>[] = [
+            {
+                key: "view",
+                label: "Ver Detalles",
+                icon: <Eye size={16} />,
+                onClick: onViewActivity,
             },
-        },
-    ], [])
+        ]
+
+        if (canUpdate) {
+            actions.push(
+                {
+                    key: "edit",
+                    label: "Editar",
+                    icon: <Pencil size={16} />,
+                    onClick: async (activity) => {
+                        try {
+                            const fullActivity = await get<MGAActivity>(`${endpoints.masters.mgaActivities}/${activity.id}`)
+                            setSelectedActivity(fullActivity)
+                            setIsEditMode(true)
+                            setIsModalOpen(true)
+                        } catch (e: any) {
+                            const errorCode = e.data?.errors?.code
+                            const message = errorCode ? getErrorMessage(errorCode) : "Error al obtener detalles de la actividad"
+                            addToast({ title: message, color: "danger" })
+                        }
+                    },
+                },
+                {
+                    key: "manage",
+                    label: "Gestionar Actividades",
+                    icon: <Link2 size={16} />,
+                    onClick: (activity) => {
+                        setSelectedActivity(activity)
+                        setIsManageModalOpen(true)
+                    },
+                }
+            )
+        }
+
+        return actions
+    }, [canUpdate])
 
     if (error) {
         return (
@@ -172,6 +222,15 @@ export function MGAActivitiesTab() {
                 <Button variant="flat" className="mt-2" onPress={fetchActivities}>
                     Reintentar
                 </Button>
+            </div>
+        )
+    }
+
+    if (!canRead) {
+        return (
+            <div className="text-center py-16">
+                <p className="text-xl font-semibold text-danger">Acceso Denegado</p>
+                <p className="text-default-500 mt-2">No tienes permisos para ver este módulo.</p>
             </div>
         )
     }
@@ -208,7 +267,10 @@ export function MGAActivitiesTab() {
                 onClose={() => {
                     setIsModalOpen(false)
                     setSelectedActivity(null)
+                    setIsEditMode(false)
                 }}
+                onSuccess={fetchActivities}
+                initialEditMode={isEditMode}
             />
 
             <CreateMGAActivityModal

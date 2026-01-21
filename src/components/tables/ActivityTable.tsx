@@ -8,6 +8,9 @@ import {
     TableRow,
     TableCell,
     Button,
+    Pagination,
+    Select,
+    SelectItem,
 } from "@heroui/react"
 import { Plus, X } from "lucide-react"
 
@@ -28,6 +31,11 @@ type Props = {
     onAction: (id: string) => void
     emptyMessage?: string
     ariaLabel?: string
+    page?: number
+    totalPages?: number
+    onPageChange?: (page: number) => void
+    limit?: number
+    onLimitChange?: (limit: number) => void
 }
 
 const columns = [
@@ -55,11 +63,53 @@ export function ActivityTable({
     onAction,
     emptyMessage = "No hay actividades",
     ariaLabel = "Tabla de actividades detalladas",
+    page = 1,
+    totalPages = 1,
+    onPageChange,
+    limit = 10,
+    onLimitChange,
 }: Props) {
     return (
         <Table
             aria-label={ariaLabel}
             removeWrapper
+            bottomContent={
+                <div className="flex w-full justify-between items-center px-2">
+                    <div className="w-[30%]"></div>
+                    {totalPages > 1 && (
+                        <div className="flex justify-center w-[40%]">
+                            <Pagination
+                                isCompact
+                                showControls
+                                showShadow
+                                color="primary"
+                                page={page}
+                                total={totalPages}
+                                onChange={(page) => onPageChange?.(page)}
+                            />
+                        </div>
+                    )}
+                    <div className="flex justify-end w-[30%]">
+                        {onLimitChange && (
+                            <Select
+                                label="Filas"
+                                size="sm"
+                                variant="bordered"
+                                className="max-w-[100px]"
+                                selectedKeys={[limit.toString()]}
+                                onChange={(e) => {
+                                    if (e.target.value) onLimitChange(Number(e.target.value))
+                                }}
+                            >
+                                <SelectItem key="5">5</SelectItem>
+                                <SelectItem key="10">10</SelectItem>
+                                <SelectItem key="20">20</SelectItem>
+                                <SelectItem key="50">50</SelectItem>
+                            </Select>
+                        )}
+                    </div>
+                </div>
+            }
             classNames={{
                 th: "bg-default-100 text-default-600 text-tiny",
                 td: "text-small",

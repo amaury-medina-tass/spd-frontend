@@ -27,6 +27,7 @@ export function usePermissions(modulePath: string) {
     const canAssignRole = useMemo(() => hasPermission("ASSIGN_ROLE"), [hasPermission])
     const canAssignPermission = useMemo(() => hasPermission("ASSIGN_PERMISSION"), [hasPermission])
     const canAssignAction = useMemo(() => hasPermission("ASSIGN_ACTION"), [hasPermission])
+    const canModifyBudget = useMemo(() => hasPermission("BUDGET_MODIFICATION"), [hasPermission])
 
     return {
         modulePermissions,
@@ -38,5 +39,6 @@ export function usePermissions(modulePath: string) {
         canAssignRole,
         canAssignPermission,
         canAssignAction,
+        canModifyBudget,
     }
 }

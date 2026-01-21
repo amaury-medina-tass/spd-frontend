@@ -43,40 +43,51 @@ export function ManageDetailedActivitiesModal({
     const [actionLoading, setActionLoading] = useState<string | null>(null)
     const [activeTab, setActiveTab] = useState<string>("associated")
 
+    // Pagination State
+    const [pageAssociated, setPageAssociated] = useState(1)
+    const [totalPagesAssociated, setTotalPagesAssociated] = useState(1)
+    const [pageAvailable, setPageAvailable] = useState(1)
+    const [totalPagesAvailable, setTotalPagesAvailable] = useState(1)
+    const [limit, setLimit] = useState(5)
+
     const fetchAssociated = useCallback(async () => {
         if (!mgaActivityId) return
         setLoadingAssociated(true)
         try {
             const res = await get<PaginatedData<DetailedActivityItem>>(
-                `${endpoints.masters.mgaActivityAssociatedActivities(mgaActivityId)}?limit=100&search=${searchAssociated}`
+                `${endpoints.masters.mgaActivityDetailedActivities(mgaActivityId)}?type=associated&limit=${limit}&page=${pageAssociated}&search=${searchAssociated}`
             )
             setAssociated(res.data)
+            setTotalPagesAssociated(res.meta.totalPages)
         } catch (e: any) {
             addToast({ title: "Error al cargar asociadas", description: e.message, color: "danger" })
         } finally {
             setLoadingAssociated(false)
         }
-    }, [mgaActivityId, searchAssociated])
+    }, [mgaActivityId, searchAssociated, pageAssociated, limit])
 
     const fetchAvailable = useCallback(async () => {
         if (!mgaActivityId) return
         setLoadingAvailable(true)
         try {
             const res = await get<PaginatedData<DetailedActivityItem>>(
-                `${endpoints.masters.mgaActivityAvailableActivities(mgaActivityId)}?limit=100&search=${searchAvailable}`
+                `${endpoints.masters.mgaActivityDetailedActivities(mgaActivityId)}?type=available&limit=${limit}&page=${pageAvailable}&search=${searchAvailable}`
             )
             setAvailable(res.data)
+            setTotalPagesAvailable(res.meta.totalPages)
         } catch (e: any) {
             addToast({ title: "Error al cargar disponibles", description: e.message, color: "danger" })
         } finally {
             setLoadingAvailable(false)
         }
-    }, [mgaActivityId, searchAvailable])
+    }, [mgaActivityId, searchAvailable, pageAvailable, limit])
 
     useEffect(() => {
         if (isOpen && mgaActivityId) {
             setSearchAssociated("")
             setSearchAvailable("")
+            setPageAssociated(1)
+            setPageAvailable(1)
             setActiveTab("associated")
             fetchAssociated()
             fetchAvailable()
@@ -87,13 +98,13 @@ export function ManageDetailedActivitiesModal({
         if (isOpen && mgaActivityId && activeTab === "associated") {
             fetchAssociated()
         }
-    }, [searchAssociated])
+    }, [searchAssociated, pageAssociated, limit])
 
     useEffect(() => {
         if (isOpen && mgaActivityId && activeTab === "available") {
             fetchAvailable()
         }
-    }, [searchAvailable])
+    }, [searchAvailable, pageAvailable, limit])
 
     const handleAssociate = async (detailedId: string) => {
         if (!mgaActivityId) return
@@ -176,14 +187,7 @@ export function ManageDetailedActivitiesModal({
                         >
                             <Tab
                                 key="associated"
-                                title={
-                                    <span className="flex items-center gap-2">
-                                        Asociadas
-                                        <span className="text-tiny bg-default-100 px-1.5 py-0.5 rounded">
-                                            {associated.length}
-                                        </span>
-                                    </span>
-                                }
+                                title="Asociadas"
                             >
                                 <div className="pt-4 space-y-3">
                                     <div className="flex items-center justify-between">
@@ -219,6 +223,15 @@ export function ManageDetailedActivitiesModal({
                                             onAction={handleDissociate}
                                             emptyMessage="No hay actividades asociadas"
                                             ariaLabel="Actividades asociadas"
+                                            page={pageAssociated}
+                                            totalPages={totalPagesAssociated}
+                                            onPageChange={setPageAssociated}
+                                            limit={limit}
+                                            onLimitChange={(l) => {
+                                                setLimit(l)
+                                                setPageAssociated(1)
+                                                setPageAvailable(1)
+                                            }}
                                         />
                                     )}
                                 </div>
@@ -226,14 +239,7 @@ export function ManageDetailedActivitiesModal({
 
                             <Tab
                                 key="available"
-                                title={
-                                    <span className="flex items-center gap-2">
-                                        Disponibles
-                                        <span className="text-tiny bg-default-100 px-1.5 py-0.5 rounded">
-                                            {available.length}
-                                        </span>
-                                    </span>
-                                }
+                                title="Disponibles"
                             >
                                 <div className="pt-4 space-y-3">
                                     <div className="flex items-center justify-between">
@@ -270,6 +276,15 @@ export function ManageDetailedActivitiesModal({
                                             onAction={handleAssociate}
                                             emptyMessage="No hay actividades disponibles"
                                             ariaLabel="Actividades disponibles"
+                                            page={pageAvailable}
+                                            totalPages={totalPagesAvailable}
+                                            onPageChange={setPageAvailable}
+                                            limit={limit}
+                                            onLimitChange={(l) => {
+                                                setLimit(l)
+                                                setPageAssociated(1)
+                                                setPageAvailable(1)
+                                            }}
                                         />
                                     )}
                                 </div>

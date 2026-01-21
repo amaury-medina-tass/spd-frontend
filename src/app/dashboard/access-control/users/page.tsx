@@ -64,7 +64,7 @@ export default function AccessControlUsersPage() {
   // Filter & Pagination State
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState("")
-  const [limit, setLimit] = useState(10)
+  const [limit, setLimit] = useState(5)
   const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({
     column: "created_at",
     direction: "descending",

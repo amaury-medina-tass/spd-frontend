@@ -64,7 +64,7 @@ const detailedActivityColumns: ColumnDef<DetailedActivity>[] = [
 ]
 
 export function DetailedActivitiesTab() {
-    const { canCreate, canUpdate, canDelete, hasPermission } = usePermissions("/masters/activities")
+    const { canRead, canCreate, canUpdate, canDelete, hasPermission } = usePermissions("/masters/activities")
 
     // Explicit permission for budget modification
     const canModifyBudget = hasPermission("BUDGET_MODIFICATION")
@@ -91,7 +91,7 @@ export function DetailedActivitiesTab() {
     const [error, setError] = useState<string | null>(null)
     const [page, setPage] = useState(1)
     const [search, setSearch] = useState("")
-    const [limit, setLimit] = useState(10)
+    const [limit, setLimit] = useState(5)
     const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({
         column: "code",
         direction: "ascending",
@@ -321,6 +321,15 @@ export function DetailedActivitiesTab() {
                 <Button variant="flat" className="mt-2" onPress={fetchActivities}>
                     Reintentar
                 </Button>
+            </div>
+        )
+    }
+
+    if (!canRead) {
+        return (
+            <div className="text-center py-16">
+                <p className="text-xl font-semibold text-danger">Acceso Denegado</p>
+                <p className="text-default-500 mt-2">No tienes permisos para ver este módulo.</p>
             </div>
         )
     }
