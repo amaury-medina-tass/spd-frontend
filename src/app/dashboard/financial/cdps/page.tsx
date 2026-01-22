@@ -1,22 +1,23 @@
 "use client"
 
-import { Button, Breadcrumbs, BreadcrumbItem, SortDescriptor } from "@heroui/react"
+import { Button, Breadcrumbs, BreadcrumbItem } from "@heroui/react"
 import { useCallback, useEffect, useState } from "react"
-import { DataTable, ColumnDef, RowAction } from "@/components/tables/DataTable"
+import { DataTable, ColumnDef, RowAction, SortDescriptor } from "@/components/tables/DataTable"
 import { useDebounce } from "@/hooks/useDebounce"
 import { get, PaginatedData, PaginationMeta } from "@/lib/http"
 import { endpoints } from "@/lib/endpoints"
-import { RefreshCw, Eye } from "lucide-react"
+import { RefreshCw, Eye, Link2 } from "lucide-react"
 import type { CdpTableRow, CdpPositionDetail } from "@/types/cdp"
 import { getErrorMessage } from "@/lib/error-codes"
 import { CdpPositionDetailModal } from "@/components/modals/financial/CdpPositionDetailModal"
+import { ManageCdpActivitiesModal } from "@/components/modals/financial/ManageCdpActivitiesModal"
 
 const columns: ColumnDef<CdpTableRow>[] = [
   { key: "cdpNumber", label: "N° CDP", sortable: true },
   { 
     key: "cdpTotalValue", 
     label: "Valor Total CDP", 
-    sortable: true,
+    sortable: false,
     render: (row) => new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP" }).format(row.cdpTotalValue),
   },
   { key: "projectCode", label: "Código Proyecto", sortable: true },
@@ -29,10 +30,20 @@ const columns: ColumnDef<CdpTableRow>[] = [
     render: (row) => new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP" }).format(row.positionValue),
   },
   { key: "needCode", label: "Código Necesidad", sortable: true },
-  { key: "fundingSourceName", label: "Origen Presupuesto", sortable: true },
-  { key: "fundingSourceCode", label: "Fondo", sortable: true },
+  { key: "fundingSourceName", label: "Origen Presupuesto", sortable: false },
+  { key: "fundingSourceCode", label: "Fondo", sortable: false },
   { key: "observations", label: "Observaciones", sortable: false },
 ]
+
+// Map frontend column keys to backend sort columns
+const sortColumnMap: Record<string, string> = {
+  cdpNumber: "cdp.number",
+  positionNumber: "pos.positionNumber",
+  positionValue: "pos.value",
+  rubricCode: "r.code",
+  projectCode: "p.code",
+  needCode: "n.code",
+}
 
 export default function FinancialCdpsPage() {
   // Data State
@@ -44,6 +55,10 @@ export default function FinancialCdpsPage() {
   // Detail Modal State
   const [selectedPosition, setSelectedPosition] = useState<CdpPositionDetail | null>(null)
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
+
+  // Manage Activities Modal State
+  const [isActivitiesModalOpen, setIsActivitiesModalOpen] = useState(false)
+  const [selectedPositionForActivities, setSelectedPositionForActivities] = useState<CdpTableRow | null>(null)
 
   // Filter & Pagination State
   const [page, setPage] = useState(1)
@@ -68,8 +83,8 @@ export default function FinancialCdpsPage() {
         params.set("search", search.trim())
       }
 
-      if (sortDescriptor.column) {
-        params.set("sortBy", `cdp.${sortDescriptor.column}`)
+      if (sortDescriptor.column && sortColumnMap[sortDescriptor.column]) {
+        params.set("sortBy", sortColumnMap[sortDescriptor.column])
         params.set("sortOrder", sortDescriptor.direction === "ascending" ? "ASC" : "DESC")
       }
 
@@ -112,6 +127,15 @@ export default function FinancialCdpsPage() {
         label: "Ver Detalle",
         icon: <Eye size={18} />,
         onClick: (item) => fetchPositionDetail(item.id),
+    },
+    {
+        key: "manage-activities",
+        label: "Gestionar Actividades",
+        icon: <Link2 size={18} />,
+        onClick: (item) => {
+            setSelectedPositionForActivities(item)
+            setIsActivitiesModalOpen(true)
+        },
     },
   ]
 
@@ -168,6 +192,17 @@ export default function FinancialCdpsPage() {
         isOpen={isDetailModalOpen}
         onClose={() => setIsDetailModalOpen(false)}
         position={selectedPosition}
+      />
+
+      <ManageCdpActivitiesModal
+        isOpen={isActivitiesModalOpen}
+        positionId={selectedPositionForActivities?.id || null}
+        positionNumber={selectedPositionForActivities?.positionNumber}
+        onClose={() => {
+            setIsActivitiesModalOpen(false)
+            setSelectedPositionForActivities(null)
+        }}
+        onSuccess={fetchCdps}
       />
     </div>
   )

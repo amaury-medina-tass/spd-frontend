@@ -25,3 +25,26 @@ export type CdpPositionDetail = {
   fundingSourceCode: string
   observations: string
 }
+
+export type CdpDetailedActivity = {
+  id: string
+  code: string
+  name: string
+  observations: string | null
+  budgetCeiling: string
+  balance: string
+  cpc: string | null
+  projectId: string
+  rubricId: string
+  rubric: {
+    id: string
+    code: string
+    accountName: string
+  }
+  project: {
+    id: string
+    code: string
+    name: string
+    financialExecutionPercentage: number
+  }
+}

@@ -1,8 +1,8 @@
 "use client"
 
-import { Button, SortDescriptor } from "@heroui/react"
+import { Button } from "@heroui/react"
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { DataTable, ColumnDef, RowAction, TopAction } from "@/components/tables/DataTable"
+import { DataTable, ColumnDef, RowAction, TopAction, SortDescriptor } from "@/components/tables/DataTable"
 import { useDebounce } from "@/hooks/useDebounce"
 import { usePermissions } from "@/hooks/usePermissions"
 import { get, post, patch, del, PaginatedData, PaginationMeta } from "@/lib/http"

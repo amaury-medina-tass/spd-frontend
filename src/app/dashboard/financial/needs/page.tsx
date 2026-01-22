@@ -1,8 +1,8 @@
 "use client"
 
-import { Button, Breadcrumbs, BreadcrumbItem, Chip, SortDescriptor, Tooltip } from "@heroui/react"
+import { Button, Breadcrumbs, BreadcrumbItem, Chip, Tooltip } from "@heroui/react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { DataTable, ColumnDef, RowAction, TopAction } from "@/components/tables/DataTable"
+import { DataTable, ColumnDef, RowAction, TopAction, SortDescriptor } from "@/components/tables/DataTable"
 import { useDebounce } from "@/hooks/useDebounce"
 import { usePermissions } from "@/hooks/usePermissions"
 import { NeedDetailModal } from "@/components/modals/financial/NeedDetailModal"

@@ -1,8 +1,8 @@
 "use client"
 
-import { Button, Breadcrumbs, BreadcrumbItem, SortDescriptor } from "@heroui/react"
+import { Button, Breadcrumbs, BreadcrumbItem } from "@heroui/react"
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { DataTable, ColumnDef, RowAction, TopAction } from "@/components/tables/DataTable"
+import { DataTable, ColumnDef, RowAction, TopAction, SortDescriptor } from "@/components/tables/DataTable"
 import { useDebounce } from "@/hooks/useDebounce"
 import { usePermissions } from "@/hooks/usePermissions"
 import { ModuleModal } from "@/components/modals/modules/ModuleModal"

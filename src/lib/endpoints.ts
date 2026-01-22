@@ -45,5 +45,8 @@ export const endpoints = {
     poaiPpaTrends: "/financial/poai-ppa/trends",
     cdpsTable: "/financial/cdps/positions/table",
     cdpPositionDetail: (id: string) => `/financial/cdps/positions/${id}`,
+    cdpPositionDetailedActivities: (positionId: string) => `/financial/cdps/positions/${positionId}/detailed-activities`,
+    cdpPositionDetailedActivitiesRemove: (positionId: string, activityId: string) => `/financial/cdps/positions/${positionId}/detailed-activities/${activityId}`,
+    cdpPositionConsume: (positionId: string) => `/financial/cdps/positions/${positionId}/consume`,
   },
 }
