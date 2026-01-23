@@ -23,6 +23,12 @@ const detailedActivityColumns: ColumnDef<DetailedActivity>[] = [
     { key: "code", label: "Código", sortable: true },
     { key: "name", label: "Nombre", sortable: true },
     {
+        key: "activityDate",
+        label: "Fecha",
+        sortable: true,
+        render: (activity) => activity.activityDate ? new Date(activity.activityDate).toLocaleDateString("es-CO") : "N/A",
+    },
+    {
         key: "project.name",
         label: "Proyecto",
         sortable: false,

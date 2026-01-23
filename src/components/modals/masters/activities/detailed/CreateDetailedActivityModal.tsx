@@ -11,7 +11,10 @@ import {
     Textarea,
     Autocomplete,
     AutocompleteItem,
+    DatePicker,
+    DateValue,
 } from "@heroui/react"
+import { today, getLocalTimeZone } from "@internationalized/date"
 import { FileBarChart, Plus } from "lucide-react"
 import { useState, useEffect, useCallback } from "react"
 import { useDebounce } from "@/hooks/useDebounce"
@@ -23,6 +26,7 @@ export type CreateDetailedActivityPayload = {
     code: string
     name: string
     observations: string
+    activityDate: string
     budgetCeiling: number
     balance: number
     cpc: string
@@ -71,6 +75,7 @@ export function CreateDetailedActivityModal({
     const [cpc, setCpc] = useState("")
     const [projectId, setProjectId] = useState("")
     const [rubricId, setRubricId] = useState("")
+    const [date, setDate] = useState<DateValue | null>(null)
 
     // Projects state
     const [projects, setProjects] = useState<RelatedProject[]>([])
@@ -95,7 +100,9 @@ export function CreateDetailedActivityModal({
             setProjectId("")
             setRubricId("")
             setProjectSearch("")
+            setProjectSearch("")
             setRubricSearch("")
+            setDate(today(getLocalTimeZone()))
         }
     }, [isOpen])
 
@@ -149,6 +156,7 @@ export function CreateDetailedActivityModal({
             code: code.trim(),
             name: name.trim(),
             observations: observations.trim(),
+            activityDate: date ? date.toDate(getLocalTimeZone()).toISOString() : new Date().toISOString(),
             budgetCeiling: value,
             balance: value,
             cpc: cpc.trim(),
@@ -164,7 +172,10 @@ export function CreateDetailedActivityModal({
         budgetCeiling !== "" &&
         cpc.trim() !== "" &&
         projectId !== "" &&
-        rubricId !== ""
+        cpc.trim() !== "" &&
+        projectId !== "" &&
+        rubricId !== "" &&
+        date !== null
 
     return (
         <Modal
@@ -217,6 +228,17 @@ export function CreateDetailedActivityModal({
                                 isRequired
                                 labelPlacement="outside"
                             />
+
+                            {/* Fecha */}
+                            <div className="col-span-2 md:col-span-1">
+                                <DatePicker
+                                    label="Fecha de Actividad"
+                                    value={date}
+                                    onChange={setDate}
+                                    isRequired
+                                    labelPlacement="outside"
+                                />
+                            </div>
                         </div>
 
                         <div className="pt-1">

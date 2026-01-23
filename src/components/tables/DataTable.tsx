@@ -118,9 +118,9 @@ export function DataTable<T extends { id: string }>({
 
         if (typeof value === "boolean") {
             return (
-                <Chip 
-                    color={value ? "success" : "danger"} 
-                    variant="flat" 
+                <Chip
+                    color={value ? "success" : "danger"}
+                    variant="flat"
                     size="sm"
                     classNames={{
                         base: "px-2 h-6",
@@ -158,7 +158,7 @@ export function DataTable<T extends { id: string }>({
         if (sortDescriptor?.column !== columnKey) {
             return <ArrowUpDown size={14} className="text-default-300 opacity-0 group-hover:opacity-100 transition-opacity" />
         }
-        return sortDescriptor.direction === "ascending" 
+        return sortDescriptor.direction === "ascending"
             ? <ChevronUp size={14} className="text-primary" />
             : <ChevronDown size={14} className="text-primary" />
     }
@@ -226,7 +226,7 @@ export function DataTable<T extends { id: string }>({
                                 {columns.map((column) => (
                                     <th
                                         key={column.key}
-                                        className={`px-6 py-3 text-left text-xs font-bold text-default-700 uppercase tracking-wide whitespace-nowrap ${column.className ?? ""}`}
+                                        className={`px-6 py-3 text-left text-xs font-bold text-default-700 tracking-wide whitespace-nowrap ${column.className ?? ""}`}
                                         style={{ width: column.width, minWidth: column.width ?? '120px' }}
                                     >
                                         {column.sortable && onSortChange ? (
@@ -243,7 +243,7 @@ export function DataTable<T extends { id: string }>({
                                     </th>
                                 ))}
                                 {hasActions && (
-                                    <th className="sticky right-0 px-6 py-3 text-center text-xs font-bold text-default-700 uppercase tracking-wide bg-default-100 w-[80px] before:content-[''] before:absolute before:top-0 before:bottom-0 before:-left-8 before:w-8 before:bg-gradient-to-r before:from-transparent before:to-default-100 before:pointer-events-none">
+                                    <th className="sticky right-0 px-6 py-3 text-center text-xs font-bold text-default-700 tracking-wide bg-default-100 w-[80px] before:content-[''] before:absolute before:top-0 before:bottom-0 before:-left-8 before:w-8 before:bg-gradient-to-r before:from-transparent before:to-default-100 before:pointer-events-none">
                                         Acciones
                                     </th>
                                 )}
@@ -265,7 +265,7 @@ export function DataTable<T extends { id: string }>({
                                     </td>
                                 </tr>
                             ) : (
-                            items.map((item, index) => (
+                                items.map((item, index) => (
                                     <tr
                                         key={`${item.id}-${index}`}
                                         className="group/row"
@@ -280,20 +280,20 @@ export function DataTable<T extends { id: string }>({
                                             </td>
                                         ))}
                                         {hasActions && (
-                                                <td className="sticky right-0 px-6 py-4 bg-content1 text-center before:content-[''] before:absolute before:top-0 before:bottom-0 before:-left-8 before:w-8 before:bg-gradient-to-r before:from-transparent before:to-content1 before:pointer-events-none">
-                                                    <Dropdown>
-                                                        <DropdownTrigger>
-                                                            <Button
-                                                                isIconOnly
-                                                                size="sm"
-                                                                variant="light"
-                                                                radius="sm"
+                                            <td className="sticky right-0 px-6 py-4 bg-content1 text-center before:content-[''] before:absolute before:top-0 before:bottom-0 before:-left-8 before:w-8 before:bg-gradient-to-r before:from-transparent before:to-content1 before:pointer-events-none">
+                                                <Dropdown>
+                                                    <DropdownTrigger>
+                                                        <Button
+                                                            isIconOnly
+                                                            size="sm"
+                                                            variant="light"
+                                                            radius="sm"
                                                             className="text-default-400"
                                                         >
                                                             <MoreVertical size={16} />
                                                         </Button>
                                                     </DropdownTrigger>
-                                                    <DropdownMenu 
+                                                    <DropdownMenu
                                                         aria-label="Acciones de fila"
                                                         classNames={{
                                                             list: "py-1",

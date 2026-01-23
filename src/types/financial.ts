@@ -1,3 +1,5 @@
+import { PaginationMeta } from "@/lib/http"
+
 export type PreviousStudy = {
     id: string
     code: string
@@ -159,3 +161,20 @@ export type ProjectSelectItem = {
     financialExecutionPercentage: number
 }
 
+
+export type NeedCdpPosition = {
+    projectCode: string
+    cdpNumber: string
+    fundingSourceCode: string
+    fundingSourceName: string
+    cdpTotalValue: number
+    positionNumber: string
+    positionValue: number
+    observations: string
+}
+
+export type NeedCdpPositionsResponse = {
+    totalValue: number
+    data: NeedCdpPosition[]
+    meta: PaginationMeta
+}

@@ -6,9 +6,10 @@ import { DataTable, ColumnDef, RowAction, TopAction, SortDescriptor } from "@/co
 import { useDebounce } from "@/hooks/useDebounce"
 import { usePermissions } from "@/hooks/usePermissions"
 import { NeedDetailModal } from "@/components/modals/financial/NeedDetailModal"
+import { NeedCdpPositionsModal } from "@/components/modals/financial/NeedCdpPositionsModal"
 import { get, PaginatedData, PaginationMeta } from "@/lib/http"
 import { endpoints } from "@/lib/endpoints"
-import { Eye, RefreshCw } from "lucide-react"
+import { Eye, RefreshCw, Layers } from "lucide-react"
 import { addToast } from "@heroui/toast"
 import type { FinancialNeed } from "@/types/financial"
 import { getErrorMessage } from "@/lib/error-codes"
@@ -129,9 +130,11 @@ export default function FinancialNeedsPage() {
 
     // Modal State
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
+    const [isPositionsModalOpen, setIsPositionsModalOpen] = useState(false)
 
     // Selection State
     const [selectedNeed, setSelectedNeed] = useState<FinancialNeed | null>(null)
+    const [selectedNeedIdForPositions, setSelectedNeedIdForPositions] = useState<string | null>(null)
 
     const fetchNeeds = useCallback(async () => {
         setLoading(true)
@@ -183,6 +186,11 @@ export default function FinancialNeedsPage() {
         }
     }
 
+    const onViewPositions = (need: FinancialNeed) => {
+        setSelectedNeedIdForPositions(need.id)
+        setIsPositionsModalOpen(true)
+    }
+
     const rowActions: RowAction<FinancialNeed>[] = useMemo(() => {
         const actions: RowAction<FinancialNeed>[] = []
         if (canRead) {
@@ -191,6 +199,12 @@ export default function FinancialNeedsPage() {
                 label: "Ver Detalles",
                 icon: <Eye size={16} />,
                 onClick: onViewDetails,
+            })
+            actions.push({
+                key: "positions",
+                label: "Ver Posiciones CDP",
+                icon: <Layers size={16} />,
+                onClick: onViewPositions,
             })
         }
         return actions
@@ -260,6 +274,15 @@ export default function FinancialNeedsPage() {
                 onClose={() => {
                     setIsDetailModalOpen(false)
                     setSelectedNeed(null)
+                }}
+            />
+
+            <NeedCdpPositionsModal
+                isOpen={isPositionsModalOpen}
+                needId={selectedNeedIdForPositions}
+                onClose={() => {
+                    setIsPositionsModalOpen(false)
+                    setSelectedNeedIdForPositions(null)
                 }}
             />
         </div>

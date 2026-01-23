@@ -228,14 +228,29 @@ export function MGAActivityModal({
 
                         </div>
 
-                        <Divider />
 
-                        {/* Fechas de Registro */}
+
+                        {/* Fechas de Registro y Actividad */}
                         <div className="grid grid-cols-2 gap-x-6 gap-y-4">
-                            {/* Fecha de Creación */}
+                            {/* Fecha de Actividad */}
                             <div className="flex items-start gap-3">
                                 <div className="w-8 h-8 rounded-lg bg-default-100 flex items-center justify-center flex-shrink-0 mt-0.5">
                                     <Calendar size={16} className="text-default-500" />
+                                </div>
+                                <div>
+                                    <span className="text-tiny text-default-400 uppercase tracking-wide">
+                                        Fecha de Actividad
+                                    </span>
+                                    <p className="text-small text-foreground">
+                                        {activity.activityDate ? new Date(activity.activityDate).toLocaleDateString("es-CO") : "N/A"}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Fecha de Creación */}
+                            <div className="flex items-start gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-default-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                    <Clock size={16} className="text-default-500" />
                                 </div>
                                 <div>
                                     <span className="text-tiny text-default-400 uppercase tracking-wide">

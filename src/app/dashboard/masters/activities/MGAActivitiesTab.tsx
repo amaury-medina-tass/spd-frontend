@@ -15,10 +15,46 @@ import { MGAActivityModal } from "@/components/modals/masters/activities/mga/MGA
 import { CreateMGAActivityModal } from "@/components/modals/masters/activities/mga/CreateMGAActivityModal"
 import { ManageDetailedActivitiesModal } from "@/components/modals/masters/activities/mga/ManageDetailedActivitiesModal"
 
+const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("es-CO", {
+        style: "currency",
+        currency: "COP",
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+    }).format(amount)
+}
+
 // Columns for MGA Activities
 const mgaActivityColumns: ColumnDef<MGAActivity>[] = [
     { key: "code", label: "Código", sortable: true },
     { key: "name", label: "Nombre", sortable: true },
+    {
+        key: "activityDate",
+        label: "Fecha",
+        sortable: true,
+        render: (activity) => activity.activityDate ? new Date(activity.activityDate).toLocaleDateString("es-CO") : "N/A",
+    },
+    {
+        key: "value",
+        label: "Valor",
+        sortable: true,
+        render: (activity) => (
+            <span className="font-medium whitespace-nowrap">
+                {activity.value ? formatCurrency(activity.value) : formatCurrency(0)}
+            </span>
+        ),
+    },
+    {
+        key: "balance",
+        label: "Saldo",
+        sortable: true,
+        render: (activity) => (
+            <span className={`font-medium whitespace-nowrap ${(activity.balance || 0) > 0 ? "text-success-600 dark:text-success-400" : "text-default-500"
+                }`}>
+                {activity.balance ? formatCurrency(activity.balance) : formatCurrency(0)}
+            </span>
+        ),
+    },
     {
         key: "project.code",
         label: "Cód. Proyecto",
@@ -143,7 +179,7 @@ export function MGAActivitiesTab() {
                 onClick: fetchActivities,
             },
         ]
-        
+
         if (canCreate) {
             actions.push({
                 key: "create",
@@ -153,7 +189,7 @@ export function MGAActivitiesTab() {
                 onClick: () => setIsCreateModalOpen(true),
             })
         }
-        
+
         return actions
     }, [fetchActivities, canCreate])
 

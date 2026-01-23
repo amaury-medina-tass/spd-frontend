@@ -13,19 +13,19 @@ import { CdpPositionDetailModal } from "@/components/modals/financial/CdpPositio
 import { ManageCdpActivitiesModal } from "@/components/modals/financial/ManageCdpActivitiesModal"
 
 const columns: ColumnDef<CdpTableRow>[] = [
-  { key: "cdpNumber", label: "N° CDP", sortable: true },
-  { 
-    key: "cdpTotalValue", 
-    label: "Valor Total CDP", 
+  { key: "cdpNumber", label: "N° Cdp", sortable: true },
+  {
+    key: "cdpTotalValue",
+    label: "Valor Total Cdp",
     sortable: false,
     render: (row) => new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP" }).format(row.cdpTotalValue),
   },
   { key: "projectCode", label: "Código Proyecto", sortable: true },
   { key: "rubricCode", label: "Posición Presupuestal", sortable: true },
   { key: "positionNumber", label: "N° Posición", sortable: true },
-  { 
-    key: "positionValue", 
-    label: "Valor Posición", 
+  {
+    key: "positionValue",
+    label: "Valor Posición",
     sortable: true,
     render: (row) => new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP" }).format(row.positionValue),
   },
@@ -53,6 +53,7 @@ export default function FinancialCdpsPage() {
   const [error, setError] = useState<string | null>(null)
 
   // Detail Modal State
+  const [selectedPositionId, setSelectedPositionId] = useState<string | null>(null)
   const [selectedPosition, setSelectedPosition] = useState<CdpPositionDetail | null>(null)
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
 
@@ -103,12 +104,13 @@ export default function FinancialCdpsPage() {
   const fetchPositionDetail = async (id: string) => {
     try {
       const result = await get<CdpPositionDetail>(endpoints.financial.cdpPositionDetail(id))
+      setSelectedPositionId(id)
       setSelectedPosition(result)
       setIsDetailModalOpen(true)
     } catch (e: any) {
-        const errorCode = e.data?.errors?.code
-        const message = errorCode ? getErrorMessage(errorCode) : (e.message ?? "Error al cargar detalle")
-        console.error(message)
+      const errorCode = e.data?.errors?.code
+      const message = errorCode ? getErrorMessage(errorCode) : (e.message ?? "Error al cargar detalle")
+      console.error(message)
     }
   }
 
@@ -123,19 +125,19 @@ export default function FinancialCdpsPage() {
 
   const rowActions: RowAction<CdpTableRow>[] = [
     {
-        key: "view",
-        label: "Ver Detalle",
-        icon: <Eye size={18} />,
-        onClick: (item) => fetchPositionDetail(item.id),
+      key: "view",
+      label: "Ver Detalle",
+      icon: <Eye size={18} />,
+      onClick: (item) => fetchPositionDetail(item.id),
     },
     {
-        key: "manage-activities",
-        label: "Gestionar Actividades",
-        icon: <Link2 size={18} />,
-        onClick: (item) => {
-            setSelectedPositionForActivities(item)
-            setIsActivitiesModalOpen(true)
-        },
+      key: "manage-activities",
+      label: "Gestionar Actividades",
+      icon: <Link2 size={18} />,
+      onClick: (item) => {
+        setSelectedPositionForActivities(item)
+        setIsActivitiesModalOpen(true)
+      },
     },
   ]
 
@@ -190,8 +192,13 @@ export default function FinancialCdpsPage() {
 
       <CdpPositionDetailModal
         isOpen={isDetailModalOpen}
-        onClose={() => setIsDetailModalOpen(false)}
-        position={selectedPosition}
+        positionId={selectedPositionId}
+        initialData={selectedPosition}
+        onClose={() => {
+          setIsDetailModalOpen(false)
+          setSelectedPositionId(null)
+          setSelectedPosition(null)
+        }}
       />
 
       <ManageCdpActivitiesModal
@@ -199,8 +206,8 @@ export default function FinancialCdpsPage() {
         positionId={selectedPositionForActivities?.id || null}
         positionNumber={selectedPositionForActivities?.positionNumber}
         onClose={() => {
-            setIsActivitiesModalOpen(false)
-            setSelectedPositionForActivities(null)
+          setIsActivitiesModalOpen(false)
+          setSelectedPositionForActivities(null)
         }}
         onSuccess={fetchCdps}
       />

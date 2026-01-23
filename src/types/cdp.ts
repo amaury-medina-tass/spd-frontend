@@ -12,6 +12,25 @@ export type CdpTableRow = {
   observations: string
 }
 
+export type ConsumedActivity = {
+  id: string
+  detailedActivityId: string
+  activityCode: string
+  activityName: string
+  projectCode: string
+  assignedValue: number
+  balance: number
+}
+
+export type ConsumedActivityMeta = {
+  total: number
+  page: number
+  limit: number
+  totalPages: number
+  hasNextPage: boolean
+  hasPreviousPage: boolean
+}
+
 export type CdpPositionDetail = {
   id: string
   projectCode: string
@@ -21,9 +40,14 @@ export type CdpPositionDetail = {
   needCode: string
   cdpNumber: string
   cdpTotalValue: number
-  fundingSourceName: string
-  fundingSourceCode: string
+  fundingSourceName: string | null
+  fundingSourceCode: string | null
   observations: string
+  totalConsumed: number
+  consumedByActivity: {
+    data: ConsumedActivity[]
+    meta: ConsumedActivityMeta
+  }
 }
 
 export type CdpDetailedActivity = {

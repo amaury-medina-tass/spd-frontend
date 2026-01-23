@@ -44,6 +44,7 @@ export type DetailedActivity = {
     updateAt: string
     project: RelatedProject
     rubric: RelatedRubric
+    activityDate: string
 }
 
 export type FullDetailedActivity = Omit<DetailedActivity, 'project'> & {
@@ -69,6 +70,8 @@ export type MGAActivity = {
     project: RelatedProject
     product: RelatedProduct
     detailedActivitiesCount: number
+    value: number
+    balance: number
 }
 
 export type BudgetModification = {
