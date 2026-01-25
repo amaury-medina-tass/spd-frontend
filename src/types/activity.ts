@@ -57,6 +57,25 @@ export type RelatedProduct = {
     productName: string
 }
 
+export type MGAActivityDetailedActivity = {
+    id: string
+    detailedActivityId: string
+    activityCode: string
+    activityName: string
+    projectCode: string
+    value: number
+    balance: number
+}
+
+export type MGAActivityDetailedMeta = {
+    total: number
+    page: number
+    limit: number
+    totalPages: number
+    hasNextPage: boolean
+    hasPreviousPage: boolean
+}
+
 export type MGAActivity = {
     id: string
     code: string
@@ -72,6 +91,10 @@ export type MGAActivity = {
     detailedActivitiesCount: number
     value: number
     balance: number
+    detailedActivities?: {
+        data: MGAActivityDetailedActivity[]
+        meta: MGAActivityDetailedMeta
+    }
 }
 
 export type BudgetModification = {

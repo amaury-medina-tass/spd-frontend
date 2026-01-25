@@ -15,6 +15,7 @@ import {
     Activity,
     BarChart3,
     FileCheck,
+    Variable,
 } from "lucide-react"
 import React, { ReactNode } from "react"
 
@@ -129,6 +130,12 @@ export const menuItems: (MenuItem | MenuGroup)[] = [
                 href: "/dashboard/masters/activities",
                 permissionPath: "/masters/activities",
                 icon: React.createElement(Activity, { size: 18 }),
+            },
+            {
+                label: "Variables",
+                href: "/dashboard/masters/variables",
+                permissionPath: "/masters/variables",
+                icon: React.createElement(Variable, { size: 18 }),
             },
         ],
     },

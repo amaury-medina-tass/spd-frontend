@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import {
     Modal,
     ModalBody,
@@ -10,10 +9,6 @@ import {
     Button,
     Chip,
     Divider,
-    Card,
-    CardBody,
-    Tooltip,
-    addToast,
 } from "@heroui/react"
 import {
     FileText,
@@ -22,56 +17,9 @@ import {
     Building2,
     Link2,
     Clock,
-    Hash,
-    Copy,
-    Check,
+    Activity,
 } from "lucide-react"
 import type { MasterContract } from "@/types/financial"
-
-interface CopyButtonProps {
-    text: string
-    label: string
-}
-
-function CopyButton({ text, label }: CopyButtonProps) {
-    const [copied, setCopied] = useState(false)
-
-    const handleCopy = async (e: React.MouseEvent) => {
-        e.stopPropagation()
-        try {
-            await navigator.clipboard.writeText(text)
-            setCopied(true)
-            addToast({
-                title: `${label} copiado`,
-                color: "success",
-            })
-            setTimeout(() => setCopied(false), 2000)
-        } catch (err) {
-            addToast({
-                title: "Error al copiar",
-                color: "danger",
-            })
-        }
-    }
-
-    return (
-        <Tooltip content={copied ? "¡Copiado!" : `Copiar ${label}`}>
-            <Button
-                isIconOnly
-                size="sm"
-                variant="light"
-                className="min-w-6 w-6 h-6"
-                onPress={handleCopy as any}
-            >
-                {copied ? (
-                    <Check size={12} className="text-success" />
-                ) : (
-                    <Copy size={12} className="text-default-400" />
-                )}
-            </Button>
-        </Tooltip>
-    )
-}
 
 export function MasterContractDetailModal({
     isOpen,
@@ -125,7 +73,7 @@ export function MasterContractDetailModal({
         <Modal
             isOpen={isOpen}
             onOpenChange={() => onClose()}
-            size="2xl"
+            size="lg"
             scrollBehavior="inside"
             classNames={{
                 base: "bg-content1",
@@ -134,221 +82,182 @@ export function MasterContractDetailModal({
             }}
         >
             <ModalContent>
-                <ModalHeader className="flex flex-col gap-2">
+                <ModalHeader className="flex flex-col gap-1">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                            <FileText size={20} className="text-primary" />
+                        <div className="w-9 h-9 rounded-lg bg-default-100 flex items-center justify-center">
+                            <FileText size={18} className="text-default-600" />
                         </div>
-                        <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                                <span className="text-lg font-semibold text-foreground">
-                                    Contrato {contract.number}
-                                </span>
-                                <Chip
-                                    color={isExecution ? "default" : getStateColor(contract.state)}
-                                    variant="flat"
-                                    size="sm"
-                                    className={isExecution ? "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-400" : ""}
-                                >
-                                    {contract.state}
-                                </Chip>
-                            </div>
-                            <span className="text-small font-normal text-default-400">
-                                Detalle del contrato marco
+                        <div>
+                            <span className="text-lg font-semibold text-foreground">
+                                Contrato {contract.number}
                             </span>
+                            <p className="text-tiny text-default-400 font-normal">
+                                Detalle del contrato marco
+                            </p>
                         </div>
                     </div>
                 </ModalHeader>
 
-                <ModalBody className="gap-5 py-5">
-                    {/* Objeto del Contrato */}
-                    <div className="space-y-3">
-                        <div className="flex items-center gap-2">
-                            <FileText size={16} className="text-default-500" />
-                            <span className="text-small font-semibold text-foreground uppercase tracking-wide">
-                                Objeto del Contrato
-                            </span>
-                        </div>
-                        <Card className="bg-default-50 dark:bg-default-100/50">
-                            <CardBody className="py-3 px-4">
-                                <p className="text-small text-default-700 text-justify whitespace-pre-line leading-relaxed">
-                                    {contract.object}
-                                </p>
-                            </CardBody>
-                        </Card>
-                    </div>
-
-                    <Divider />
-
-                    {/* Información Financiera */}
-                    <div className="space-y-3">
-                        <div className="flex items-center gap-2">
-                            <DollarSign size={16} className="text-success" />
-                            <span className="text-small font-semibold text-foreground uppercase tracking-wide">
-                                Información Financiera
-                            </span>
-                        </div>
-                        <Card className="bg-success-50/50 dark:bg-success-900/20 border-success-200 dark:border-success-800">
-                            <CardBody className="py-4 px-5">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <span className="text-tiny text-success-600 dark:text-success-400 uppercase tracking-wide">
-                                            Valor Total del Contrato
-                                        </span>
-                                        <p className="text-2xl font-bold text-success-700 dark:text-success-300 mt-1">
-                                            {formatCurrency(contract.totalValue)}
-                                        </p>
-                                    </div>
-                                    <div className="w-12 h-12 rounded-full bg-success-100 dark:bg-success-900/50 flex items-center justify-center">
-                                        <DollarSign size={24} className="text-success-600 dark:text-success-400" />
-                                    </div>
-                                </div>
-                            </CardBody>
-                        </Card>
-                    </div>
-
-                    <Divider />
-
-                    {/* Fechas */}
-                    <div className="space-y-3">
-                        <div className="flex items-center gap-2">
-                            <Calendar size={16} className="text-primary" />
-                            <span className="text-small font-semibold text-foreground uppercase tracking-wide">
-                                Vigencia del Contrato
-                            </span>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                            <Card className="bg-default-50 dark:bg-default-100/50">
-                                <CardBody className="py-3 px-4">
-                                    <span className="text-tiny text-default-500 uppercase tracking-wide">
-                                        Fecha de Inicio
-                                    </span>
-                                    <p className="text-medium font-medium text-foreground mt-1">
-                                        {formatDate(contract.startDate)}
-                                    </p>
-                                </CardBody>
-                            </Card>
-                            <Card className="bg-default-50 dark:bg-default-100/50">
-                                <CardBody className="py-3 px-4">
-                                    <span className="text-tiny text-default-500 uppercase tracking-wide">
-                                        Fecha de Finalización
-                                    </span>
-                                    <p className="text-medium font-medium text-foreground mt-1">
-                                        {formatDate(contract.endDate)}
-                                    </p>
-                                </CardBody>
-                            </Card>
-                        </div>
-                    </div>
-
-                    <Divider />
-
-                    {/* Contratista */}
-                    <div className="space-y-3">
-                        <div className="flex items-center gap-2">
-                            <Building2 size={16} className="text-secondary" />
-                            <span className="text-small font-semibold text-foreground uppercase tracking-wide">
-                                Información del Contratista
-                            </span>
-                        </div>
-                        <Card className="bg-default-50 dark:bg-default-100/50">
-                            <CardBody className="py-4 px-5">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center flex-shrink-0">
-                                        <Building2 size={24} className="text-secondary" />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-medium font-semibold text-foreground truncate">
-                                            {contract.contractor.name}
-                                        </p>
-                                        <div className="flex items-center gap-2 mt-1">
-                                            <span className="text-tiny text-default-500">NIT:</span>
-                                            <span className="text-small text-default-600 font-mono">
-                                                {contract.contractor.nit}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </CardBody>
-                        </Card>
-                    </div>
-
-                    <Divider />
-
-                    {/* Vinculaciones */}
-                    <div className="space-y-3">
-                        <div className="flex items-center gap-2">
-                            <Link2 size={16} className="text-warning" />
-                            <span className="text-small font-semibold text-foreground uppercase tracking-wide">
-                                Vinculaciones
-                            </span>
-                        </div>
-                        <Card className="bg-warning-50/50 dark:bg-warning-900/20">
-                            <CardBody className="py-3 px-4">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <span className="text-tiny text-warning-600 dark:text-warning-400 uppercase tracking-wide">
-                                            Código de Necesidad
-                                        </span>
-                                        <p className="text-medium font-semibold text-warning-700 dark:text-warning-300 mt-1 font-mono">
-                                            {contract.need.code}
-                                        </p>
-                                    </div>
-                                    <Chip color="warning" variant="flat" size="sm">
-                                        Vinculado
-                                    </Chip>
-                                </div>
-                            </CardBody>
-                        </Card>
-                    </div>
-
-                    <Divider />
-
-                    {/* Metadatos de creación/actualización */}
-                    <div className="space-y-3">
-                        <div className="flex items-center gap-2">
-                            <Clock size={16} className="text-default-500" />
-                            <span className="text-small font-semibold text-foreground uppercase tracking-wide">
-                                Información del Registro
-                            </span>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
+                <ModalBody className="py-5">
+                    <div className="space-y-5">
+                        {/* Información Principal - Grid 2 columnas */}
+                        <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+                            {/* Valor Total */}
                             <div className="flex items-start gap-3">
-                                <div className="w-8 h-8 rounded-lg bg-default-100 flex items-center justify-center flex-shrink-0">
-                                    <Clock size={14} className="text-default-500" />
+                                <div className="w-8 h-8 rounded-lg bg-default-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                    <DollarSign size={16} className="text-default-500" />
                                 </div>
                                 <div>
                                     <span className="text-tiny text-default-400 uppercase tracking-wide">
-                                        Fecha de Creación
+                                        Valor Total
                                     </span>
-                                    <p className="text-small text-default-600 mt-0.5">
+                                    <p className="text-medium font-semibold text-foreground">
+                                        {formatCurrency(contract.totalValue)}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Estado */}
+                            <div className="flex items-start gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-default-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                    <Activity size={16} className="text-default-500" />
+                                </div>
+                                <div>
+                                    <span className="text-tiny text-default-400 uppercase tracking-wide">
+                                        Estado
+                                    </span>
+                                    <div className="mt-0.5">
+                                        <Chip
+                                            color={isExecution ? "default" : getStateColor(contract.state)}
+                                            variant="flat"
+                                            size="sm"
+                                            className={isExecution ? "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-400" : ""}
+                                        >
+                                            {contract.state}
+                                        </Chip>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Contratista */}
+                            <div className="flex items-start gap-3 col-span-2">
+                                <div className="w-8 h-8 rounded-lg bg-default-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                    <Building2 size={16} className="text-default-500" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <span className="text-tiny text-default-400 uppercase tracking-wide">
+                                        Contratista
+                                    </span>
+                                    <div className="flex flex-col">
+                                        <p className="text-small font-medium text-foreground truncate">
+                                            {contract.contractor.name}
+                                        </p>
+                                        <p className="text-tiny text-default-500 font-mono">
+                                            NIT: {contract.contractor.nit}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Inicio Vigencia */}
+                            <div className="flex items-start gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-default-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                    <Calendar size={16} className="text-default-500" />
+                                </div>
+                                <div>
+                                    <span className="text-tiny text-default-400 uppercase tracking-wide">
+                                        Inicio Vigencia
+                                    </span>
+                                    <p className="text-small text-foreground">
+                                        {formatDate(contract.startDate)}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Fin Vigencia */}
+                            <div className="flex items-start gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-default-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                    <Calendar size={16} className="text-default-500" />
+                                </div>
+                                <div>
+                                    <span className="text-tiny text-default-400 uppercase tracking-wide">
+                                        Fin Vigencia
+                                    </span>
+                                    <p className="text-small text-foreground">
+                                        {formatDate(contract.endDate)}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Vinculación */}
+                            <div className="flex items-start gap-3 col-span-2">
+                                <div className="w-8 h-8 rounded-lg bg-default-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                    <Link2 size={16} className="text-default-500" />
+                                </div>
+                                <div>
+                                    <span className="text-tiny text-default-400 uppercase tracking-wide">
+                                        Necesidad Vinculada
+                                    </span>
+                                    <div className="flex items-center gap-2 mt-0.5">
+                                        <p className="text-small font-medium text-foreground font-mono">
+                                            {contract.need.code}
+                                        </p>
+                                        <Chip color="success" variant="dot" size="sm" classNames={{ base: "border-none" }}>
+                                            Vinculado
+                                        </Chip>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Fecha de Creación */}
+                            <div className="flex items-start gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-default-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                    <Clock size={16} className="text-default-500" />
+                                </div>
+                                <div>
+                                    <span className="text-tiny text-default-400 uppercase tracking-wide">
+                                        Creación
+                                    </span>
+                                    <p className="text-small text-foreground">
                                         {formatDateTime(contract.createAt)}
                                     </p>
                                 </div>
                             </div>
+
+                            {/* Última Actualización */}
                             <div className="flex items-start gap-3">
-                                <div className="w-8 h-8 rounded-lg bg-default-100 flex items-center justify-center flex-shrink-0">
-                                    <Clock size={14} className="text-default-500" />
+                                <div className="w-8 h-8 rounded-lg bg-default-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                    <Clock size={16} className="text-default-500" />
                                 </div>
                                 <div>
                                     <span className="text-tiny text-default-400 uppercase tracking-wide">
-                                        Última Actualización
+                                        Actualización
                                     </span>
-                                    <p className="text-small text-default-600 mt-0.5">
+                                    <p className="text-small text-foreground">
                                         {formatDateTime(contract.updateAt)}
                                     </p>
                                 </div>
                             </div>
                         </div>
+
+                        <Divider />
+
+                        {/* Objeto del Contrato - Ancho completo */}
+                        <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                                <FileText size={16} className="text-default-500" />
+                                <span className="text-small font-medium text-foreground">
+                                    Objeto del Contrato
+                                </span>
+                            </div>
+                            <p className="text-small text-default-600 leading-relaxed bg-default-50 dark:bg-default-100/50 rounded-lg p-3 text-justify whitespace-pre-line">
+                                {contract.object}
+                            </p>
+                        </div>
                     </div>
                 </ModalBody>
 
-                <ModalFooter className="justify-between items-center">
-                    <div className="flex items-center gap-2 text-tiny text-default-400">
-                        <Hash size={14} />
-                        <span>ID: {contract.id}</span>
-                        <CopyButton text={contract.id} label="ID del contrato" />
-                    </div>
+                <ModalFooter>
                     <Button variant="flat" onPress={onClose}>
                         Cerrar
                     </Button>

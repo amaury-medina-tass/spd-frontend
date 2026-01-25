@@ -30,6 +30,7 @@ export const endpoints = {
     productsSelect: "/masters/products/select",
     rubricsSelect: "/masters/rubrics/select",
     budgetModifications: "/masters/budget-modifications",
+    variables: "/masters/variables",
   },
   audit: "/audit",
   financial: {
