@@ -6,3 +6,12 @@ export interface Variable {
     createAt: string
     updateAt: string
 }
+
+export interface VariableGoal {
+    id: string
+    variableId: string
+    year: number
+    value: string
+    createAt: string
+    updateAt: string
+}

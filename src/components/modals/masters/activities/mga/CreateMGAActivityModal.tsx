@@ -23,6 +23,9 @@ import { endpoints } from "@/lib/endpoints"
 import { addToast } from "@heroui/toast"
 import type { RelatedProject } from "@/types/activity"
 import { today, getLocalTimeZone } from "@internationalized/date"
+import { useForm, Controller } from "react-hook-form"
+import { z } from "zod"
+import { zodResolver } from "@hookform/resolvers/zod"
 
 // Types for Select Responses
 type GenericSelectResponse<T> = {
@@ -71,18 +74,37 @@ type Props = {
     onSuccess: () => void
 }
 
+const schema = z.object({
+    code: z.string().min(1, "Requerido"),
+    name: z.string().min(1, "Requerido"),
+    observations: z.string().optional(),
+    activityDate: z.any().refine((val) => val !== null, "Fecha requerida"),
+    projectId: z.string().min(1, "Seleccione proyecto"),
+    productId: z.string().min(1, "Seleccione producto"),
+})
+
+type FormValues = z.infer<typeof schema>
+
 export function CreateMGAActivityModal({
     isOpen,
     onClose,
     onSuccess,
 }: Props) {
-    // Form State
-    const [code, setCode] = useState("")
-    const [name, setName] = useState("")
-    const [observations, setObservations] = useState("")
-    const [date, setDate] = useState<DateValue | null>(null)
-    const [projectId, setProjectId] = useState("")
-    const [productId, setProductId] = useState("")
+    // Form logic
+    const { control, handleSubmit, reset, setValue, watch, formState: { errors, isValid } } = useForm<FormValues>({
+        resolver: zodResolver(schema) as any,
+        defaultValues: {
+            code: "",
+            name: "",
+            observations: "",
+            activityDate: null,
+            projectId: "",
+            productId: ""
+        },
+        mode: "onChange"
+    })
+
+    // Additional State
     const [associateDetailed, setAssociateDetailed] = useState(false)
     const [selectedDetailedIds, setSelectedDetailedIds] = useState<Set<string>>(new Set())
 
@@ -113,12 +135,14 @@ export function CreateMGAActivityModal({
     // Reset form
     useEffect(() => {
         if (isOpen) {
-            setCode("")
-            setName("")
-            setObservations("")
-            setDate(today(getLocalTimeZone()))
-            setProjectId("")
-            setProductId("")
+            reset({
+                code: "",
+                name: "",
+                observations: "",
+                activityDate: today(getLocalTimeZone()),
+                projectId: "",
+                productId: ""
+            })
             setProjectSearch("")
             setProductSearch("")
             setAssociateDetailed(false)
@@ -127,7 +151,7 @@ export function CreateMGAActivityModal({
             setDetailedOffset(0)
             setHasMoreDetailed(false)
         }
-    }, [isOpen])
+    }, [isOpen, reset])
 
     // --- Fetchers ---
 
@@ -234,16 +258,16 @@ export function CreateMGAActivityModal({
         setSelectedDetailedIds(newSet)
     }
 
-    const handleSave = async () => {
+    const onSubmit = async (data: FormValues) => {
         setIsSubmitting(true)
         try {
             const payload: CreateMGAActivityPayload = {
-                code,
-                name,
-                observations,
-                activityDate: date ? date.toDate(getLocalTimeZone()).toISOString() : new Date().toISOString(),
-                projectId,
-                productId,
+                code: data.code,
+                name: data.name,
+                observations: data.observations || "",
+                activityDate: data.activityDate ? data.activityDate.toDate(getLocalTimeZone()).toISOString() : new Date().toISOString(),
+                projectId: data.projectId,
+                productId: data.productId,
                 detailedActivityIds: associateDetailed ? Array.from(selectedDetailedIds) : []
             }
 
@@ -271,12 +295,15 @@ export function CreateMGAActivityModal({
         }).format(Number(amount))
     }
 
-    const isValid = code && name && date && projectId && productId
+    const handleClose = () => {
+        reset()
+        onClose()
+    }
 
     return (
         <Modal
             isOpen={isOpen}
-            onOpenChange={() => onClose()}
+            onOpenChange={() => handleClose()}
             size="2xl"
             scrollBehavior="inside"
             classNames={{
@@ -302,219 +329,264 @@ export function CreateMGAActivityModal({
                     </div>
                 </ModalHeader>
 
-                <ModalBody className="py-5">
-                    <div className="flex flex-col gap-5">
-                        {/* Basic Info */}
-                        <div className="grid grid-cols-2 gap-4">
-                            <Input
-                                label="Código"
-                                placeholder="Ej: MGA-2024-001"
-                                value={code}
-                                onValueChange={setCode}
-                                isRequired
-                                labelPlacement="outside"
-                            />
-                            <DatePicker
-                                label="Fecha de Actividad"
-                                value={date}
-                                onChange={setDate}
-                                isRequired
-                                labelPlacement="outside"
-                            />
-                        </div>
-
-                        <Input
-                            label="Nombre"
-                            placeholder="Nombre de la actividad"
-                            value={name}
-                            onValueChange={setName}
-                            isRequired
-                            labelPlacement="outside"
-                        />
-
-                        {/* Selects */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <Autocomplete
-                                label="Proyecto"
-                                placeholder="Buscar proyecto"
-                                labelPlacement="outside"
-                                isRequired
-                                isLoading={loadingProjects}
-                                selectedKey={projectId}
-                                onSelectionChange={(k) => {
-                                    const key = String(k)
-                                    setProjectId(key)
-                                    const selected = projects.find(p => p.id === key)
-                                    if (selected) {
-                                        setProjectSearch(selected.code)
-                                    }
-                                }}
-                                onInputChange={setProjectSearch}
-                                inputValue={projectSearch}
-                            >
-                                {projects.map((p) => (
-                                    <AutocompleteItem key={p.id} textValue={p.code}>
-                                        <div className="flex flex-col">
-                                            <span className="text-small font-bold">{p.code}</span>
-                                            <span className="text-tiny text-default-500">{p.name}</span>
-                                        </div>
-                                    </AutocompleteItem>
-                                ))}
-                            </Autocomplete>
-
-                            <Autocomplete
-                                label="Producto"
-                                placeholder="Buscar producto"
-                                labelPlacement="outside"
-                                isRequired
-                                isLoading={loadingProducts}
-                                selectedKey={productId}
-                                onSelectionChange={(k) => {
-                                    const key = String(k)
-                                    setProductId(key)
-                                    const selected = products.find(p => p.id === key)
-                                    if (selected) {
-                                        setProductSearch(selected.productCode)
-                                    }
-                                }}
-                                onInputChange={setProductSearch}
-                                inputValue={productSearch}
-                            >
-                                {products.map((p) => (
-                                    <AutocompleteItem key={p.id} textValue={p.productCode}>
-                                        <div className="flex flex-col">
-                                            <span className="text-small font-bold">{p.productCode}</span>
-                                            <span className="text-tiny text-default-500 whitespace-normal line-clamp-2">
-                                                {p.indicatorName}
-                                            </span>
-                                        </div>
-                                    </AutocompleteItem>
-                                ))}
-                            </Autocomplete>
-                        </div>
-
-                        <Textarea
-                            label="Observaciones"
-                            placeholder="Ingrese observaciones adicionales"
-                            value={observations}
-                            onValueChange={setObservations}
-                            labelPlacement="outside"
-                            minRows={2}
-                        />
-
-                        {/* Detailed Activities Association */}
-                        <div className="border-t border-divider pt-4 mt-2">
-                            <div className="flex justify-between items-center mb-1">
-                                <span className="text-small font-semibold">
-                                    Asociar Actividades Detalladas
-                                </span>
-                                <Switch
-                                    isSelected={associateDetailed}
-                                    onValueChange={setAssociateDetailed}
-                                    size="sm"
+                <form onSubmit={handleSubmit(onSubmit)}>
+                    <ModalBody className="py-5">
+                        <div className="flex flex-col gap-5">
+                            {/* Basic Info */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <Controller
+                                    name="code"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <Input
+                                            {...field}
+                                            label="Código"
+                                            placeholder="Ej: MGA-2024-001"
+                                            isRequired
+                                            labelPlacement="outside"
+                                            isInvalid={!!errors.code}
+                                            errorMessage={errors.code?.message}
+                                        />
+                                    )}
+                                />
+                                <Controller
+                                    name="activityDate"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <DatePicker
+                                            label="Fecha de Actividad"
+                                            value={field.value}
+                                            onChange={field.onChange}
+                                            isRequired
+                                            labelPlacement="outside"
+                                            isInvalid={!!errors.activityDate}
+                                            errorMessage={errors.activityDate?.message as string}
+                                        />
+                                    )}
                                 />
                             </div>
-                            <p className="text-tiny text-default-400 mb-4">
-                                Puede asociar actividades detalladas posteriormente. No es obligatorio hacerlo en este momento.
-                            </p>
 
-                            {associateDetailed && (
-                                <div className="space-y-4 animate-appearance-in">
+                            <Controller
+                                name="name"
+                                control={control}
+                                render={({ field }) => (
                                     <Input
-                                        startContent={<span className="text-default-400"><Search size={16} /></span>}
-                                        placeholder="Buscar actividad detallada por nombre o código..."
-                                        value={detailedSearch}
-                                        onValueChange={setDetailedSearch}
-                                        isClearable
-                                        onClear={() => setDetailedSearch("")}
+                                        {...field}
+                                        label="Nombre"
+                                        placeholder="Nombre de la actividad"
+                                        isRequired
+                                        labelPlacement="outside"
+                                        isInvalid={!!errors.name}
+                                        errorMessage={errors.name?.message}
                                     />
+                                )}
+                            />
 
-                                    <div
-                                        className="h-[300px] overflow-y-auto border border-default-200 rounded-lg p-2 space-y-2 bg-default-50"
-                                        onScroll={handleScroll}
-                                    >
-                                        {detailedActivities.length === 0 && !loadingDetailed ? (
-                                            <div className="flex justify-center p-4">
-                                                <span className="text-tiny text-default-400">No se encontraron actividades</span>
-                                            </div>
-                                        ) : (
-                                            detailedActivities.map((item) => {
-                                                const isSelected = selectedDetailedIds.has(item.id)
-                                                return (
-                                                    <div
-                                                        key={item.id}
-                                                        onClick={() => toggleSelection(item.id)}
-                                                        className={`
-                                                            cursor-pointer p-3 rounded-lg border transition-all duration-200
-                                                            ${isSelected
-                                                                ? "bg-primary-50 border-primary-200 dark:bg-primary-900/20 dark:border-primary-800"
-                                                                : "bg-background border-default-200 hover:border-default-300"
-                                                            }
-                                                        `}
-                                                    >
-                                                        <div className="flex justify-between items-start mb-1">
-                                                            <div className="flex items-center gap-2">
-                                                                <span className={`text-small font-bold ${isSelected ? "text-primary-600" : "text-foreground"}`}>
-                                                                    {item.code}
-                                                                </span>
-                                                                <span className="text-small text-default-500 line-clamp-1">
-                                                                    {item.name}
-                                                                </span>
-                                                            </div>
-                                                            {isSelected && <div className="w-2 h-2 rounded-full bg-primary" />}
-                                                        </div>
-
-                                                        <div className="flex flex-wrap gap-2 text-tiny text-default-400 mb-2">
-                                                            <div className="bg-default-100 px-2 py-0.5 rounded-sm">
-                                                                Proy: {item.project?.code || "N/A"}
-                                                            </div>
-                                                            <div className="bg-default-100 px-2 py-0.5 rounded-sm">
-                                                                PosPre: {item.rubric?.code || "N/A"}
-                                                            </div>
-                                                        </div>
-
-                                                        <div className="flex justify-between items-center mt-1 pt-1 border-t border-dashed border-default-100">
-                                                            <span className="text-tiny text-default-400">Saldo Disp.</span>
-                                                            <span className="text-small font-semibold text-success-600 dark:text-success-400">
-                                                                {formatCurrency(item.balance)}
-                                                            </span>
-                                                        </div>
+                            {/* Selects */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <Controller
+                                    name="projectId"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <Autocomplete
+                                            label="Proyecto"
+                                            placeholder="Buscar proyecto"
+                                            labelPlacement="outside"
+                                            isRequired
+                                            isLoading={loadingProjects}
+                                            selectedKey={field.value}
+                                            onSelectionChange={(k) => {
+                                                const key = String(k)
+                                                field.onChange(key)
+                                                const selected = projects.find(p => p.id === key)
+                                                if (selected) {
+                                                    setProjectSearch(selected.code)
+                                                }
+                                            }}
+                                            onInputChange={setProjectSearch}
+                                            inputValue={projectSearch}
+                                            isInvalid={!!errors.projectId}
+                                            errorMessage={errors.projectId?.message}
+                                        >
+                                            {projects.map((p) => (
+                                                <AutocompleteItem key={p.id} textValue={p.code}>
+                                                    <div className="flex flex-col">
+                                                        <span className="text-small font-bold">{p.code}</span>
+                                                        <span className="text-tiny text-default-500">{p.name}</span>
                                                     </div>
-                                                )
-                                            })
-                                        )}
-                                        {loadingDetailed && (
-                                            <div className="flex justify-center p-2">
-                                                <span className="text-tiny text-default-400">Cargando...</span>
-                                            </div>
-                                        )}
-                                    </div>
+                                                </AutocompleteItem>
+                                            ))}
+                                        </Autocomplete>
+                                    )}
+                                />
 
-                                    <div className="flex justify-end">
-                                        <span className="text-tiny text-default-400">
-                                            {selectedDetailedIds.size} actividad(es) seleccionada(s)
-                                        </span>
-                                    </div>
+                                <Controller
+                                    name="productId"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <Autocomplete
+                                            label="Producto"
+                                            placeholder="Buscar producto"
+                                            labelPlacement="outside"
+                                            isRequired
+                                            isLoading={loadingProducts}
+                                            selectedKey={field.value}
+                                            onSelectionChange={(k) => {
+                                                const key = String(k)
+                                                field.onChange(key)
+                                                const selected = products.find(p => p.id === key)
+                                                if (selected) {
+                                                    setProductSearch(selected.productCode)
+                                                }
+                                            }}
+                                            onInputChange={setProductSearch}
+                                            inputValue={productSearch}
+                                            isInvalid={!!errors.productId}
+                                            errorMessage={errors.productId?.message}
+                                        >
+                                            {products.map((p) => (
+                                                <AutocompleteItem key={p.id} textValue={p.productCode}>
+                                                    <div className="flex flex-col">
+                                                        <span className="text-small font-bold">{p.productCode}</span>
+                                                        <span className="text-tiny text-default-500 whitespace-normal line-clamp-2">
+                                                            {p.indicatorName}
+                                                        </span>
+                                                    </div>
+                                                </AutocompleteItem>
+                                            ))}
+                                        </Autocomplete>
+                                    )}
+                                />
+                            </div>
+
+                            <Controller
+                                name="observations"
+                                control={control}
+                                render={({ field }) => (
+                                    <Textarea
+                                        {...field}
+                                        label="Observaciones"
+                                        placeholder="Ingrese observaciones adicionales"
+                                        labelPlacement="outside"
+                                        minRows={2}
+                                    />
+                                )}
+                            />
+
+                            {/* Detailed Activities Association */}
+                            <div className="border-t border-divider pt-4 mt-2">
+                                <div className="flex justify-between items-center mb-1">
+                                    <span className="text-small font-semibold">
+                                        Asociar Actividades Detalladas
+                                    </span>
+                                    <Switch
+                                        isSelected={associateDetailed}
+                                        onValueChange={setAssociateDetailed}
+                                        size="sm"
+                                    />
                                 </div>
-                            )}
-                        </div>
-                    </div>
-                </ModalBody>
+                                <p className="text-tiny text-default-400 mb-4">
+                                    Puede asociar actividades detalladas posteriormente. No es obligatorio hacerlo en este momento.
+                                </p>
 
-                <ModalFooter>
-                    <Button variant="flat" onPress={onClose}>
-                        Cancelar
-                    </Button>
-                    <Button
-                        color="primary"
-                        onPress={handleSave}
-                        isLoading={isSubmitting}
-                        isDisabled={Boolean(!isValid)}
-                        startContent={!isSubmitting && <Plus size={16} />}
-                    >
-                        Crear Actividad
-                    </Button>
-                </ModalFooter>
+                                {associateDetailed && (
+                                    <div className="space-y-4 animate-appearance-in">
+                                        <Input
+                                            startContent={<span className="text-default-400"><Search size={16} /></span>}
+                                            placeholder="Buscar actividad detallada por nombre o código..."
+                                            value={detailedSearch}
+                                            onValueChange={setDetailedSearch}
+                                            isClearable
+                                            onClear={() => setDetailedSearch("")}
+                                        />
+
+                                        <div
+                                            className="h-[300px] overflow-y-auto border border-default-200 rounded-lg p-2 space-y-2 bg-default-50"
+                                            onScroll={handleScroll}
+                                        >
+                                            {detailedActivities.length === 0 && !loadingDetailed ? (
+                                                <div className="flex justify-center p-4">
+                                                    <span className="text-tiny text-default-400">No se encontraron actividades</span>
+                                                </div>
+                                            ) : (
+                                                detailedActivities.map((item) => {
+                                                    const isSelected = selectedDetailedIds.has(item.id)
+                                                    return (
+                                                        <div
+                                                            key={item.id}
+                                                            onClick={() => toggleSelection(item.id)}
+                                                            className={`
+                                                                cursor-pointer p-3 rounded-lg border transition-all duration-200
+                                                                ${isSelected
+                                                                    ? "bg-primary-50 border-primary-200 dark:bg-primary-900/20 dark:border-primary-800"
+                                                                    : "bg-background border-default-200 hover:border-default-300"
+                                                                }
+                                                            `}
+                                                        >
+                                                            <div className="flex justify-between items-start mb-1">
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className={`text-small font-bold ${isSelected ? "text-primary-600" : "text-foreground"}`}>
+                                                                        {item.code}
+                                                                    </span>
+                                                                    <span className="text-small text-default-500 line-clamp-1">
+                                                                        {item.name}
+                                                                    </span>
+                                                                </div>
+                                                                {isSelected && <div className="w-2 h-2 rounded-full bg-primary" />}
+                                                            </div>
+
+                                                            <div className="flex flex-wrap gap-2 text-tiny text-default-400 mb-2">
+                                                                <div className="bg-default-100 px-2 py-0.5 rounded-sm">
+                                                                    Proy: {item.project?.code || "N/A"}
+                                                                </div>
+                                                                <div className="bg-default-100 px-2 py-0.5 rounded-sm">
+                                                                    PosPre: {item.rubric?.code || "N/A"}
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="flex justify-between items-center mt-1 pt-1 border-t border-dashed border-default-100">
+                                                                <span className="text-tiny text-default-400">Saldo Disp.</span>
+                                                                <span className="text-small font-semibold text-success-600 dark:text-success-400">
+                                                                    {formatCurrency(item.balance)}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    )
+                                                })
+                                            )}
+                                            {loadingDetailed && (
+                                                <div className="flex justify-center p-2">
+                                                    <span className="text-tiny text-default-400">Cargando...</span>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="flex justify-end">
+                                            <span className="text-tiny text-default-400">
+                                                {selectedDetailedIds.size} actividad(es) seleccionada(s)
+                                            </span>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </ModalBody>
+
+                    <ModalFooter>
+                        <Button variant="flat" onPress={handleClose}>
+                            Cancelar
+                        </Button>
+                        <Button
+                            color="primary"
+                            type="submit"
+                            isLoading={isSubmitting}
+                            isDisabled={!isValid || isSubmitting}
+                            startContent={!isSubmitting && <Plus size={16} />}
+                        >
+                            Crear Actividad
+                        </Button>
+                    </ModalFooter>
+                </form>
             </ModalContent>
         </Modal>
     )

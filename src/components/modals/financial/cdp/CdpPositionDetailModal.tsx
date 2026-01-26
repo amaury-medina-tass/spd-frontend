@@ -12,10 +12,8 @@ import {
     Tabs,
     Tab,
     Input,
-    Pagination,
-    Spinner,
-    Select,
-    SelectItem,
+    Card,
+    CardBody,
 } from "@heroui/react"
 import {
     FileText,
@@ -33,8 +31,16 @@ import type { CdpPositionDetail, ConsumedActivity, ConsumedActivityMeta } from "
 import { get } from "@/lib/http"
 import { endpoints } from "@/lib/endpoints"
 import { useDebounce } from "@/hooks/useDebounce"
+import { CleanTable, ColumnDef } from "@/components/tables/CleanTable"
 
 type TabKey = "info" | "funding"
+
+const columns: ColumnDef[] = [
+    { name: "CÓDIGO", uid: "activityCode" },
+    { name: "ACTIVIDAD", uid: "activityName" },
+    { name: "ASIGNADO", uid: "assignedValue", align: "end" },
+    { name: "SALDO", uid: "balance", align: "end" },
+]
 
 export function CdpPositionDetailModal({
     isOpen,
@@ -127,6 +133,43 @@ export function CdpPositionDetailModal({
             }
         }
     }, [isOpen, initialData])
+
+    const renderCell = (item: ConsumedActivity, columnKey: React.Key) => {
+        switch (columnKey) {
+            case "activityCode":
+                return <span className="font-mono text-primary-600 dark:text-primary-400 text-small">{item.activityCode}</span>
+            case "activityName":
+                return <span className="truncate max-w-[300px] block text-small" title={item.activityName}>{item.activityName}</span>
+            case "assignedValue":
+                return <span className="font-medium text-small">{formatCurrency(item.assignedValue)}</span>
+            case "balance":
+                return <span className="font-medium text-success-600 dark:text-success-400 text-small">{formatCurrency(item.balance)}</span>
+            default:
+                return null
+        }
+    }
+
+    const renderMobileItem = (item: ConsumedActivity) => (
+        <Card className="bg-default-50 border border-default-200 shadow-none">
+            <CardBody className="p-3 gap-2">
+                <div className="flex justify-between items-start">
+                    <span className="font-mono text-xs font-bold text-primary-600">
+                        {item.activityCode}
+                    </span>
+                    <span className="text-xs font-semibold text-success-600">
+                        {formatCurrency(item.balance)}
+                    </span>
+                </div>
+                <p className="text-sm font-medium text-foreground line-clamp-2">
+                    {item.activityName}
+                </p>
+                <div className="flex justify-between items-end mt-1">
+                    <span className="text-tiny text-default-400">Asignado:</span>
+                    <span className="text-xs font-medium">{formatCurrency(item.assignedValue)}</span>
+                </div>
+            </CardBody>
+        </Card>
+    )
 
     if (!position) return null
 
@@ -373,93 +416,30 @@ export function CdpPositionDetailModal({
                                     />
                                 </div>
 
-                                {/* Activities Table */}
-                                <div className="border border-default-200 dark:border-default-700 rounded-lg overflow-hidden">
-                                    {/* Table Header */}
-                                    <div className="grid grid-cols-12 gap-2 px-3 py-2 bg-default-100 dark:bg-default-50 text-tiny font-semibold text-default-500 uppercase tracking-wide">
-                                        <div className="col-span-2">Código</div>
-                                        <div className="col-span-5">Actividad</div>
-                                        <div className="col-span-2 text-right">Asignado</div>
-                                        <div className="col-span-3 text-right">Saldo</div>
-                                    </div>
-
-                                    {/* Table Body */}
-                                    <div className="min-h-[200px]">
-                                        {loadingActivities ? (
-                                            <div className="flex items-center justify-center py-8">
-                                                <Spinner size="sm" />
-                                            </div>
-                                        ) : activities.length > 0 ? (
-                                            <div className="divide-y divide-default-100 dark:divide-default-700/50">
-                                                {activities.map((activity) => (
-                                                    <div
-                                                        key={activity.id}
-                                                        className="grid grid-cols-12 gap-2 px-3 py-2.5 text-small hover:bg-default-50 dark:hover:bg-default-100/30 transition-colors"
-                                                    >
-                                                        <div className="col-span-2 font-mono text-primary-600 dark:text-primary-400 truncate">
-                                                            {activity.activityCode}
-                                                        </div>
-                                                        <div className="col-span-5 text-foreground truncate" title={activity.activityName}>
-                                                            {activity.activityName}
-                                                        </div>
-                                                        <div className="col-span-2 text-right font-medium">
-                                                            {formatCurrency(activity.assignedValue)}
-                                                        </div>
-                                                        <div className="col-span-3 text-right font-medium text-success-600 dark:text-success-400">
-                                                            {formatCurrency(activity.balance)}
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        ) : (
-                                            <div className="flex items-center justify-center py-8 text-default-400">
-                                                <p className="text-small">
-                                                    {activitySearch ? "Sin resultados para la búsqueda" : "Sin actividades asociadas"}
-                                                </p>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {/* Pagination & Limit */}
-                                {activityMeta && (
-                                    <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-2">
-                                        <span className="text-tiny text-default-400">
-                                            Total: {activityMeta.total}
-                                        </span>
-
-                                        <div className="flex items-center gap-4">
-                                            {activityMeta.totalPages > 1 && (
-                                                <Pagination
-                                                    size="sm"
-                                                    total={activityMeta.totalPages}
-                                                    page={activityPage}
-                                                    onChange={setActivityPage}
-                                                    showControls
-                                                />
-                                            )}
-
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-tiny text-default-400">Filas:</span>
-                                                <Select
-                                                    size="sm"
-                                                    selectedKeys={[activityLimit.toString()]}
-                                                    onChange={(e) => {
-                                                        setActivityLimit(Number(e.target.value))
-                                                        setActivityPage(1)
-                                                    }}
-                                                    className="w-20"
-                                                    aria-label="Límite de filas"
-                                                >
-                                                    <SelectItem key="5" textValue="5">5</SelectItem>
-                                                    <SelectItem key="10" textValue="10">10</SelectItem>
-                                                    <SelectItem key="20" textValue="20">20</SelectItem>
-                                                    <SelectItem key="50" textValue="50">50</SelectItem>
-                                                </Select>
-                                            </div>
+                                {/* Activities Table - Replaced with CleanTable */}
+                                <CleanTable
+                                    columns={columns}
+                                    items={activities}
+                                    renderCell={renderCell}
+                                    renderMobileItem={renderMobileItem}
+                                    isLoading={loadingActivities}
+                                    page={activityPage}
+                                    totalPages={activityMeta?.totalPages}
+                                    onPageChange={setActivityPage}
+                                    limit={activityLimit}
+                                    onLimitChange={(l) => {
+                                        setActivityLimit(l)
+                                        setActivityPage(1)
+                                    }}
+                                    limitOptions={[5, 10, 20, 50]}
+                                    emptyContent={
+                                        <div className="flex items-center justify-center py-8 text-default-400">
+                                            <p className="text-small">
+                                                {activitySearch ? "Sin resultados para la búsqueda" : "Sin actividades asociadas"}
+                                            </p>
                                         </div>
-                                    </div>
-                                )}
+                                    }
+                                />
                             </div>
                         </Tab>
                     </Tabs>

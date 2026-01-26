@@ -11,13 +11,26 @@ import {
     Spinner,
     Tabs,
     Tab,
+    Card,
+    CardBody,
+    Chip,
 } from "@heroui/react"
-import { Link2, Search, RefreshCw } from "lucide-react"
+import { Link2, Search, RefreshCw, Plus, X } from "lucide-react"
 import { useState, useEffect, useCallback } from "react"
 import { get, post, del, PaginatedData } from "@/lib/http"
 import { endpoints } from "@/lib/endpoints"
 import { addToast } from "@heroui/toast"
-import { ActivityTable, DetailedActivityItem } from "@/components/tables/ActivityTable"
+import { CleanTable, ColumnDef } from "@/components/tables/CleanTable"
+
+export type DetailedActivity = {
+    id: string
+    code: string
+    name: string
+    budgetCeiling: string
+    balance: string
+    rubric?: { code: string }
+    project?: { code: string }
+}
 
 type Props = {
     isOpen: boolean
@@ -26,6 +39,16 @@ type Props = {
     onClose: () => void
     onSuccess?: () => void
 }
+
+const columns: ColumnDef[] = [
+    { name: "CÓDIGO", uid: "code" },
+    { name: "NOMBRE", uid: "name" },
+    { name: "PROYECTO", uid: "projectCode" },
+    { name: "POSPRE", uid: "rubricCode" },
+    { name: "TECHO", uid: "budgetCeiling" },
+    { name: "DISPONIBLE", uid: "balance" },
+    { name: "", uid: "actions", align: "end" },
+]
 
 export function ManageDetailedActivitiesModal({
     isOpen,
@@ -36,8 +59,8 @@ export function ManageDetailedActivitiesModal({
 }: Props) {
     const [loadingAssociated, setLoadingAssociated] = useState(true)
     const [loadingAvailable, setLoadingAvailable] = useState(true)
-    const [associated, setAssociated] = useState<DetailedActivityItem[]>([])
-    const [available, setAvailable] = useState<DetailedActivityItem[]>([])
+    const [associated, setAssociated] = useState<DetailedActivity[]>([])
+    const [available, setAvailable] = useState<DetailedActivity[]>([])
     const [searchAssociated, setSearchAssociated] = useState("")
     const [searchAvailable, setSearchAvailable] = useState("")
     const [actionLoading, setActionLoading] = useState<string | null>(null)
@@ -54,7 +77,7 @@ export function ManageDetailedActivitiesModal({
         if (!mgaActivityId) return
         setLoadingAssociated(true)
         try {
-            const res = await get<PaginatedData<DetailedActivityItem>>(
+            const res = await get<PaginatedData<DetailedActivity>>(
                 `${endpoints.masters.mgaActivityDetailedActivities(mgaActivityId)}?type=associated&limit=${limit}&page=${pageAssociated}&search=${searchAssociated}`
             )
             setAssociated(res.data)
@@ -70,7 +93,7 @@ export function ManageDetailedActivitiesModal({
         if (!mgaActivityId) return
         setLoadingAvailable(true)
         try {
-            const res = await get<PaginatedData<DetailedActivityItem>>(
+            const res = await get<PaginatedData<DetailedActivity>>(
                 `${endpoints.masters.mgaActivityDetailedActivities(mgaActivityId)}?type=available&limit=${limit}&page=${pageAvailable}&search=${searchAvailable}`
             )
             setAvailable(res.data)
@@ -139,6 +162,99 @@ export function ManageDetailedActivitiesModal({
         onClose()
     }
 
+    const formatCurrency = (n: string | number) => {
+        return new Intl.NumberFormat("es-CO", {
+            style: "currency",
+            currency: "COP",
+            minimumFractionDigits: 0,
+        }).format(Number(n))
+    }
+
+    const renderCell = (item: DetailedActivity, columnKey: React.Key, actionType: "associate" | "dissociate") => {
+        const isLoading = actionLoading === item.id
+
+        switch (columnKey) {
+            case "code":
+                return <span className="font-mono font-medium text-small">{item.code}</span>
+            case "name":
+                return <span className="line-clamp-1 max-w-[200px] text-small" title={item.name}>{item.name}</span>
+            case "projectCode":
+                return <span className="text-default-500 text-small">{item.project?.code || "—"}</span>
+            case "rubricCode":
+                return <span className="text-default-500 text-small">{item.rubric?.code || "—"}</span>
+            case "budgetCeiling":
+                return <span className="text-small">{formatCurrency(item.budgetCeiling)}</span>
+            case "balance":
+                return <span className="text-success-600 dark:text-success-400 font-medium text-small">{formatCurrency(item.balance)}</span>
+            case "actions":
+                return (
+                    <Button
+                        isIconOnly
+                        size="sm"
+                        variant="light"
+                        color={actionType === "dissociate" ? "danger" : "primary"}
+                        isLoading={isLoading}
+                        onPress={() => actionType === "dissociate" ? handleDissociate(item.id) : handleAssociate(item.id)}
+                    >
+                        {!isLoading && (actionType === "dissociate" ? <X size={16} /> : <Plus size={16} />)}
+                    </Button>
+                )
+            default:
+                return null
+        }
+    }
+
+    const renderMobileItem = (item: DetailedActivity, actionType: "associate" | "dissociate") => {
+        const isLoading = actionLoading === item.id
+        return (
+            <Card className="bg-default-50 border border-default-200 shadow-none">
+                <CardBody className="p-3 gap-2">
+                    <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                            <span className="font-mono text-xs font-semibold text-primary-600 dark:text-primary-400">
+                                {item.code}
+                            </span>
+                            <p className="text-sm font-medium text-foreground line-clamp-2 mt-0.5">
+                                {item.name}
+                            </p>
+                        </div>
+                        <Button
+                            isIconOnly
+                            size="sm"
+                            variant="flat"
+                            color={actionType === "dissociate" ? "danger" : "primary"}
+                            isLoading={isLoading}
+                            onPress={() => actionType === "dissociate" ? handleDissociate(item.id) : handleAssociate(item.id)}
+                            className="flex-shrink-0"
+                        >
+                            {!isLoading && (actionType === "dissociate" ? <X size={14} /> : <Plus size={14} />)}
+                        </Button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 mt-1">
+                        <div>
+                            <span className="text-tiny text-default-400">Proyecto</span>
+                            <p className="text-xs font-medium">{item.project?.code || "—"}</p>
+                        </div>
+                        <div>
+                            <span className="text-tiny text-default-400">Pos. Presupuestal</span>
+                            <p className="text-xs font-medium">{item.rubric?.code || "—"}</p>
+                        </div>
+                        <div>
+                            <span className="text-tiny text-default-400">Techo</span>
+                            <p className="text-xs font-medium">{formatCurrency(item.budgetCeiling)}</p>
+                        </div>
+                        <div>
+                            <span className="text-tiny text-default-400">Disponible</span>
+                            <p className="text-xs font-medium text-success-600 dark:text-success-400">
+                                {formatCurrency(item.balance)}
+                            </p>
+                        </div>
+                    </div>
+                </CardBody>
+            </Card>
+        )
+    }
+
     const loading = loadingAssociated || loadingAvailable
 
     return (
@@ -185,10 +301,7 @@ export function ManageDetailedActivitiesModal({
                                 cursor: "w-full bg-primary",
                             }}
                         >
-                            <Tab
-                                key="associated"
-                                title="Asociadas"
-                            >
+                            <Tab key="associated" title="Asociadas">
                                 <div className="pt-4 space-y-3">
                                     <div className="flex items-center justify-between">
                                         <Input
@@ -211,36 +324,31 @@ export function ManageDetailedActivitiesModal({
                                             Actualizar
                                         </Button>
                                     </div>
-                                    {loadingAssociated ? (
-                                        <div className="flex justify-center py-8">
-                                            <Spinner size="sm" />
-                                        </div>
-                                    ) : (
-                                        <ActivityTable
-                                            items={associated}
-                                            actionType="dissociate"
-                                            actionLoading={actionLoading}
-                                            onAction={handleDissociate}
-                                            emptyMessage="No hay actividades asociadas"
-                                            ariaLabel="Actividades asociadas"
-                                            page={pageAssociated}
-                                            totalPages={totalPagesAssociated}
-                                            onPageChange={setPageAssociated}
-                                            limit={limit}
-                                            onLimitChange={(l) => {
-                                                setLimit(l)
-                                                setPageAssociated(1)
-                                                setPageAvailable(1)
-                                            }}
-                                        />
-                                    )}
+                                    <CleanTable
+                                        columns={columns}
+                                        items={associated}
+                                        renderCell={(item, key) => renderCell(item, key, "dissociate")}
+                                        renderMobileItem={(item) => renderMobileItem(item, "dissociate")}
+                                        isLoading={loadingAssociated}
+                                        emptyContent={
+                                            <div className="flex flex-col items-center justify-center py-12 text-default-400">
+                                                <p className="text-sm font-medium">No hay actividades asociadas</p>
+                                            </div>
+                                        }
+                                        page={pageAssociated}
+                                        totalPages={totalPagesAssociated}
+                                        onPageChange={setPageAssociated}
+                                        limit={limit}
+                                        onLimitChange={(l) => {
+                                            setLimit(l)
+                                            setPageAssociated(1)
+                                            setPageAvailable(1)
+                                        }}
+                                    />
                                 </div>
                             </Tab>
 
-                            <Tab
-                                key="available"
-                                title="Disponibles"
-                            >
+                            <Tab key="available" title="Disponibles">
                                 <div className="pt-4 space-y-3">
                                     <div className="flex items-center justify-between">
                                         <Input
@@ -263,30 +371,27 @@ export function ManageDetailedActivitiesModal({
                                             Actualizar
                                         </Button>
                                     </div>
-
-                                    {loadingAvailable ? (
-                                        <div className="flex justify-center py-8">
-                                            <Spinner size="sm" />
-                                        </div>
-                                    ) : (
-                                        <ActivityTable
-                                            items={available}
-                                            actionType="associate"
-                                            actionLoading={actionLoading}
-                                            onAction={handleAssociate}
-                                            emptyMessage="No hay actividades disponibles"
-                                            ariaLabel="Actividades disponibles"
-                                            page={pageAvailable}
-                                            totalPages={totalPagesAvailable}
-                                            onPageChange={setPageAvailable}
-                                            limit={limit}
-                                            onLimitChange={(l) => {
-                                                setLimit(l)
-                                                setPageAssociated(1)
-                                                setPageAvailable(1)
-                                            }}
-                                        />
-                                    )}
+                                    <CleanTable
+                                        columns={columns}
+                                        items={available}
+                                        renderCell={(item, key) => renderCell(item, key, "associate")}
+                                        renderMobileItem={(item) => renderMobileItem(item, "associate")}
+                                        isLoading={loadingAvailable}
+                                        emptyContent={
+                                            <div className="flex flex-col items-center justify-center py-12 text-default-400">
+                                                <p className="text-sm font-medium">No hay actividades disponibles</p>
+                                            </div>
+                                        }
+                                        page={pageAvailable}
+                                        totalPages={totalPagesAvailable}
+                                        onPageChange={setPageAvailable}
+                                        limit={limit}
+                                        onLimitChange={(l) => {
+                                            setLimit(l)
+                                            setPageAssociated(1)
+                                            setPageAvailable(1)
+                                        }}
+                                    />
                                 </div>
                             </Tab>
                         </Tabs>

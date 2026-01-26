@@ -1,12 +1,12 @@
 "use client"
 
-import { Modal, ModalBody, ModalContent, ModalHeader, ModalFooter, SortDescriptor, Chip, Pagination } from "@heroui/react"
+import { Modal, ModalBody, ModalContent, ModalHeader, ModalFooter, SortDescriptor, Chip, Button } from "@heroui/react"
 import { useCallback, useEffect, useState } from "react"
 import { get, PaginatedData, PaginationMeta } from "@/lib/http"
 import { endpoints } from "@/lib/endpoints"
 import { BudgetModification } from "@/types/activity"
 import { History } from "lucide-react"
-import { CleanTable } from "@/components/tables/CleanTable"
+import { CleanTable, ColumnDef } from "@/components/tables/CleanTable"
 
 type Props = {
     isOpen: boolean
@@ -15,7 +15,7 @@ type Props = {
     onClose: () => void
 }
 
-const columns = [
+const columns: ColumnDef[] = [
     { name: "TIPO", uid: "modificationType" },
     { name: "RUBRO (TRASLADOS)", uid: "rubricInfo", sortable: false },
     { name: "VALOR", uid: "value" },
@@ -40,8 +40,10 @@ export function BudgetModificationHistoryModal({
         column: "createdAt",
         direction: "descending",
     })
+    const [page, setPage] = useState(1)
+    const [limit, setLimit] = useState(5)
 
-    const fetchHistory = useCallback(async (page: number, currentSort: SortDescriptor) => {
+    const fetchHistory = useCallback(async (page: number, currentSort: SortDescriptor, currentLimit: number) => {
         if (!isOpen) return
         setLoading(true)
         try {
@@ -50,7 +52,7 @@ export function BudgetModificationHistoryModal({
 
             const params = new URLSearchParams({
                 page: page.toString(),
-                limit: "5",
+                limit: currentLimit.toString(),
                 sortOrder: sortDirection,
                 sortBy: sortColumn as string,
                 detailedActivityId: detailedActivityId
@@ -71,23 +73,20 @@ export function BudgetModificationHistoryModal({
 
     useEffect(() => {
         if (isOpen) {
-            fetchHistory(1, sortDescriptor)
+            fetchHistory(1, sortDescriptor, limit)
+            setPage(1)
         }
-    }, [isOpen, fetchHistory, sortDescriptor])
+    }, [isOpen, fetchHistory, sortDescriptor, limit])
 
     const handleSortChange = (descriptor: SortDescriptor) => {
         setSortDescriptor(descriptor)
-        fetchHistory(meta?.page || 1, descriptor)
-    }
-
-    const handlePageChange = (page: number) => {
-        fetchHistory(page, sortDescriptor)
+        fetchHistory(page, descriptor, limit)
     }
 
     const renderCell = useCallback((item: BudgetModification, columnKey: React.Key) => {
         switch (columnKey) {
             case "modificationType":
-                const types = {
+                const types: Record<string, string> = {
                     ADDITION: "Adición",
                     REDUCTION: "Reducción",
                     TRANSFER: "Traslado",
@@ -210,6 +209,18 @@ export function BudgetModificationHistoryModal({
                                 sortDescriptor={sortDescriptor}
                                 onSortChange={handleSortChange}
                                 renderCell={renderCell}
+                                page={page}
+                                totalPages={meta?.totalPages}
+                                onPageChange={(newPage) => {
+                                    setPage(newPage)
+                                    fetchHistory(newPage, sortDescriptor, limit)
+                                }}
+                                limit={limit}
+                                onLimitChange={(newLimit) => {
+                                    setLimit(newLimit)
+                                    setPage(1)
+                                    fetchHistory(1, sortDescriptor, newLimit)
+                                }}
                                 emptyContent={
                                     <div className="flex flex-col items-center justify-center p-10 text-default-400">
                                         <div className="w-16 h-16 bg-default-50 rounded-full flex items-center justify-center mb-4">
@@ -222,18 +233,14 @@ export function BudgetModificationHistoryModal({
                             />
                         </ModalBody>
                         <ModalFooter className="justify-between items-center bg-default-50/50">
-                            <span className="text-small text-default-400">
-                                Total: {meta?.total || 0} registro(s)
-                            </span>
-                            <Pagination
-                                isCompact
-                                showControls
-                                showShadow
-                                color="primary"
-                                page={meta?.page || 1}
-                                total={meta?.totalPages || 1}
-                                onChange={handlePageChange}
-                            />
+                            <div className="flex-1">
+                                <span className="text-small text-default-400">
+                                    Total: {meta?.total || 0} registro(s)
+                                </span>
+                            </div>
+                            <Button variant="light" onPress={onClose}>
+                                Cerrar
+                            </Button>
                         </ModalFooter>
                     </>
                 )}

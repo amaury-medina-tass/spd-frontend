@@ -8,11 +8,12 @@ import { usePermissions } from "@/hooks/usePermissions"
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal"
 import { get, post, patch, del, PaginatedData, PaginationMeta } from "@/lib/http"
 import { endpoints } from "@/lib/endpoints"
-import { Pencil, Trash2, Plus, RefreshCw, Eye } from "lucide-react"
+import { Pencil, Trash2, Plus, RefreshCw, Eye, Target } from "lucide-react"
 import { addToast } from "@heroui/toast"
 import { getErrorMessage } from "@/lib/error-codes"
 import { VariableModal } from "@/components/modals/masters/variables/VariableModal"
 import { VariableDetailModal } from "@/components/modals/masters/variables/VariableDetailModal"
+import { VariableGoalsModal } from "@/components/modals/masters/variables/VariableGoalsModal"
 import type { Variable } from "@/types/variable"
 
 const columns: ColumnDef<Variable>[] = [
@@ -64,6 +65,7 @@ export default function MastersVariablesPage() {
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+    const [isGoalsModalOpen, setIsGoalsModalOpen] = useState(false)
 
     // Selection State
     const [editing, setEditing] = useState<Variable | null>(null)
@@ -116,6 +118,11 @@ export default function MastersVariablesPage() {
     const onView = (variable: Variable) => {
         setSelectedVariable(variable)
         setIsDetailModalOpen(true)
+    }
+
+    const onViewGoals = (variable: Variable) => {
+        setSelectedVariable(variable)
+        setIsGoalsModalOpen(true)
     }
 
     const onEdit = async (variable: Variable) => {
@@ -190,6 +197,12 @@ export default function MastersVariablesPage() {
                 label: "Ver",
                 icon: <Eye size={16} />,
                 onClick: onView,
+            },
+            {
+                key: "goals",
+                label: "Metas",
+                icon: <Target size={16} />,
+                onClick: onViewGoals,
             },
         ]
         if (canUpdate) {
@@ -299,6 +312,16 @@ export default function MastersVariablesPage() {
                 variable={selectedVariable}
                 onClose={() => {
                     setIsDetailModalOpen(false)
+                    setSelectedVariable(null)
+                }}
+            />
+
+            <VariableGoalsModal
+                isOpen={isGoalsModalOpen}
+                variableId={selectedVariable?.id || null}
+                variableName={selectedVariable?.name}
+                onClose={() => {
+                    setIsGoalsModalOpen(false)
                     setSelectedVariable(null)
                 }}
             />

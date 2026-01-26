@@ -9,8 +9,8 @@ import { endpoints } from "@/lib/endpoints"
 import { RefreshCw, Eye, Link2 } from "lucide-react"
 import type { CdpTableRow, CdpPositionDetail } from "@/types/cdp"
 import { getErrorMessage } from "@/lib/error-codes"
-import { CdpPositionDetailModal } from "@/components/modals/financial/CdpPositionDetailModal"
-import { ManageCdpActivitiesModal } from "@/components/modals/financial/ManageCdpActivitiesModal"
+import { CdpPositionDetailModal } from "@/components/modals/financial/cdp/CdpPositionDetailModal"
+import { ManageCdpActivitiesModal } from "@/components/modals/financial/cdp/ManageCdpActivitiesModal"
 
 const columns: ColumnDef<CdpTableRow>[] = [
   { key: "cdpNumber", label: "N° Cdp", sortable: true },

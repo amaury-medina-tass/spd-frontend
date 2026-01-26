@@ -21,6 +21,9 @@ import { useDebounce } from "@/hooks/useDebounce"
 import { get } from "@/lib/http"
 import { endpoints } from "@/lib/endpoints"
 import type { RelatedProject, Rubric } from "@/types/activity"
+import { useForm, Controller } from "react-hook-form"
+import { z } from "zod"
+import { zodResolver } from "@hookform/resolvers/zod"
 
 export type CreateDetailedActivityPayload = {
     code: string
@@ -61,21 +64,39 @@ type Props = {
     onSave: (data: CreateDetailedActivityPayload) => void
 }
 
+const schema = z.object({
+    code: z.string().min(1, "Requerido"),
+    cpc: z.string().min(1, "Requerido"),
+    name: z.string().min(1, "Requerido"),
+    observations: z.string().optional(),
+    activityDate: z.any().refine((val) => val !== null, "Fecha requerida"),
+    budgetCeiling: z.string().min(1, "Requerido"), // Handling as string for easier currency input masking
+    projectId: z.string().min(1, "Seleccione proyecto"),
+    rubricId: z.string().min(1, "Seleccione rubro"),
+})
+
+type FormValues = z.infer<typeof schema>
+
 export function CreateDetailedActivityModal({
     isOpen,
     isLoading = false,
     onClose,
     onSave,
 }: Props) {
-    // Form state
-    const [code, setCode] = useState("")
-    const [name, setName] = useState("")
-    const [observations, setObservations] = useState("")
-    const [budgetCeiling, setBudgetCeiling] = useState("")
-    const [cpc, setCpc] = useState("")
-    const [projectId, setProjectId] = useState("")
-    const [rubricId, setRubricId] = useState("")
-    const [date, setDate] = useState<DateValue | null>(null)
+    const { control, handleSubmit, reset, setValue, watch, formState: { errors, isValid } } = useForm<FormValues>({
+        resolver: zodResolver(schema) as any,
+        defaultValues: {
+            code: "",
+            cpc: "",
+            name: "",
+            observations: "",
+            activityDate: null,
+            budgetCeiling: "",
+            projectId: "",
+            rubricId: ""
+        },
+        mode: "onChange"
+    })
 
     // Projects state
     const [projects, setProjects] = useState<RelatedProject[]>([])
@@ -89,22 +110,23 @@ export function CreateDetailedActivityModal({
     const [rubricSearch, setRubricSearch] = useState("")
     const debouncedRubricSearch = useDebounce(rubricSearch, 300)
 
-    // Reset form when modal opens/closes
+    // Reset form when modal opens
     useEffect(() => {
         if (isOpen) {
-            setCode("")
-            setName("")
-            setObservations("")
-            setBudgetCeiling("")
-            setCpc("")
-            setProjectId("")
-            setRubricId("")
-            setProjectSearch("")
+            reset({
+                code: "",
+                cpc: "",
+                name: "",
+                observations: "",
+                activityDate: today(getLocalTimeZone()),
+                budgetCeiling: "",
+                projectId: "",
+                rubricId: ""
+            })
             setProjectSearch("")
             setRubricSearch("")
-            setDate(today(getLocalTimeZone()))
         }
-    }, [isOpen])
+    }, [isOpen, reset])
 
     const fetchProjects = useCallback(async (search: string = "") => {
         setLoadingProjects(true)
@@ -150,37 +172,31 @@ export function CreateDetailedActivityModal({
         }
     }, [debouncedRubricSearch, fetchRubrics, isOpen])
 
-    const handleSave = () => {
-        const value = parseFloat(budgetCeiling) || 0
+    const onSubmit = (data: FormValues) => {
+        const value = parseFloat(data.budgetCeiling.replace(/[^\d]/g, '')) || 0
         const payload: CreateDetailedActivityPayload = {
-            code: code.trim(),
-            name: name.trim(),
-            observations: observations.trim(),
-            activityDate: date ? date.toDate(getLocalTimeZone()).toISOString() : new Date().toISOString(),
+            code: data.code.trim(),
+            name: data.name.trim(),
+            observations: data.observations?.trim() || "",
+            activityDate: data.activityDate ? data.activityDate.toDate(getLocalTimeZone()).toISOString() : new Date().toISOString(),
             budgetCeiling: value,
             balance: value,
-            cpc: cpc.trim(),
-            projectId,
-            rubricId,
+            cpc: data.cpc.trim(),
+            projectId: data.projectId,
+            rubricId: data.rubricId,
         }
         onSave(payload)
     }
 
-    const isValid =
-        code.trim() !== "" &&
-        name.trim() !== "" &&
-        budgetCeiling !== "" &&
-        cpc.trim() !== "" &&
-        projectId !== "" &&
-        cpc.trim() !== "" &&
-        projectId !== "" &&
-        rubricId !== "" &&
-        date !== null
+    const handleClose = () => {
+        reset()
+        onClose()
+    }
 
     return (
         <Modal
             isOpen={isOpen}
-            onOpenChange={() => onClose()}
+            onOpenChange={() => handleClose()}
             size="2xl"
             scrollBehavior="inside"
             classNames={{
@@ -206,160 +222,222 @@ export function CreateDetailedActivityModal({
                     </div>
                 </ModalHeader>
 
-                <ModalBody className="py-5">
-                    <div className="flex flex-col gap-5">
-                        <div className="grid grid-cols-2 gap-4">
-                            {/* Código */}
-                            <Input
-                                label="Código"
-                                placeholder="Ej: ACT-001"
-                                value={code}
-                                onValueChange={setCode}
-                                isRequired
-                                labelPlacement="outside"
-                            />
+                <form onSubmit={handleSubmit(onSubmit)}>
+                    <ModalBody className="py-5">
+                        <div className="flex flex-col gap-5">
+                            <div className="grid grid-cols-2 gap-4">
+                                {/* Código */}
+                                <Controller
+                                    name="code"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <Input
+                                            {...field}
+                                            label="Código"
+                                            placeholder="Ej: ACT-001"
+                                            isRequired
+                                            labelPlacement="outside"
+                                            isInvalid={!!errors.code}
+                                            errorMessage={errors.code?.message}
+                                        />
+                                    )}
+                                />
 
-                            {/* CPC */}
-                            <Input
-                                label="CPC"
-                                placeholder="Ingrese el CPC"
-                                value={cpc}
-                                onValueChange={setCpc}
-                                isRequired
-                                labelPlacement="outside"
-                            />
+                                {/* CPC */}
+                                <Controller
+                                    name="cpc"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <Input
+                                            {...field}
+                                            label="CPC"
+                                            placeholder="Ingrese el CPC"
+                                            isRequired
+                                            labelPlacement="outside"
+                                            isInvalid={!!errors.cpc}
+                                            errorMessage={errors.cpc?.message}
+                                        />
+                                    )}
+                                />
 
-                            {/* Fecha */}
-                            <div className="col-span-2 md:col-span-1">
-                                <DatePicker
-                                    label="Fecha de Actividad"
-                                    value={date}
-                                    onChange={setDate}
-                                    isRequired
-                                    labelPlacement="outside"
+                                {/* Fecha */}
+                                <div className="col-span-2 md:col-span-1">
+                                    <Controller
+                                        name="activityDate"
+                                        control={control}
+                                        render={({ field }) => (
+                                            <DatePicker
+                                                label="Fecha de Actividad"
+                                                value={field.value}
+                                                onChange={field.onChange}
+                                                isRequired
+                                                labelPlacement="outside"
+                                                isInvalid={!!errors.activityDate}
+                                                errorMessage={errors.activityDate?.message as string}
+                                            />
+                                        )}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="pt-1">
+                                {/* Nombre */}
+                                <Controller
+                                    name="name"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <Input
+                                            {...field}
+                                            label="Nombre"
+                                            placeholder="Ingrese el nombre de la actividad"
+                                            isRequired
+                                            labelPlacement="outside"
+                                            isInvalid={!!errors.name}
+                                            errorMessage={errors.name?.message}
+                                        />
+                                    )}
+                                />
+                            </div>
+
+                            <div className="pt-1">
+                                {/* Proyecto */}
+                                <Controller
+                                    name="projectId"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <Autocomplete
+                                            label="Proyecto"
+                                            placeholder="Seleccione un proyecto"
+                                            labelPlacement="outside"
+                                            isRequired
+                                            isLoading={loadingProjects}
+                                            selectedKey={field.value}
+                                            onSelectionChange={(key) => {
+                                                const k = String(key)
+                                                field.onChange(k)
+                                                const selected = projects.find(p => p.id === k)
+                                                if (selected) {
+                                                    setProjectSearch(selected.code)
+                                                }
+                                            }}
+                                            onInputChange={setProjectSearch}
+                                            inputValue={projectSearch}
+                                            isInvalid={!!errors.projectId}
+                                            errorMessage={errors.projectId?.message}
+                                        >
+                                            {projects.map((project) => (
+                                                <AutocompleteItem key={project.id} textValue={`${project.code} - ${project.name}`}>
+                                                    <div className="flex flex-col">
+                                                        <span className="text-small font-medium">{project.code}</span>
+                                                        <span className="text-tiny text-default-400">{project.name}</span>
+                                                    </div>
+                                                </AutocompleteItem>
+                                            ))}
+                                        </Autocomplete>
+                                    )}
+                                />
+                            </div>
+
+                            <div className="pt-1">
+                                {/* Posición Presupuestal */}
+                                <Controller
+                                    name="rubricId"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <Autocomplete
+                                            label="Posición Presupuestal"
+                                            placeholder="Seleccione una posición presupuestal"
+                                            labelPlacement="outside"
+                                            isRequired
+                                            isLoading={loadingRubrics}
+                                            selectedKey={field.value}
+                                            onSelectionChange={(key) => {
+                                                const k = String(key)
+                                                field.onChange(k)
+                                                const selected = rubrics.find(r => r.id === k)
+                                                if (selected) {
+                                                    setRubricSearch(selected.code)
+                                                }
+                                            }}
+                                            onInputChange={setRubricSearch}
+                                            inputValue={rubricSearch}
+                                            isInvalid={!!errors.rubricId}
+                                            errorMessage={errors.rubricId?.message}
+                                        >
+                                            {rubrics.map((rubric) => (
+                                                <AutocompleteItem key={rubric.id} textValue={`${rubric.code} - ${rubric.accountName}`}>
+                                                    <div className="flex flex-col">
+                                                        <span className="text-small font-medium">{rubric.code}</span>
+                                                        <span className="text-tiny text-default-400">{rubric.accountName}</span>
+                                                    </div>
+                                                </AutocompleteItem>
+                                            ))}
+                                        </Autocomplete>
+                                    )}
+                                />
+                            </div>
+
+                            <div className="pt-1">
+                                {/* Valor */}
+                                <Controller
+                                    name="budgetCeiling"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <Input
+                                            {...field}
+                                            label="Valor"
+                                            placeholder="0"
+                                            value={field.value ? new Intl.NumberFormat('es-CO').format(parseFloat(field.value.replace(/[^\d]/g, '')) || 0) : ''}
+                                            onValueChange={(val) => {
+                                                const numericValue = val.replace(/[^\d]/g, '')
+                                                field.onChange(numericValue)
+                                            }}
+                                            isRequired
+                                            labelPlacement="outside"
+                                            startContent={
+                                                <span className="text-default-400 text-small">$</span>
+                                            }
+                                            isInvalid={!!errors.budgetCeiling}
+                                            errorMessage={errors.budgetCeiling?.message}
+                                        />
+                                    )}
+                                />
+                            </div>
+
+                            <div className="pt-1">
+                                {/* Observaciones */}
+                                <Controller
+                                    name="observations"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <Textarea
+                                            {...field}
+                                            label="Observaciones"
+                                            placeholder="Ingrese las observaciones (opcional)"
+                                            labelPlacement="outside"
+                                            minRows={3}
+                                            value={field.value || ""}
+                                        />
+                                    )}
                                 />
                             </div>
                         </div>
+                    </ModalBody>
 
-                        <div className="pt-1">
-                            {/* Nombre */}
-                            <Input
-                                label="Nombre"
-                                placeholder="Ingrese el nombre de la actividad"
-                                value={name}
-                                onValueChange={setName}
-                                isRequired
-                                labelPlacement="outside"
-                            />
-                        </div>
-
-                        <div className="pt-1">
-                            {/* Proyecto */}
-                            <Autocomplete
-                                label="Proyecto"
-                                placeholder="Seleccione un proyecto"
-                                labelPlacement="outside"
-                                isRequired
-                                isLoading={loadingProjects}
-                                selectedKey={projectId}
-                                onSelectionChange={(key) => {
-                                    const k = String(key)
-                                    setProjectId(k)
-                                    const selected = projects.find(p => p.id === k)
-                                    if (selected) {
-                                        setProjectSearch(selected.code)
-                                    }
-                                }}
-                                onInputChange={setProjectSearch}
-                                inputValue={projectSearch}
-                            >
-                                {projects.map((project) => (
-                                    <AutocompleteItem key={project.id} textValue={`${project.code} - ${project.name}`}>
-                                        <div className="flex flex-col">
-                                            <span className="text-small font-medium">{project.code}</span>
-                                            <span className="text-tiny text-default-400">{project.name}</span>
-                                        </div>
-                                    </AutocompleteItem>
-                                ))}
-                            </Autocomplete>
-                        </div>
-
-                        <div className="pt-1">
-                            {/* Posición Presupuestal */}
-                            <Autocomplete
-                                label="Posición Presupuestal"
-                                placeholder="Seleccione una posición presupuestal"
-                                labelPlacement="outside"
-                                isRequired
-                                isLoading={loadingRubrics}
-                                selectedKey={rubricId}
-                                onSelectionChange={(key) => {
-                                    const k = String(key)
-                                    setRubricId(k)
-                                    const selected = rubrics.find(r => r.id === k)
-                                    if (selected) {
-                                        setRubricSearch(selected.code)
-                                    }
-                                }}
-                                onInputChange={setRubricSearch}
-                                inputValue={rubricSearch}
-                            >
-                                {rubrics.map((rubric) => (
-                                    <AutocompleteItem key={rubric.id} textValue={`${rubric.code} - ${rubric.accountName}`}>
-                                        <div className="flex flex-col">
-                                            <span className="text-small font-medium">{rubric.code}</span>
-                                            <span className="text-tiny text-default-400">{rubric.accountName}</span>
-                                        </div>
-                                    </AutocompleteItem>
-                                ))}
-                            </Autocomplete>
-                        </div>
-
-                        <div className="pt-1">
-                            {/* Valor */}
-                            <Input
-                                label="Valor"
-                                placeholder="0"
-                                value={budgetCeiling ? new Intl.NumberFormat('es-CO').format(parseFloat(budgetCeiling.replace(/[^\d]/g, '')) || 0) : ''}
-                                onValueChange={(val) => {
-                                    const numericValue = val.replace(/[^\d]/g, '')
-                                    setBudgetCeiling(numericValue)
-                                }}
-                                isRequired
-                                labelPlacement="outside"
-                                startContent={
-                                    <span className="text-default-400 text-small">$</span>
-                                }
-                            />
-                        </div>
-
-                        <div className="pt-1">
-                            {/* Observaciones */}
-                            <Textarea
-                                label="Observaciones"
-                                placeholder="Ingrese las observaciones (opcional)"
-                                value={observations}
-                                onValueChange={setObservations}
-                                labelPlacement="outside"
-                                minRows={3}
-                            />
-                        </div>
-                    </div>
-                </ModalBody>
-
-                <ModalFooter>
-                    <Button variant="flat" onPress={onClose}>
-                        Cancelar
-                    </Button>
-                    <Button
-                        color="primary"
-                        onPress={handleSave}
-                        isLoading={isLoading}
-                        isDisabled={!isValid}
-                    >
-                        Crear
-                    </Button>
-                </ModalFooter>
+                    <ModalFooter>
+                        <Button variant="flat" onPress={handleClose}>
+                            Cancelar
+                        </Button>
+                        <Button
+                            color="primary"
+                            type="submit"
+                            isLoading={isLoading}
+                            isDisabled={!isValid || isLoading}
+                        >
+                            Crear
+                        </Button>
+                    </ModalFooter>
+                </form>
             </ModalContent>
         </Modal>
     )

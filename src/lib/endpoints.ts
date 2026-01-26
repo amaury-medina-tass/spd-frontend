@@ -31,6 +31,7 @@ export const endpoints = {
     rubricsSelect: "/masters/rubrics/select",
     budgetModifications: "/masters/budget-modifications",
     variables: "/masters/variables",
+    variableGoals: "/masters/variable-goals",
   },
   audit: "/audit",
   financial: {
