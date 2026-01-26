@@ -16,6 +16,7 @@ import {
     BarChart3,
     FileCheck,
     Variable,
+    Goal,
 } from "lucide-react"
 import React, { ReactNode } from "react"
 
@@ -136,6 +137,12 @@ export const menuItems: (MenuItem | MenuGroup)[] = [
                 href: "/dashboard/masters/variables",
                 permissionPath: "/masters/variables",
                 icon: React.createElement(Variable, { size: 18 }),
+            },
+            {
+                label: "Indicadores",
+                href: "/dashboard/masters/indicators",
+                permissionPath: "/masters/indicators",
+                icon: React.createElement(Goal, { size: 18 }),
             },
         ],
     },

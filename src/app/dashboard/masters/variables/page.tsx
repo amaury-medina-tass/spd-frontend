@@ -319,7 +319,7 @@ export default function MastersVariablesPage() {
             <VariableGoalsModal
                 isOpen={isGoalsModalOpen}
                 variableId={selectedVariable?.id || null}
-                variableName={selectedVariable?.name}
+                variableCode={selectedVariable?.code}
                 onClose={() => {
                     setIsGoalsModalOpen(false)
                     setSelectedVariable(null)

@@ -32,6 +32,10 @@ export const endpoints = {
     budgetModifications: "/masters/budget-modifications",
     variables: "/masters/variables",
     variableGoals: "/masters/variable-goals",
+    variableQuadrenniums: "/masters/variable-quadrenniums",
+    indicators: "/masters/indicators",
+    actionPlanIndicators: "/masters/action-plan-indicators",
+    indicatorCatalogs: "/masters/indicators/catalogs", // New endpoint for catalogs
   },
   audit: "/audit",
   financial: {
