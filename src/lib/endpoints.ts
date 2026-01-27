@@ -36,6 +36,9 @@ export const endpoints = {
     indicators: "/masters/indicators",
     actionPlanIndicators: "/masters/action-plan-indicators",
     indicatorCatalogs: "/masters/indicators/catalogs", // New endpoint for catalogs
+    indicativePlanIndicatorGoals: "/masters/indicative-plan-indicators-goals",
+    indicativePlanIndicatorQuadrenniums: "/masters/indicative-plan-indicators-quadrenniums",
+    indicativePlanIndicatorQuadrenniumsByIndicator: (id: string) => `/masters/indicative-plan-indicators-quadrenniums/by-indicator/${id}`,
   },
   audit: "/audit",
   financial: {

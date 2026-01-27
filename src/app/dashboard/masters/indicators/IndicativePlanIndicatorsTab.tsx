@@ -15,7 +15,8 @@ import { CreateIndicatorModal } from "@/components/modals/masters/indicators/Cre
 import { deleteIndicator } from "@/services/masters/indicators.service"
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal"
 import { EditIndicatorModal } from "@/components/modals/masters/indicators/EditIndicatorModal"
-import { Pencil } from "lucide-react"
+import { Pencil, Target } from "lucide-react"
+import { IndicativePlanIndicatorGoalsModal } from "@/components/modals/masters/indicators/IndicativePlanIndicatorGoalsModal"
 
 const indicatorColumns: ColumnDef<Indicator>[] = [
     { key: "code", label: "Código", sortable: true },
@@ -57,6 +58,8 @@ export function IndicativePlanIndicatorsTab() {
     const [indicatorToEdit, setIndicatorToEdit] = useState<Indicator | null>(null)
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
     const [indicatorToDelete, setIndicatorToDelete] = useState<Indicator | null>(null)
+    const [isGoalsModalOpen, setIsGoalsModalOpen] = useState(false)
+    const [indicatorForGoals, setIndicatorForGoals] = useState<Indicator | null>(null)
 
     // Table State
     const [items, setItems] = useState<Indicator[]>([])
@@ -195,6 +198,16 @@ export function IndicativePlanIndicatorsTab() {
             })
         }
 
+        actions.push({
+            key: "goals",
+            label: "Ver Metas",
+            icon: <Target size={16} />,
+            onClick: (item) => {
+                setIndicatorForGoals(item)
+                setIsGoalsModalOpen(true)
+            },
+        })
+
         return actions
     }, [canDelete])
 
@@ -271,6 +284,13 @@ export function IndicativePlanIndicatorsTab() {
                 onClose={() => setIsEditModalOpen(false)}
                 onSuccess={fetchIndicators}
                 indicator={indicatorToEdit}
+            />
+
+            <IndicativePlanIndicatorGoalsModal
+                isOpen={isGoalsModalOpen}
+                onClose={() => setIsGoalsModalOpen(false)}
+                indicatorId={indicatorForGoals?.id ?? null}
+                indicatorCode={indicatorForGoals?.code}
             />
         </>
     )

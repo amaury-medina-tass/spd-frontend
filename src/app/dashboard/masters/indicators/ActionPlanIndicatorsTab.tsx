@@ -5,6 +5,7 @@ import { ActionPlanIndicator } from "@/types/masters/indicators"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { AlertTriangle, Plus, RefreshCw, Pencil, Trash2, Eye } from "lucide-react"
 import { usePermissions } from "@/hooks/usePermissions"
+import { useDebounce } from "@/hooks/useDebounce"
 import { getActionPlanIndicators, deleteActionPlanIndicator } from "@/services/masters/indicators.service"
 import { PaginatedData, PaginationMeta } from "@/lib/http"
 import { addToast } from "@heroui/toast"
@@ -49,6 +50,8 @@ export function ActionPlanIndicatorsTab() {
         column: "code",
         direction: "ascending",
     })
+    const [searchInput, setSearchInput] = useState("")
+    const debouncedSearch = useDebounce(searchInput, 400)
 
     // Modals
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
@@ -90,6 +93,11 @@ export function ActionPlanIndicatorsTab() {
     useEffect(() => {
         fetchIndicators()
     }, [fetchIndicators])
+
+    useEffect(() => {
+        setSearch(debouncedSearch)
+        setPage(1)
+    }, [debouncedSearch])
 
     const handleDeleteClick = (indicator: ActionPlanIndicator) => {
         setIndicatorToDelete(indicator)
@@ -188,8 +196,8 @@ export function ActionPlanIndicatorsTab() {
                 isLoading={loading}
                 rowActions={rowActions}
                 topActions={topActions}
-                searchValue={search}
-                onSearchChange={setSearch}
+                searchValue={searchInput}
+                onSearchChange={setSearchInput}
                 searchPlaceholder="Buscar indicadores..."
                 ariaLabel="Tabla de indicadores plan de acción"
                 sortDescriptor={sortDescriptor}

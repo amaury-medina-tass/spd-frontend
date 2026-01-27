@@ -52,7 +52,7 @@ export default function MastersIndicatorsPage() {
                     </div>
 
                     {/* Content based on selected tab */}
-                    <div className="mt-2">
+                    <div className="mt-2 min-w-0">
                         {selectedTab === "indicative" && <IndicativePlanIndicatorsTab />}
                         {selectedTab === "action" && <ActionPlanIndicatorsTab />}
                     </div>

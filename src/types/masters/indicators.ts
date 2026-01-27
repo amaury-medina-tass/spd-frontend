@@ -95,3 +95,22 @@ export type CreateActionPlanIndicatorDTO = {
 }
 
 export type UpdateActionPlanIndicatorDTO = Partial<CreateActionPlanIndicatorDTO>
+
+export interface IndicativePlanIndicatorGoal {
+    id: string
+    indicatorId: string
+    year: number
+    value: string
+    createAt: string
+    updateAt: string
+}
+
+export interface IndicativePlanIndicatorQuadrenniumGoal {
+    id: string
+    indicatorId: string
+    startYear: number
+    endYear: number
+    value: string
+    createAt: string
+    updateAt: string
+}
