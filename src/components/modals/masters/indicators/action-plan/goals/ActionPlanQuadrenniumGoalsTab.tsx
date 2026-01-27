@@ -8,7 +8,8 @@ import {
 } from "@heroui/react"
 import { ActionPlanIndicatorQuadrenniumGoal } from "@/types/masters/indicators"
 import { BarChart, Plus, Pencil, Trash2, X } from "lucide-react"
-import { CleanTable, ColumnDef } from "@/components/tables/CleanTable"
+import { ResourceManager } from "@/components/common/ResourceManager"
+import { ColumnDef } from "@/components/tables/CleanTable"
 import { useForm, Controller } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -327,7 +328,7 @@ export function ActionPlanQuadrenniumGoalsTab({ indicatorId }: Props) {
                 </form>
             </div>
 
-            <CleanTable
+            <ResourceManager
                 columns={quadrenniumColumns}
                 items={quadrenniumGoals}
                 renderCell={renderQuadrenniumCell}

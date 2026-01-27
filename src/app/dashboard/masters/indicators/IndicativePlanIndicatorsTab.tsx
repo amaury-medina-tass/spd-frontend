@@ -47,6 +47,9 @@ const indicatorColumns: ColumnDef<Indicator>[] = [
     },
 ]
 
+import { ManageIndicatorVariablesModal } from "@/components/modals/masters/indicators/ManageIndicatorVariablesModal"
+import { Calculator } from "lucide-react"
+
 export function IndicativePlanIndicatorsTab() {
     const { canRead, canCreate, canUpdate, canDelete } = usePermissions("/masters/indicators")
 
@@ -60,6 +63,8 @@ export function IndicativePlanIndicatorsTab() {
     const [indicatorToDelete, setIndicatorToDelete] = useState<Indicator | null>(null)
     const [isGoalsModalOpen, setIsGoalsModalOpen] = useState(false)
     const [indicatorForGoals, setIndicatorForGoals] = useState<Indicator | null>(null)
+    const [isVariablesModalOpen, setIsVariablesModalOpen] = useState(false)
+    const [indicatorForVariables, setIndicatorForVariables] = useState<Indicator | null>(null)
 
     // Table State
     const [items, setItems] = useState<Indicator[]>([])
@@ -208,6 +213,18 @@ export function IndicativePlanIndicatorsTab() {
             },
         })
 
+        if (canUpdate) {
+            actions.push({
+                key: "variables",
+                label: "Variables",
+                icon: <Calculator size={16} />,
+                onClick: (item) => {
+                    setIndicatorForVariables(item)
+                    setIsVariablesModalOpen(true)
+                },
+            })
+        }
+
         return actions
     }, [canDelete])
 
@@ -291,6 +308,14 @@ export function IndicativePlanIndicatorsTab() {
                 onClose={() => setIsGoalsModalOpen(false)}
                 indicatorId={indicatorForGoals?.id ?? null}
                 indicatorCode={indicatorForGoals?.code}
+            />
+
+            <ManageIndicatorVariablesModal
+                isOpen={isVariablesModalOpen}
+                onClose={() => setIsVariablesModalOpen(false)}
+                indicatorId={indicatorForVariables?.id ?? null}
+                indicatorCode={indicatorForVariables?.code}
+                type="indicative"
             />
         </>
     )

@@ -10,7 +10,8 @@ import { get, post, patch, del, PaginatedData } from "@/lib/http"
 import { endpoints } from "@/lib/endpoints"
 import { IndicativePlanIndicatorQuadrenniumGoal } from "@/types/masters/indicators"
 import { BarChart, Plus, Pencil, Trash2, X } from "lucide-react"
-import { CleanTable, ColumnDef } from "@/components/tables/CleanTable"
+import { ResourceManager } from "@/components/common/ResourceManager"
+import { ColumnDef } from "@/components/tables/CleanTable"
 import { useForm, Controller } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -312,7 +313,7 @@ export function IndicativeQuadrenniumGoalsTab({ indicatorId }: Props) {
                 </form>
             </div>
 
-            <CleanTable
+            <ResourceManager
                 columns={quadrenniumColumns}
                 items={quadrenniumGoals}
                 renderCell={renderQuadrenniumCell}

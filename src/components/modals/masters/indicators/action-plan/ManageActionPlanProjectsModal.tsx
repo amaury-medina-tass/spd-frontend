@@ -10,34 +10,27 @@ import {
     Tabs,
     Tab,
 } from "@heroui/react"
-import { Link2 } from "lucide-react"
-import { AssociatedCdpActivitiesTab } from "./activities/AssociatedCdpActivitiesTab"
-import { AvailableCdpActivitiesTab } from "./activities/AvailableCdpActivitiesTab"
+import { Link2, FolderKanban, CheckCircle2 } from "lucide-react"
+import { AssociatedProjectsTab } from "./projects/AssociatedProjectsTab"
+import { AvailableProjectsTab } from "./projects/AvailableProjectsTab"
 
 type Props = {
     isOpen: boolean
-    positionId: string | null
-    positionNumber?: string
+    indicatorId: string | null
+    indicatorCode?: string
     onClose: () => void
-    onSuccess?: () => void
 }
 
-export function ManageCdpActivitiesModal({
+export function ManageActionPlanProjectsModal({
     isOpen,
-    positionId,
-    positionNumber,
+    indicatorId,
+    indicatorCode,
     onClose,
-    onSuccess,
 }: Props) {
-    const handleClose = () => {
-        onSuccess?.()
-        onClose()
-    }
-
     return (
         <Modal
             isOpen={isOpen}
-            onOpenChange={() => handleClose()}
+            onOpenChange={onClose}
             size="5xl"
             scrollBehavior="inside"
             placement="center"
@@ -55,10 +48,10 @@ export function ManageCdpActivitiesModal({
                             <Link2 size={16} className="text-default-500" />
                         </div>
                         <div>
-                            <span className="text-base font-semibold">Gestionar Actividades Detalladas</span>
-                            {positionNumber && (
+                            <span className="text-base font-semibold">Gestionar Proyectos</span>
+                            {indicatorCode && (
                                 <p className="text-tiny text-default-400 font-normal">
-                                    Posición #{positionNumber}
+                                    Indicador: {indicatorCode}
                                 </p>
                             )}
                         </div>
@@ -67,28 +60,45 @@ export function ManageCdpActivitiesModal({
 
                 <ModalBody className="px-4 sm:px-6 py-4">
                     <Tabs
+                        aria-label="Proyectos"
                         variant="underlined"
                         classNames={{
                             tabList: "gap-6",
                             cursor: "w-full bg-primary",
                         }}
                     >
-                        <Tab key="associated" title="Asociadas">
+                        <Tab
+                            key="associated"
+                            title={
+                                <div className="flex items-center space-x-2">
+                                    <CheckCircle2 size={16} />
+                                    <span>Asociados</span>
+                                </div>
+                            }
+                        >
                             <div className="pt-4">
-                                <AssociatedCdpActivitiesTab positionId={positionId} />
+                                <AssociatedProjectsTab indicatorId={indicatorId} />
                             </div>
                         </Tab>
 
-                        <Tab key="available" title="Disponibles">
+                        <Tab
+                            key="available"
+                            title={
+                                <div className="flex items-center space-x-2">
+                                    <FolderKanban size={16} />
+                                    <span>Disponibles</span>
+                                </div>
+                            }
+                        >
                             <div className="pt-4">
-                                <AvailableCdpActivitiesTab positionId={positionId} />
+                                <AvailableProjectsTab indicatorId={indicatorId} />
                             </div>
                         </Tab>
                     </Tabs>
                 </ModalBody>
 
                 <ModalFooter>
-                    <Button variant="flat" size="sm" onPress={handleClose}>
+                    <Button variant="flat" size="sm" onPress={onClose}>
                         Cerrar
                     </Button>
                 </ModalFooter>

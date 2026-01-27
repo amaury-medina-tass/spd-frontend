@@ -41,6 +41,15 @@ export const endpoints = {
     indicativePlanIndicatorGoals: "/masters/indicative-plan-indicators-goals",
     indicativePlanIndicatorQuadrenniums: "/masters/indicative-plan-indicators-quadrenniums",
     indicativePlanIndicatorQuadrenniumsByIndicator: (id: string) => `/masters/indicative-plan-indicators-quadrenniums/by-indicator/${id}`,
+    // Indicator Variables
+    indicatorVariables: (id: string) => `/masters/indicators/${id}/variables`,
+    indicatorVariablesDissociate: (id: string, variableId: string) => `/masters/indicators/${id}/variables/${variableId}`,
+    // Action Plan Indicator Variables
+    actionPlanIndicatorVariables: (id: string) => `/masters/action-plan-indicators/${id}/variables`,
+    actionPlanIndicatorVariablesDissociate: (id: string, variableId: string) => `/masters/action-plan-indicators/${id}/variables/${variableId}`,
+    // Action Plan Indicator Projects
+    actionPlanIndicatorProjects: (id: string) => `/masters/action-plan-indicators/${id}/projects`,
+    actionPlanIndicatorProjectsDissociate: (id: string, projectId: string) => `/masters/action-plan-indicators/${id}/projects/${projectId}`,
   },
   audit: "/audit",
   financial: {

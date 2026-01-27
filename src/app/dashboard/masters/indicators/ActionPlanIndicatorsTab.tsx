@@ -34,6 +34,10 @@ const indicatorColumns: ColumnDef<ActionPlanIndicator>[] = [
     },
 ]
 
+import { ManageIndicatorVariablesModal } from "@/components/modals/masters/indicators/ManageIndicatorVariablesModal"
+import { ManageActionPlanProjectsModal } from "@/components/modals/masters/indicators/action-plan/ManageActionPlanProjectsModal"
+import { Calculator, Briefcase } from "lucide-react"
+
 export function ActionPlanIndicatorsTab() {
     const { canRead, canCreate, canUpdate, canDelete } = usePermissions("/masters/indicators") // Adjust permission path if needed
 
@@ -64,7 +68,10 @@ export function ActionPlanIndicatorsTab() {
     const [indicatorToDelete, setIndicatorToDelete] = useState<ActionPlanIndicator | null>(null)
     const [isGoalsModalOpen, setIsGoalsModalOpen] = useState(false)
     const [indicatorForGoals, setIndicatorForGoals] = useState<ActionPlanIndicator | null>(null)
-
+    const [isVariablesModalOpen, setIsVariablesModalOpen] = useState(false)
+    const [indicatorForVariables, setIndicatorForVariables] = useState<ActionPlanIndicator | null>(null)
+    const [isProjectsModalOpen, setIsProjectsModalOpen] = useState(false)
+    const [indicatorForProjects, setIndicatorForProjects] = useState<ActionPlanIndicator | null>(null)
 
     const fetchIndicators = useCallback(async () => {
         setLoading(true)
@@ -198,6 +205,28 @@ export function ActionPlanIndicatorsTab() {
             },
         })
 
+        if (canUpdate) {
+            actions.push({
+                key: "variables",
+                label: "Variables",
+                icon: <Calculator size={16} />,
+                onClick: (item) => {
+                    setIndicatorForVariables(item)
+                    setIsVariablesModalOpen(true)
+                },
+            })
+
+            actions.push({
+                key: "projects",
+                label: "Proyectos",
+                icon: <Briefcase size={16} />,
+                onClick: (item) => {
+                    setIndicatorForProjects(item)
+                    setIsProjectsModalOpen(true)
+                },
+            })
+        }
+
         return actions
     }, [canUpdate, canDelete])
 
@@ -251,6 +280,21 @@ export function ActionPlanIndicatorsTab() {
                 onClose={() => setIsGoalsModalOpen(false)}
                 indicatorId={indicatorForGoals?.id ?? null}
                 indicatorCode={indicatorForGoals?.code}
+            />
+
+           <ManageIndicatorVariablesModal
+                isOpen={isVariablesModalOpen}
+                onClose={() => setIsVariablesModalOpen(false)}
+                indicatorId={indicatorForVariables?.id ?? null}
+                indicatorCode={indicatorForVariables?.code}
+                type="action-plan"
+            />
+
+            <ManageActionPlanProjectsModal
+                isOpen={isProjectsModalOpen}
+                onClose={() => setIsProjectsModalOpen(false)}
+                indicatorId={indicatorForProjects?.id ?? null}
+                indicatorCode={indicatorForProjects?.code}
             />
 
             <ConfirmationModal

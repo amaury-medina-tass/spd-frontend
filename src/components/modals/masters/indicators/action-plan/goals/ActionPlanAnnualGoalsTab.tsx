@@ -9,8 +9,9 @@ import {
 import { get, post, patch, del, PaginatedData } from "@/lib/http"
 import { endpoints } from "@/lib/endpoints"
 import { ActionPlanIndicatorGoal } from "@/types/masters/indicators"
-import { BarChart, Search, Plus, Pencil, Trash2, X } from "lucide-react"
-import { CleanTable, ColumnDef } from "@/components/tables/CleanTable"
+import { BarChart, Plus, Pencil, Trash2, X } from "lucide-react"
+import { ResourceManager } from "@/components/common/ResourceManager"
+import { ColumnDef } from "@/components/tables/CleanTable"
 import { useDebounce } from "@/hooks/useDebounce"
 import { useForm, Controller } from "react-hook-form"
 import { z } from "zod"
@@ -313,42 +314,30 @@ export function ActionPlanAnnualGoalsTab({ indicatorId }: Props) {
             </div>
 
             {/* List */}
-            <div className="space-y-4">
-                <div className="flex justify-end">
-                    <Input
-                        size="sm"
-                        placeholder="Buscar año..."
-                        value={search}
-                        onValueChange={setSearch}
-                        startContent={<Search size={16} className="text-default-400" />}
-                        isClearable
-                        onClear={() => setSearch("")}
-                        className="max-w-xs"
-                    />
-                </div>
-
-                <CleanTable
-                    columns={columns}
-                    items={goals}
-                    renderCell={renderCell}
-                    isLoading={loading}
-                    page={page}
-                    totalPages={meta?.totalPages}
-                    onPageChange={setPage}
-                    limit={limit}
-                    onLimitChange={(l) => {
-                        setLimit(l)
-                        setPage(1)
-                    }}
-                    limitOptions={[5, 10, 20]}
-                    emptyContent={
-                        <div className="text-center py-8 text-default-400 border border-dashed border-default-200 rounded-lg">
-                            <BarChart className="w-10 h-10 mx-auto mb-2 opacity-50" />
-                            <p>{search ? "No se encontraron metas para la búsqueda" : "No hay metas registradas para este indicador"}</p>
-                        </div>
-                    }
-                />
-            </div>
+            <ResourceManager
+                columns={columns}
+                items={goals}
+                renderCell={renderCell}
+                search={search}
+                onSearchChange={setSearch}
+                searchPlaceholder="Buscar año..."
+                isLoading={loading}
+                page={page}
+                totalPages={meta?.totalPages}
+                onPageChange={setPage}
+                limit={limit}
+                onLimitChange={(l) => {
+                    setLimit(l)
+                    setPage(1)
+                }}
+                limitOptions={[5, 10, 20]}
+                emptyContent={
+                    <div className="text-center py-8 text-default-400 border border-dashed border-default-200 rounded-lg">
+                        <BarChart className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                        <p>{search ? "No se encontraron metas para la búsqueda" : "No hay metas registradas para este indicador"}</p>
+                    </div>
+                }
+            />
 
             <ConfirmationModal
                 isOpen={isDeleteModalOpen}

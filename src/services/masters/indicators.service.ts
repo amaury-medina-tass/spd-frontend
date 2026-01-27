@@ -71,3 +71,45 @@ export const updateActionPlanIndicatorQuadrenniumGoal = async (id: string, data:
 export const deleteActionPlanIndicatorQuadrenniumGoal = async (id: string) => {
     return await del<void>(`${endpoints.masters.actionPlanIndicatorQuadrenniums}/${id}`)
 }
+
+// Indicator Variables
+
+export const getIndicatorVariables = async (id: string, params: string) => {
+    return await get<PaginatedData<any>>(`${endpoints.masters.indicatorVariables(id)}?${params}`)
+}
+
+export const associateIndicatorVariable = async (id: string, variableId: string) => {
+    return await post<any>(endpoints.masters.indicatorVariables(id), { variableId })
+}
+
+export const disassociateIndicatorVariable = async (id: string, variableId: string) => {
+    return await del<void>(endpoints.masters.indicatorVariablesDissociate(id, variableId))
+}
+
+// Action Plan Indicator Variables
+
+export const getActionPlanIndicatorVariables = async (id: string, params: string) => {
+    return await get<PaginatedData<any>>(`${endpoints.masters.actionPlanIndicatorVariables(id)}?${params}`)
+}
+
+export const associateActionPlanIndicatorVariable = async (id: string, variableId: string) => {
+    return await post<any>(endpoints.masters.actionPlanIndicatorVariables(id), { variableId })
+}
+
+export const disassociateActionPlanIndicatorVariable = async (id: string, variableId: string) => {
+    return await del<void>(endpoints.masters.actionPlanIndicatorVariablesDissociate(id, variableId))
+}
+
+// Action Plan Indicator Projects
+
+export const getActionPlanIndicatorProjects = async (id: string, params: string) => {
+    return await get<PaginatedData<any>>(`${endpoints.masters.actionPlanIndicatorProjects(id)}?${params}`)
+}
+
+export const associateActionPlanIndicatorProject = async (id: string, projectId: string) => {
+    return await post<any>(endpoints.masters.actionPlanIndicatorProjects(id), { projectId })
+}
+
+export const disassociateActionPlanIndicatorProject = async (id: string, projectId: string) => {
+    return await del<void>(endpoints.masters.actionPlanIndicatorProjectsDissociate(id, projectId))
+}
