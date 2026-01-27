@@ -3,16 +3,17 @@
 import { DataTable, ColumnDef, SortDescriptor, TopAction, RowAction } from "@/components/tables/DataTable"
 import { ActionPlanIndicator } from "@/types/masters/indicators"
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { AlertTriangle, Plus, RefreshCw, Pencil, Trash2, Eye } from "lucide-react"
+import { AlertTriangle, Plus, RefreshCw, Pencil, Trash2, Eye, Target } from "lucide-react"
 import { usePermissions } from "@/hooks/usePermissions"
 import { useDebounce } from "@/hooks/useDebounce"
 import { getActionPlanIndicators, deleteActionPlanIndicator } from "@/services/masters/indicators.service"
 import { PaginatedData, PaginationMeta } from "@/lib/http"
 import { addToast } from "@heroui/toast"
-import { CreateActionPlanIndicatorModal } from "@/components/modals/masters/indicators/CreateActionPlanIndicatorModal"
-import { EditActionPlanIndicatorModal } from "@/components/modals/masters/indicators/EditActionPlanIndicatorModal"
+import { CreateActionPlanIndicatorModal } from "@/components/modals/masters/indicators/action-plan/CreateActionPlanIndicatorModal"
+import { EditActionPlanIndicatorModal } from "@/components/modals/masters/indicators/action-plan/EditActionPlanIndicatorModal"
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal"
-import { ActionPlanIndicatorDetailModal } from "@/components/modals/masters/indicators/ActionPlanIndicatorDetailModal"
+import { ActionPlanIndicatorDetailModal } from "@/components/modals/masters/indicators/action-plan/ActionPlanIndicatorDetailModal"
+import { ActionPlanIndicatorGoalsModal } from "@/components/modals/masters/indicators/action-plan/ActionPlanIndicatorGoalsModal"
 
 const indicatorColumns: ColumnDef<ActionPlanIndicator>[] = [
     { key: "code", label: "Código", sortable: true },
@@ -61,6 +62,8 @@ export function ActionPlanIndicatorsTab() {
     const [selectedIndicator, setSelectedIndicator] = useState<ActionPlanIndicator | null>(null)
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
     const [indicatorToDelete, setIndicatorToDelete] = useState<ActionPlanIndicator | null>(null)
+    const [isGoalsModalOpen, setIsGoalsModalOpen] = useState(false)
+    const [indicatorForGoals, setIndicatorForGoals] = useState<ActionPlanIndicator | null>(null)
 
 
     const fetchIndicators = useCallback(async () => {
@@ -185,6 +188,16 @@ export function ActionPlanIndicatorsTab() {
             })
         }
 
+        actions.push({
+            key: "goals",
+            label: "Ver Metas",
+            icon: <Target size={16} />,
+            onClick: (item) => {
+                setIndicatorForGoals(item)
+                setIsGoalsModalOpen(true)
+            },
+        })
+
         return actions
     }, [canUpdate, canDelete])
 
@@ -231,6 +244,13 @@ export function ActionPlanIndicatorsTab() {
                 isOpen={isDetailModalOpen}
                 onClose={() => setIsDetailModalOpen(false)}
                 indicator={selectedIndicator}
+            />
+
+            <ActionPlanIndicatorGoalsModal
+                isOpen={isGoalsModalOpen}
+                onClose={() => setIsGoalsModalOpen(false)}
+                indicatorId={indicatorForGoals?.id ?? null}
+                indicatorCode={indicatorForGoals?.code}
             />
 
             <ConfirmationModal

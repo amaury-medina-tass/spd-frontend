@@ -10,13 +10,13 @@ import { RefreshCw, Eye, Plus, Trash2 } from "lucide-react"
 import { addToast } from "@heroui/toast"
 import { Indicator } from "@/types/masters/indicators"
 import { getIndicators } from "@/services/masters/indicators.service"
-import { IndicatorDetailModal } from "@/components/modals/masters/indicators/IndicatorDetailModal"
-import { CreateIndicatorModal } from "@/components/modals/masters/indicators/CreateIndicatorModal"
+import { IndicatorDetailModal } from "@/components/modals/masters/indicators/indicative-plan/IndicatorDetailModal"
+import { CreateIndicatorModal } from "@/components/modals/masters/indicators/indicative-plan/CreateIndicatorModal"
 import { deleteIndicator } from "@/services/masters/indicators.service"
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal"
-import { EditIndicatorModal } from "@/components/modals/masters/indicators/EditIndicatorModal"
+import { EditIndicatorModal } from "@/components/modals/masters/indicators/indicative-plan/EditIndicatorModal"
 import { Pencil, Target } from "lucide-react"
-import { IndicativePlanIndicatorGoalsModal } from "@/components/modals/masters/indicators/IndicativePlanIndicatorGoalsModal"
+import { IndicativePlanIndicatorGoalsModal } from "@/components/modals/masters/indicators/indicative-plan/IndicativePlanIndicatorGoalsModal"
 
 const indicatorColumns: ColumnDef<Indicator>[] = [
     { key: "code", label: "Código", sortable: true },

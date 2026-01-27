@@ -35,6 +35,8 @@ export const endpoints = {
     variableQuadrenniums: "/masters/variable-quadrenniums",
     indicators: "/masters/indicators",
     actionPlanIndicators: "/masters/action-plan-indicators",
+    actionPlanIndicatorGoals: "/masters/action-plan-indicators-goals",
+    actionPlanIndicatorQuadrenniums: "/masters/action-plan-indicators-quadrenniums",
     indicatorCatalogs: "/masters/indicators/catalogs", // New endpoint for catalogs
     indicativePlanIndicatorGoals: "/masters/indicative-plan-indicators-goals",
     indicativePlanIndicatorQuadrenniums: "/masters/indicative-plan-indicators-quadrenniums",

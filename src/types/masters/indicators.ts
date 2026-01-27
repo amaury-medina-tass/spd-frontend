@@ -105,7 +105,28 @@ export interface IndicativePlanIndicatorGoal {
     updateAt: string
 }
 
+
 export interface IndicativePlanIndicatorQuadrenniumGoal {
+    id: string
+    indicatorId: string
+    startYear: number
+    endYear: number
+    value: string
+    createAt: string
+    updateAt: string
+}
+
+
+export interface ActionPlanIndicatorGoal {
+    id: string
+    indicatorId: string
+    year: number
+    value: string
+    createAt: string
+    updateAt: string
+}
+
+export interface ActionPlanIndicatorQuadrenniumGoal {
     id: string
     indicatorId: string
     startYear: number

@@ -1,6 +1,6 @@
 import { get, post, put, del, PaginatedData, patch } from "@/lib/http"
 import { endpoints } from "@/lib/endpoints"
-import { CreateIndicatorDTO, Indicator, IndicatorCatalogs, UpdateIndicatorDTO, ActionPlanIndicator, CreateActionPlanIndicatorDTO, UpdateActionPlanIndicatorDTO } from "@/types/masters/indicators"
+import { CreateIndicatorDTO, Indicator, IndicatorCatalogs, UpdateIndicatorDTO, ActionPlanIndicator, CreateActionPlanIndicatorDTO, UpdateActionPlanIndicatorDTO, ActionPlanIndicatorQuadrenniumGoal, ActionPlanIndicatorGoal } from "@/types/masters/indicators"
 
 export const getIndicators = async (params: string) => {
     return await get<PaginatedData<Indicator>>(`${endpoints.masters.indicators}?${params}`)
@@ -38,4 +38,36 @@ export const updateActionPlanIndicator = async (id: string, data: UpdateActionPl
 
 export const deleteActionPlanIndicator = async (id: string) => {
     return await del<void>(`${endpoints.masters.actionPlanIndicators}/${id}`)
+}
+
+export const getActionPlanIndicatorGoals = async (params: string) => {
+    return await get<PaginatedData<ActionPlanIndicatorGoal>>(`${endpoints.masters.actionPlanIndicatorGoals}?${params}`)
+}
+
+export const createActionPlanIndicatorGoal = async (data: any) => {
+    return await post<ActionPlanIndicatorGoal>(endpoints.masters.actionPlanIndicatorGoals, data)
+}
+
+export const updateActionPlanIndicatorGoal = async (id: string, data: any) => {
+    return await patch<ActionPlanIndicatorGoal>(`${endpoints.masters.actionPlanIndicatorGoals}/${id}`, data)
+}
+
+export const deleteActionPlanIndicatorGoal = async (id: string) => {
+    return await del<void>(`${endpoints.masters.actionPlanIndicatorGoals}/${id}`)
+}
+
+export const getActionPlanIndicatorQuadrenniumGoals = async (params: string) => {
+    return await get<PaginatedData<ActionPlanIndicatorQuadrenniumGoal>>(`${endpoints.masters.actionPlanIndicatorQuadrenniums}?${params}`)
+}
+
+export const createActionPlanIndicatorQuadrenniumGoal = async (data: any) => {
+    return await post<ActionPlanIndicatorQuadrenniumGoal>(endpoints.masters.actionPlanIndicatorQuadrenniums, data)
+}
+
+export const updateActionPlanIndicatorQuadrenniumGoal = async (id: string, data: any) => {
+    return await patch<ActionPlanIndicatorQuadrenniumGoal>(`${endpoints.masters.actionPlanIndicatorQuadrenniums}/${id}`, data)
+}
+
+export const deleteActionPlanIndicatorQuadrenniumGoal = async (id: string) => {
+    return await del<void>(`${endpoints.masters.actionPlanIndicatorQuadrenniums}/${id}`)
 }
