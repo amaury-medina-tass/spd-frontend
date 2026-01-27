@@ -13,7 +13,7 @@ import {
     Card,
     CardBody,
 } from "@heroui/react"
-import { Link2, X, Plus } from "lucide-react"
+import { Link2, X, Plus, FolderKanban, CheckCircle2 } from "lucide-react"
 import { useState, useEffect, useCallback, useMemo } from "react"
 import { addToast } from "@heroui/toast"
 import { Variable } from "@/types/variable"
@@ -293,7 +293,15 @@ export function ManageIndicatorVariablesModal({
                                 cursor: "w-full bg-primary",
                             }}
                         >
-                            <Tab key="associated" title="Asociadas">
+                            <Tab 
+                                key="associated" 
+                                title={
+                                    <div className="flex items-center space-x-2">
+                                        <CheckCircle2 size={16} />
+                                        <span>Asociadas</span>
+                                    </div>
+                                }
+                            >
                                 <div className="pt-4">
                                     <ResourceManager
                                         search={searchAssociated}
@@ -323,7 +331,15 @@ export function ManageIndicatorVariablesModal({
                                 </div>
                             </Tab>
 
-                            <Tab key="available" title="Disponibles">
+                            <Tab 
+                                key="available" 
+                                title={
+                                    <div className="flex items-center space-x-2">
+                                        <FolderKanban size={16} />
+                                        <span>Disponibles</span>
+                                    </div>
+                                }
+                            >
                                 <div className="pt-4">
                                     <ResourceManager
                                         search={searchAvailable}

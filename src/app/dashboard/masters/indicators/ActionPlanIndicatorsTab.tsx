@@ -36,7 +36,8 @@ const indicatorColumns: ColumnDef<ActionPlanIndicator>[] = [
 
 import { ManageIndicatorVariablesModal } from "@/components/modals/masters/indicators/ManageIndicatorVariablesModal"
 import { ManageActionPlanProjectsModal } from "@/components/modals/masters/indicators/action-plan/ManageActionPlanProjectsModal"
-import { Calculator, Briefcase } from "lucide-react"
+import { Calculator, Briefcase, FunctionSquare } from "lucide-react"
+import { FormulaEditorModal } from "@/components/modals/common/FormulaEditorModal"
 
 export function ActionPlanIndicatorsTab() {
     const { canRead, canCreate, canUpdate, canDelete } = usePermissions("/masters/indicators") // Adjust permission path if needed
@@ -72,6 +73,8 @@ export function ActionPlanIndicatorsTab() {
     const [indicatorForVariables, setIndicatorForVariables] = useState<ActionPlanIndicator | null>(null)
     const [isProjectsModalOpen, setIsProjectsModalOpen] = useState(false)
     const [indicatorForProjects, setIndicatorForProjects] = useState<ActionPlanIndicator | null>(null)
+    const [isFormulaModalOpen, setIsFormulaModalOpen] = useState(false)
+    const [indicatorForFormula, setIndicatorForFormula] = useState<ActionPlanIndicator | null>(null)
 
     const fetchIndicators = useCallback(async () => {
         setLoading(true)
@@ -225,6 +228,16 @@ export function ActionPlanIndicatorsTab() {
                     setIsProjectsModalOpen(true)
                 },
             })
+
+            actions.push({
+                key: "formula",
+                label: "Fórmula",
+                icon: <FunctionSquare size={16} />,
+                onClick: (item) => {
+                    setIndicatorForFormula(item)
+                    setIsFormulaModalOpen(true)
+                },
+            })
         }
 
         return actions
@@ -305,6 +318,29 @@ export function ActionPlanIndicatorsTab() {
                 description={`¿Estás seguro de que deseas eliminar el indicador "${indicatorToDelete?.name}"? Esta acción no se puede deshacer.`}
                 confirmText="Eliminar"
                 confirmColor="danger"
+            />
+
+            <FormulaEditorModal
+                isOpen={isFormulaModalOpen}
+                onClose={() => setIsFormulaModalOpen(false)}
+                onSave={async (formula, ast) => {
+                    console.log("Formula Saved:", formula)
+                    console.log("AST:", ast)
+                    addToast({
+                        title: "Fórmula Guardada",
+                        description: "La fórmula se ha guardado correctamente (simulado)",
+                        color: "success"
+                    })
+                    // TODO: Call service to update indicator formula
+                    return Promise.resolve()
+                }}
+                initialFormula="" 
+                title={`Editor de Fórmula - ${indicatorForFormula?.code || ''}`}
+                indicatorId={indicatorForFormula?.id || ''}
+                // TODO: Fetch and pass actual variables/goals
+                variables={[]}
+                goalsVariables={[]}
+                goalsIndicators={[]}
             />
         </>
     )
