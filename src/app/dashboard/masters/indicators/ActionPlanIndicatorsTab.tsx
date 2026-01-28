@@ -14,6 +14,7 @@ import { EditActionPlanIndicatorModal } from "@/components/modals/masters/indica
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal"
 import { ActionPlanIndicatorDetailModal } from "@/components/modals/masters/indicators/action-plan/ActionPlanIndicatorDetailModal"
 import { ActionPlanIndicatorGoalsModal } from "@/components/modals/masters/indicators/action-plan/ActionPlanIndicatorGoalsModal"
+import { createFormula } from "@/services/masters/formulas.service"
 
 const indicatorColumns: ColumnDef<ActionPlanIndicator>[] = [
     { key: "code", label: "Código", sortable: true },
@@ -323,24 +324,31 @@ export function ActionPlanIndicatorsTab() {
             <FormulaEditorModal
                 isOpen={isFormulaModalOpen}
                 onClose={() => setIsFormulaModalOpen(false)}
-                onSave={async (formula, ast) => {
-                    console.log("Formula Saved:", formula)
-                    console.log("AST:", ast)
-                    addToast({
-                        title: "Fórmula Guardada",
-                        description: "La fórmula se ha guardado correctamente (simulado)",
-                        color: "success"
-                    })
-                    // TODO: Call service to update indicator formula
-                    return Promise.resolve()
+                onSave={async (payload: any) => {
+                    console.log("PAYLOAD TO BACKEND:", payload)
+                    try {
+                        await createFormula({
+                            expression: payload.expression,
+                            ast: payload.ast,
+                            actionIndicatorId: indicatorForFormula?.id
+                        });
+                        addToast({
+                            title: "Fórmula Guardada",
+                            description: "La fórmula se ha guardado correctamente",
+                            color: "success"
+                        })
+                        fetchIndicators(); // Refresh to update status if needed
+                        setIsFormulaModalOpen(false);
+                    } catch (error: any) {
+                        addToast({
+                            title: "Error al guardar fórmula",
+                            description: error.message || "Ocurrió un error inesperado",
+                            color: "danger"
+                        })
+                    }
                 }}
-                initialFormula="" 
                 title={`Editor de Fórmula - ${indicatorForFormula?.code || ''}`}
                 indicatorId={indicatorForFormula?.id || ''}
-                // TODO: Fetch and pass actual variables/goals
-                variables={[]}
-                goalsVariables={[]}
-                goalsIndicators={[]}
             />
         </>
     )

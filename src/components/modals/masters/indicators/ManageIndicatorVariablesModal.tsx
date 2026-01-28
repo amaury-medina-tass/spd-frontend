@@ -137,7 +137,7 @@ export function ManageIndicatorVariablesModal({
         }
     }, [searchAvailable, pageAvailable, limit, activeTab])
 
-    const handleAssociate = async (variableId: string) => {
+    const handleAssociate = useCallback(async (variableId: string) => {
         if (!indicatorId) return
         setActionLoading(variableId)
         try {
@@ -154,9 +154,9 @@ export function ManageIndicatorVariablesModal({
         } finally {
             setActionLoading(null)
         }
-    }
+    }, [indicatorId, type, fetchAssociated, fetchAvailable])
 
-    const handleDissociate = async (variableId: string) => {
+    const handleDissociate = useCallback(async (variableId: string) => {
         if (!indicatorId) return
         setActionLoading(variableId)
         try {
@@ -173,7 +173,7 @@ export function ManageIndicatorVariablesModal({
         } finally {
             setActionLoading(null)
         }
-    }
+    }, [indicatorId, type, fetchAssociated, fetchAvailable])
 
     const loading = loadingAssociated || loadingAvailable
 
@@ -210,7 +210,7 @@ export function ManageIndicatorVariablesModal({
             default:
                 return null
         }
-    }, [actionLoading])
+    }, [actionLoading, handleAssociate, handleDissociate])
 
     const renderMobileItem = useCallback((item: Variable, isAssociated: boolean) => (
         <Card className="bg-default-50 border border-default-200 shadow-none">
@@ -244,7 +244,7 @@ export function ManageIndicatorVariablesModal({
                 )}
             </CardBody>
         </Card>
-    ), [actionLoading])
+    ), [actionLoading, handleAssociate, handleDissociate])
 
 
     return (

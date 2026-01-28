@@ -1,13 +1,16 @@
 export interface FormulaStep {
-    type: 'variable' | 'goal_variable' | 'goal_indicator' | 'baseline' | 'function' | 'operator' | 'comparison' | 'constant' | 'separator' | 'parenthesis' | 'advance';
+    type: 'variable' | 'goal_variable' | 'goal_indicator' | 'quadrennium_variable' | 'quadrennium_indicator' | 'baseline' | 'function' | 'operator' | 'comparison' | 'constant' | 'separator' | 'parenthesis' | 'advance';
     value: any;
 }
 
 export interface Variable {
     id: string;
+    code?: string;
     name: string;
     description?: string;
     formula?: FormulaStep[];
+    goals?: GoalVariable[];
+    quadrenniums?: VariableQuadrenium[];
 }
 
 export interface GoalVariable {
@@ -16,9 +19,32 @@ export interface GoalVariable {
     label?: string;
 }
 
+export interface VariableQuadrenium {
+    id: string;
+    startYear: number;
+    endYear: number;
+    value: string;
+    label?: string;
+}
+
 export interface GoalIndicator {
     idMeta: string;
-    metaIndicador: string;
+    valorMeta: string; // Changed from metaIndicador to match likely API or normalize
+    label?: string;
+}
+
+export interface IndicatorQuadrennium {
+    id: string;
+    startYear: number;
+    endYear: number;
+    value: string;
+    label?: string;
+}
+
+export interface VariableAdvance {
+    id: string;
+    year: number;
+    months: number[]; // Array of month numbers (1-12)
     label?: string;
 }
 
@@ -72,14 +98,16 @@ export function parseFormulaString(
     formulaString: string,
     variables: Variable[] = [],
     goalsVariables: GoalVariable[] = [],
-    goalsIndicators: GoalIndicator[] = []
+    goalsIndicators: GoalIndicator[] = [],
+    variableQuadrenniums: Map<string, VariableQuadrenium[]> = new Map(), // Not strictly used for lookup here unless flat list passed
+    indicatorQuadrenniums: IndicatorQuadrennium[] = []
 ): FormulaStep[] {
     if (!formulaString || typeof formulaString !== 'string') {
         return [];
     }
 
     const steps: FormulaStep[] = [];
-    const tokenRegex = /(\[LINEA_BASE\]|\[MV:[^\]]+\]|\[MI:[^\]]+\]|\[[^\]]+\]|SUM\(|AVG\(|MAX\(|MIN\(|IF\(|[+\-*/(),]|≠|≥|≤|[=><]|\d+\.?\d*)/g;
+    const tokenRegex = /(\[LINEA_BASE\]|\[MV:[^\]]+\]|\[MI:[^\]]+\]|\[QV:[^\]]+\]|\[QI:[^\]]+\]|\[[^\]]+\]|SUM\(|AVG\(|MAX\(|MIN\(|IF\(|[+\-*/(),]|≠|≥|≤|[=><]|\d+\.?\d*)/g;
 
     let match;
     while ((match = tokenRegex.exec(formulaString)) !== null) {
@@ -89,7 +117,7 @@ export function parseFormulaString(
         if (token === '[LINEA_BASE]') {
             steps.push({ type: 'baseline', value: { id: 'LINEA_BASE', label: 'Línea Base' } });
         }
-        else if (token.startsWith('[') && token.endsWith(']') && !token.startsWith('[MV:') && !token.startsWith('[MI:')) {
+        else if (token.startsWith('[') && token.endsWith(']') && !token.startsWith('[MV:') && !token.startsWith('[MI:') && !token.startsWith('[QV:') && !token.startsWith('[QI:')) {
             const varId = token.slice(1, -1);
             const variable = variables.find(v => v.id === varId);
             if (variable) {
@@ -101,21 +129,57 @@ export function parseFormulaString(
         else if (token.startsWith('[MV:') && token.endsWith(']')) {
             const idMeta = token.slice(4, -1);
             const goal = goalsVariables.find(g => g.idMeta === idMeta);
-            if (goal) {
-                const label = `Meta Variable [${goal.valorMeta}]`;
-                steps.push({ type: 'goal_variable', value: { ...goal, label } });
+             // Also check inside variables if goalsVariables param is empty/flat
+             let foundGoal = goal;
+             if (!foundGoal) {
+                 for (const v of variables) {
+                     const g = v.goals?.find(vg => vg.idMeta === idMeta);
+                     if (g) { foundGoal = g; break; }
+                 }
+             }
+
+            if (foundGoal) {
+                const label = `Meta Var [${foundGoal.valorMeta}]`;
+                steps.push({ type: 'goal_variable', value: { ...foundGoal, label } });
             } else {
-                steps.push({ type: 'goal_variable', value: { idMeta, label: `Meta Variable [${idMeta}]` } as any });
+                steps.push({ type: 'goal_variable', value: { idMeta, label: `Meta Var [${idMeta}]` } as any });
             }
         }
         else if (token.startsWith('[MI:') && token.endsWith(']')) {
             const idMeta = token.slice(4, -1);
             const goal = goalsIndicators.find(g => g.idMeta === idMeta);
             if (goal) {
-                const label = `Meta Indicador [${goal.metaIndicador}]`;
+                const label = `Meta Ind [${goal.valorMeta}]`;
                 steps.push({ type: 'goal_indicator', value: { ...goal, label } });
             } else {
-                steps.push({ type: 'goal_indicator', value: { idMeta, label: `Meta Indicador [${idMeta}]` } as any });
+                steps.push({ type: 'goal_indicator', value: { idMeta, label: `Meta Ind [${idMeta}]` } as any });
+            }
+        }
+        else if (token.startsWith('[QV:') && token.endsWith(']')) {
+            const id = token.slice(4, -1);
+            // Search in variables
+            let foundQuad: VariableQuadrenium | undefined;
+            for (const v of variables) {
+                const q = v.quadrenniums?.find(vq => vq.id === id);
+                if (q) { foundQuad = q; break; }
+            }
+
+            if (foundQuad) {
+                const label = `Cuatrenio Var [${foundQuad.startYear}-${foundQuad.endYear}]`;
+                steps.push({ type: 'quadrennium_variable', value: { ...foundQuad, label } });
+            } else {
+                steps.push({ type: 'quadrennium_variable', value: { id, label: `Cuatrenio Var [${id}]` } as any });
+            }
+        }
+        else if (token.startsWith('[QI:') && token.endsWith(']')) {
+            const id = token.slice(4, -1);
+            const quad = indicatorQuadrenniums.find(q => q.id === id);
+            
+            if (quad) {
+                const label = `Cuatrenio Ind [${quad.startYear}-${quad.endYear}]`;
+                steps.push({ type: 'quadrennium_indicator', value: { ...quad, label } });
+            } else {
+                steps.push({ type: 'quadrennium_indicator', value: { id, label: `Cuatrenio Ind [${id}]` } as any });
             }
         }
         else if (/^(SUM|AVG|MAX|MIN|IF)\($/i.test(token)) {
@@ -209,6 +273,8 @@ export function validateFormula(steps: FormulaStep[]): ValidationResult {
             case 'constant':
             case 'goal_variable':
             case 'goal_indicator':
+            case 'quadrennium_variable':
+            case 'quadrennium_indicator':
             case 'baseline':
                 if (functionStack.length > 0) {
                     functionStack[functionStack.length - 1].hasArgs = true;
@@ -221,13 +287,20 @@ export function validateFormula(steps: FormulaStep[]): ValidationResult {
                     result.isValid = false;
                     result.errors.push('Operadores consecutivos no permitidos');
                 }
+                
+                const isUnary = step.value.symbol === '-' || step.value.symbol === '+';
+                
                 if (!prevStep) {
-                    result.isValid = false;
-                    result.errors.push('La fórmula no puede iniciar con un operador');
+                    if (!isUnary) {
+                        result.isValid = false;
+                        result.errors.push('La fórmula no puede iniciar con un operador (salvo signo + o -)');
+                    }
                 }
                 if (prevStep && (prevStep.type === 'function' || (prevStep.type === 'parenthesis' && prevStep.value === '('))) {
-                    result.isValid = false;
-                    result.errors.push('Operador no puede seguir a paréntesis de apertura');
+                    if (!isUnary) {
+                        result.isValid = false;
+                        result.errors.push('Operador no puede seguir a paréntesis de apertura (salvo signo + o -)');
+                    }
                 }
                 break;
 
@@ -249,7 +322,7 @@ export function validateFormula(steps: FormulaStep[]): ValidationResult {
     }
 
     const lastStep = steps[steps.length - 1];
-    const validEndings = ['variable', 'advance', 'constant', 'goal_variable', 'goal_indicator', 'baseline'];
+    const validEndings = ['variable', 'advance', 'constant', 'goal_variable', 'goal_indicator', 'quadrennium_variable', 'quadrennium_indicator', 'baseline'];
     const isValidEnding = validEndings.includes(lastStep.type) ||
         (lastStep.type === 'parenthesis' && lastStep.value === ')');
 
@@ -309,6 +382,10 @@ export function buildAST(steps: FormulaStep[], expandVariables = false) {
                 return { type: 'goal_var', value: step.value.idMeta };
             case 'goal_indicator':
                 return { type: 'goal_ind', value: step.value.idMeta };
+            case 'quadrennium_variable':
+                return { type: 'quad_var', value: step.value.id };
+            case 'quadrennium_indicator':
+                return { type: 'quad_ind', value: step.value.id };
             case 'baseline':
                 return { type: 'baseline', value: 'LINEA_BASE' };
             case 'operator':
@@ -389,8 +466,8 @@ export function buildAST(steps: FormulaStep[], expandVariables = false) {
             return { kind: 'error', message: 'Unexpected end of formula' };
         }
 
-        // Handle constants, goal references, and baseline
-        if (token.type === 'const' || token.type === 'goal_var' || token.type === 'goal_ind' || token.type === 'baseline') {
+        // Handle constants, goal/quad references, and baseline
+        if (token.type === 'const' || token.type === 'goal_var' || token.type === 'goal_ind' || token.type === 'quad_var' || token.type === 'quad_ind' || token.type === 'baseline') {
             consume();
             return { kind: token.type, value: token.value };
         }

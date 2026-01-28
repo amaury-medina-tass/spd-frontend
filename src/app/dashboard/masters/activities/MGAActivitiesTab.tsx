@@ -14,6 +14,7 @@ import { getErrorMessage } from "@/lib/error-codes"
 import { MGAActivityModal } from "@/components/modals/masters/activities/mga/MGAActivityModal"
 import { CreateMGAActivityModal } from "@/components/modals/masters/activities/mga/CreateMGAActivityModal"
 import { ManageDetailedActivitiesModal } from "@/components/modals/masters/activities/mga/ManageDetailedActivitiesModal"
+import { getMGAActivities } from "@/services/masters/mga-activities.service"
 
 const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("es-CO", {
@@ -148,7 +149,7 @@ export function MGAActivitiesTab() {
                 params.set("sortOrder", sortDescriptor.direction === "ascending" ? "ASC" : "DESC")
             }
 
-            const result = await get<PaginatedData<MGAActivity>>(`${endpoints.masters.mgaActivities}?${params}`)
+            const result = await getMGAActivities(params.toString())
             setItems(result.data)
             setMeta(result.meta)
         } catch (e: any) {
