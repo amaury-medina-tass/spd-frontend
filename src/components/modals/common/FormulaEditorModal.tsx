@@ -53,7 +53,8 @@ import {
     getFormulaStatusMessage,
     FORMULA_FUNCTIONS,
     FORMULA_OPERATORS,
-    COMPARISON_OPERATORS
+    COMPARISON_OPERATORS,
+    convertAstToSteps
 } from "@/utils/formula";
 
 // Helper function to clean labels that come with ":value" format
@@ -166,7 +167,7 @@ const StepChip = ({ step, onDelete }: { step: FormulaStep; onDelete?: () => void
     };
 
     const style = getStepStyle();
-    
+
     const getDisplayValue = () => {
         switch (step.type) {
             case 'variable': return step.value.name;
@@ -174,11 +175,11 @@ const StepChip = ({ step, onDelete }: { step: FormulaStep; onDelete?: () => void
             case 'operator': return step.value.symbol;
             case 'comparison': return step.value.symbol;
             case 'constant': return step.value;
-            case 'goal_variable': 
-            case 'goal_indicator': 
+            case 'goal_variable':
+            case 'goal_indicator':
                 return cleanLabel(step.value.label, step.value.valorMeta);
-            case 'quadrennium_variable': 
-            case 'quadrennium_indicator': 
+            case 'quadrennium_variable':
+            case 'quadrennium_indicator':
                 return cleanLabel(step.value.label, `${step.value.startYear}-${step.value.endYear}`);
             case 'advance':
                 return step.value.label || `Avance ${step.value.year}`;
@@ -213,7 +214,7 @@ const StepChip = ({ step, onDelete }: { step: FormulaStep; onDelete?: () => void
     }
 
     return (
-        <div 
+        <div
             className={`
                 group inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[4px] text-xs border
                 ${style.bg} ${style.border} ${style.text}
@@ -222,8 +223,8 @@ const StepChip = ({ step, onDelete }: { step: FormulaStep; onDelete?: () => void
         >
             <span className="font-medium font-mono">{getDisplayValue()}</span>
             {onDelete && (
-                <button 
-                    onClick={(e) => { e.stopPropagation(); onDelete(); }} 
+                <button
+                    onClick={(e) => { e.stopPropagation(); onDelete(); }}
                     className="ml-0.5 opacity-0 group-hover:opacity-70 hover:opacity-100 transition-opacity focus:outline-none rounded-full hover:bg-black/10 dark:hover:bg-white/10 p-0.5"
                 >
                     <X size={10} strokeWidth={2.5} />
@@ -243,25 +244,26 @@ export function FormulaEditorModal({
     const currentYear = new Date().getFullYear().toString();
     const [selectedYear, setSelectedYear] = useState<string>(currentYear);
     const [isLoading, setIsLoading] = useState(false);
-    
+
     // Data State
     const [variables, setVariables] = useState<Variable[]>([]);
     const [goalVariables, setGoalVariables] = useState<GoalVariable[]>([]);
     const [goalIndicators, setGoalIndicators] = useState<GoalIndicator[]>([]);
     const [indicatorQuadrenniums, setIndicatorQuadrenniums] = useState<IndicatorQuadrennium[]>([]);
+    const [existingFormulaId, setExistingFormulaId] = useState<string | null>(null);
 
     // Editor State
     const [activeTab, setActiveTab] = useState<string>("variables");
     const [selectedVariableId, setSelectedVariableId] = useState<string | null>(null);
-    
+
     // Formula States
     const [variableFormulas, setVariableFormulas] = useState<Record<string, FormulaStep[]>>({});
     const [mainFormulaSteps, setMainFormulaSteps] = useState<FormulaStep[]>([]);
     const [isReplicateModalOpen, setIsReplicateModalOpen] = useState(false);
     const [isGuideOpen, setIsGuideOpen] = useState(false);
-    
+
     // Derived State for Validation Logic
-    const currentSteps = activeTab === "variables" 
+    const currentSteps = activeTab === "variables"
         ? (selectedVariableId ? (variableFormulas[selectedVariableId] || []) : [])
         : mainFormulaSteps;
 
@@ -271,7 +273,7 @@ export function FormulaEditorModal({
 
         // Analyze Context (Function, Argument Index)
         let contextStack: { type: 'function' | 'paren', name?: string, argIndex: number }[] = [];
-        
+
         for (const s of steps) {
             if (s.type === 'function') {
                 contextStack.push({ type: 'function', name: s.value.id, argIndex: 0 });
@@ -326,7 +328,7 @@ export function FormulaEditorModal({
             // Count existing comparison operators in the current argument scope
             let comparisonCount = 0;
             let bracketDepth = 0;
-            
+
             // Iterate backwards to find the start of the current argument
             for (let i = steps.length - 1; i >= 0; i--) {
                 const s = steps[i];
@@ -339,7 +341,7 @@ export function FormulaEditorModal({
                     if (bracketDepth === 0) break; // Start of function
                 }
                 if (s.type === 'separator' && bracketDepth === 0) break; // Start of argument
-                
+
                 if (bracketDepth === 0 && s.type === 'comparison') {
                     comparisonCount++;
                 }
@@ -359,15 +361,15 @@ export function FormulaEditorModal({
         if (!lastStep) {
             canAddUnaryOperator = true;
         } else {
-             const type = lastStep.type;
-             if (type === 'function' || (type === 'parenthesis' && lastStep.value === '(') || type === 'separator') {
-                 canAddUnaryOperator = true;
-             }
+            const type = lastStep.type;
+            if (type === 'function' || (type === 'parenthesis' && lastStep.value === '(') || type === 'separator') {
+                canAddUnaryOperator = true;
+            }
         }
 
         return {
             canAddEntity,
-            canAddOperator, 
+            canAddOperator,
             canAddMathOperator: canAddOperator && !isInsideFunction,
             canAddOpenParen: canAddEntity,
             canAddCloseParen,
@@ -381,7 +383,7 @@ export function FormulaEditorModal({
     }, [currentSteps]);
 
     const [cursorIndex, setCursorIndex] = useState<number | null>(null);
-    
+
     // Constant input state
     const [constantValue, setConstantValue] = useState<string>('');
 
@@ -398,7 +400,7 @@ export function FormulaEditorModal({
         try {
             const response = await fetch(`http://localhost:8080/masters/formulas/indicator-data/${indicatorId}?type=action&year=${year}`);
             if (!response.ok) throw new Error("Failed to fetch data");
-            
+
             const result = await response.json();
             if (result.success && result.data) {
                 const fetchedVariables = result.data.variables || [];
@@ -407,13 +409,13 @@ export function FormulaEditorModal({
                     code: v.code,
                     name: v.name,
                     description: v.description,
-                    formula: [],
+                    formula: [], // Will be populated in second pass
                     goals: v.goals?.map((g: any) => ({
                         idMeta: g.id,
                         valorMeta: g.value,
                         label: `Meta [${g.year}]`
                     })) || [],
-                     quadrenniums: v.quadrenniums?.map((q: any) => ({
+                    quadrenniums: v.quadrenniums?.map((q: any) => ({
                         id: q.id,
                         startYear: q.startYear,
                         endYear: q.endYear,
@@ -421,8 +423,6 @@ export function FormulaEditorModal({
                         label: `Cuatrenio [${q.startYear}-${q.endYear}]`
                     })) || []
                 }));
-
-                setVariables(mappedVariables);
 
                 const indGoals = result.data.indicator?.goals?.map((g: any) => ({
                     idMeta: g.id,
@@ -432,18 +432,81 @@ export function FormulaEditorModal({
                 setGoalIndicators(indGoals);
 
                 const indQuads = result.data.indicator?.quadrenniums?.map((q: any) => ({
-                   id: q.id,
-                   startYear: q.startYear,
-                   endYear: q.endYear,
-                   value: q.value,
-                   label: `Cuatrenio Ind [${q.startYear}-${q.endYear}]`
+                    id: q.id,
+                    startYear: q.startYear,
+                    endYear: q.endYear,
+                    value: q.value,
+                    label: `Cuatrenio Ind [${q.startYear}-${q.endYear}]`
                 })) || [];
                 setIndicatorQuadrenniums(indQuads);
 
+                setVariables(mappedVariables);
+
+                const formulas = result.data.indicator?.formulas;
+                if (formulas && Array.isArray(formulas) && formulas.length > 0) {
+                    setExistingFormulaId(formulas[0].id);
+                    if (formulas[0].expression) {
+                        const parsed = parseFormulaString(
+                            formulas[0].expression,
+                            mappedVariables,
+                            [],
+                            indGoals,
+                            new Map(),
+                            indQuads
+                        );
+                        setMainFormulaSteps(parsed);
+                    }
+
+                    // Extract variable formulas from AST
+                    const extractedFormulas: Record<string, FormulaStep[]> = {};
+                    console.log("[DEBUG] Starting AST traversal", formulas[0].ast);
+
+                    const traverseAndExtract = (node: any) => {
+                        if (!node) return;
+                        if (node.kind === 'ref') console.log("[DEBUG] Ref:", node.value, !!node.subFormula);
+
+                        // Check for variable ref with subFormula
+                        if (node.kind === 'ref' && node.value && node.subFormula) {
+                            const steps = convertAstToSteps(
+                                node.subFormula,
+                                mappedVariables,
+                                [], // goalsVariables implied
+                                indGoals,
+                                [], // quad vars implied
+                                indQuads
+                            );
+                            extractedFormulas[node.value] = steps;
+
+                            // Update variable reference in the list
+                            const v = mappedVariables.find(x => x.id === node.value);
+                            if (v) v.formula = steps;
+
+                            // Recurse into subFormula to find nested dependencies
+                            traverseAndExtract(node.subFormula);
+                        }
+
+                        // Standard traversal
+                        if (node.left) traverseAndExtract(node.left);
+                        if (node.right) traverseAndExtract(node.right);
+                        if (node.args && Array.isArray(node.args)) {
+                            node.args.forEach((arg: any) => traverseAndExtract(arg));
+                        }
+                    };
+
+                    if (formulas[0].ast) {
+                        traverseAndExtract(formulas[0].ast);
+                        setVariableFormulas(extractedFormulas);
+                        // Force update variables to reflect formula changes
+                        setVariables([...mappedVariables]);
+                    }
+                } else {
+                    setExistingFormulaId(null);
+                    setMainFormulaSteps([]);
+                }
             }
         } catch (error) {
             console.error("Error fetching indicator data:", error);
-            setVariables([]); 
+            setVariables([]);
         } finally {
             setIsLoading(false);
         }
@@ -523,9 +586,9 @@ export function FormulaEditorModal({
         setVariableFormulas(prev => {
             const next = { ...prev };
             targetIds.forEach(id => {
-               if (mappedFormulas[id]) {
-                   next[id] = mappedFormulas[id];
-               }
+                if (mappedFormulas[id]) {
+                    next[id] = mappedFormulas[id];
+                }
             });
             return next;
         });
@@ -557,15 +620,15 @@ export function FormulaEditorModal({
         return steps.map(step => {
             if (step.type === 'variable') {
                 const varId = step.value.id;
-                
+
                 // Prevent infinite recursion (circular ref)
                 if (visitedIds.has(varId)) {
-                    return step; 
+                    return step;
                 }
 
                 // Get latest formula from state, fallback to existing
                 const currentFormula = variableFormulas[varId] || step.value.formula || [];
-                
+
                 // Create a new set for the next level to allow A->B->C, but prevent A->B->A
                 const nextVisited = new Set(visitedIds);
                 nextVisited.add(varId);
@@ -592,6 +655,7 @@ export function FormulaEditorModal({
         const unifiedAST = buildAST(hydratedMainSteps, true); // true = expandVariables
 
         const payload = {
+            id: existingFormulaId,
             indicatorId,
             expression: serializeFormula(mainFormulaSteps),
             ast: unifiedAST,
@@ -603,7 +667,7 @@ export function FormulaEditorModal({
         };
 
         // Pass payload to parent
-        onSave(payload, null); 
+        onSave(payload, null);
     };
 
     // --- Render: Editor Toolbar ---
@@ -619,10 +683,10 @@ export function FormulaEditorModal({
                     <div className="flex gap-2 items-center flex-wrap w-full sm:w-auto">
                         {activeTab === "main" && (
                             <>
-                                <Select 
-                                    placeholder="Variables" 
-                                    size="sm" 
-                                    className="w-full sm:w-48 md:w-52" 
+                                <Select
+                                    placeholder="Variables"
+                                    size="sm"
+                                    className="w-full sm:w-48 md:w-52"
                                     aria-label="Insertar Variable"
                                     variant="bordered"
                                     selectedKeys={[]}
@@ -635,12 +699,12 @@ export function FormulaEditorModal({
                                     startContent={<VariableIcon size={14} className="text-primary shrink-0" />}
                                     onChange={(e) => {
                                         const v = variables.find(x => x.id === e.target.value);
-                                        if(v) insertStep({ type: 'variable', value: v });
+                                        if (v) insertStep({ type: 'variable', value: v });
                                     }}
                                 >
                                     {variables.map(v => (
-                                        <SelectItem 
-                                            key={v.id} 
+                                        <SelectItem
+                                            key={v.id}
                                             textValue={v.name}
                                             classNames={{ title: "text-xs", description: "text-[10px]" }}
                                             description={v.code || "Sin código"}
@@ -649,7 +713,7 @@ export function FormulaEditorModal({
                                         </SelectItem>
                                     ))}
                                 </Select>
-                                
+
                                 {goalIndicators.length > 0 && (
                                     <Select
                                         placeholder="Metas Indicador"
@@ -667,12 +731,12 @@ export function FormulaEditorModal({
                                         startContent={<Target size={14} className="text-emerald-500 shrink-0" />}
                                         onChange={(e) => {
                                             const g = goalIndicators.find(x => x.idMeta === e.target.value);
-                                            if(g) insertStep({ type: 'goal_indicator', value: g });
+                                            if (g) insertStep({ type: 'goal_indicator', value: g });
                                         }}
                                     >
                                         {goalIndicators.map(g => (
-                                            <SelectItem 
-                                                key={g.idMeta} 
+                                            <SelectItem
+                                                key={g.idMeta}
                                                 textValue={cleanLabel(g.label, g.valorMeta)}
                                                 classNames={{ title: "text-xs", description: "text-[10px]" }}
                                                 description={g.valorMeta}
@@ -700,12 +764,12 @@ export function FormulaEditorModal({
                                         startContent={<Calendar size={14} className="text-cyan-500 shrink-0" />}
                                         onChange={(e) => {
                                             const q = indicatorQuadrenniums.find(x => x.id === e.target.value);
-                                            if(q) insertStep({ type: 'quadrennium_indicator', value: q });
+                                            if (q) insertStep({ type: 'quadrennium_indicator', value: q });
                                         }}
                                     >
                                         {indicatorQuadrenniums.map(q => (
-                                            <SelectItem 
-                                                key={q.id} 
+                                            <SelectItem
+                                                key={q.id}
                                                 textValue={cleanLabel(q.label, `${q.startYear}-${q.endYear}`)}
                                                 classNames={{ title: "text-xs", description: "text-[10px]" }}
                                                 description={q.value}
@@ -737,12 +801,12 @@ export function FormulaEditorModal({
                                         startContent={<Target size={14} className="text-emerald-500 shrink-0" />}
                                         onChange={(e) => {
                                             const g = currentVariableGoals.find(x => x.idMeta === e.target.value);
-                                            if(g) insertStep({ type: 'goal_variable', value: g });
+                                            if (g) insertStep({ type: 'goal_variable', value: g });
                                         }}
                                     >
                                         {currentVariableGoals.map(g => (
-                                            <SelectItem 
-                                                key={g.idMeta} 
+                                            <SelectItem
+                                                key={g.idMeta}
                                                 textValue={cleanLabel(g.label, g.valorMeta)}
                                                 classNames={{ title: "text-xs", description: "text-[10px]" }}
                                                 description={g.valorMeta}
@@ -752,7 +816,7 @@ export function FormulaEditorModal({
                                         ))}
                                     </Select>
                                 )}
-                                
+
                                 {currentVariableQuadrenniums.length > 0 && (
                                     <Select
                                         placeholder="Cuatrenios Variable"
@@ -770,12 +834,12 @@ export function FormulaEditorModal({
                                         startContent={<Calendar size={14} className="text-cyan-500 shrink-0" />}
                                         onChange={(e) => {
                                             const q = currentVariableQuadrenniums.find(x => x.id === e.target.value);
-                                            if(q) insertStep({ type: 'quadrennium_variable', value: q });
+                                            if (q) insertStep({ type: 'quadrennium_variable', value: q });
                                         }}
                                     >
                                         {currentVariableQuadrenniums.map(q => (
-                                            <SelectItem 
-                                                key={q.id} 
+                                            <SelectItem
+                                                key={q.id}
                                                 textValue={cleanLabel(q.label, `${q.startYear}-${q.endYear}`)}
                                                 classNames={{ title: "text-xs", description: "text-[10px]" }}
                                                 description={q.value}
@@ -785,7 +849,7 @@ export function FormulaEditorModal({
                                         ))}
                                     </Select>
                                 )}
-                                
+
                             </>
                         )}
                     </div>
@@ -796,15 +860,15 @@ export function FormulaEditorModal({
                     <div className="flex items-center gap-0.5 bg-white dark:bg-default-100/20 rounded-lg p-0.5 border border-default-200 dark:border-default-700">
                         {FORMULA_OPERATORS.map(op => (
                             <Tooltip key={op.id} content={op.name || op.symbol} delay={300}>
-                                <Button 
-                                    size="sm" 
-                                    isIconOnly 
+                                <Button
+                                    size="sm"
+                                    isIconOnly
                                     variant="light"
                                     isDisabled={
                                         (!validationState.canAddOperator && !(
                                             (op.symbol === '+' || op.symbol === '-') && validationState.canAddUnaryOperator
-                                        )) && 
-                                        !(op.symbol === '(' && validationState.canAddEntity) && 
+                                        )) &&
+                                        !(op.symbol === '(' && validationState.canAddEntity) &&
                                         !(op.symbol === ')' && validationState.canAddCloseParen)
                                     }
                                     className="w-8 h-7 min-w-8 font-mono text-base font-semibold"
@@ -820,9 +884,9 @@ export function FormulaEditorModal({
                     <div className="flex items-center gap-0.5 bg-white dark:bg-default-100/20 rounded-lg p-0.5 border border-purple-200 dark:border-purple-700">
                         {COMPARISON_OPERATORS.map(op => (
                             <Tooltip key={op.id} content={op.name || op.symbol} delay={300}>
-                                <Button 
-                                    size="sm" 
-                                    isIconOnly 
+                                <Button
+                                    size="sm"
+                                    isIconOnly
                                     variant="light"
                                     isDisabled={!validationState.canAddOperator || !validationState.isInIfCondition || !validationState.canAddComparisonOperator}
                                     className="w-8 h-7 min-w-8 font-mono text-base font-semibold text-purple-600 dark:text-purple-400"
@@ -846,11 +910,11 @@ export function FormulaEditorModal({
                             <Button size="sm" isIconOnly variant="light" isDisabled={!validationState.canAddSeparator} className="w-8 h-7 min-w-8 font-mono text-base" onPress={() => insertStep({ type: 'separator', value: ',' })}>,</Button>
                         </Tooltip>
                     </div>
-                    
+
                     {/* Functions */}
-                    <Select 
-                        placeholder="Funciones" 
-                        size="sm" 
+                    <Select
+                        placeholder="Funciones"
+                        size="sm"
                         className="w-full sm:w-36 md:w-40"
                         aria-label="Insertar Función"
                         variant="bordered"
@@ -864,12 +928,12 @@ export function FormulaEditorModal({
                         startContent={<FunctionSquare size={14} className="text-violet-500 shrink-0" />}
                         onChange={(e) => {
                             const f = FORMULA_FUNCTIONS.find(x => x.id === e.target.value);
-                            if(f) insertStep({ type: 'function', value: f });
+                            if (f) insertStep({ type: 'function', value: f });
                         }}
                     >
                         {FORMULA_FUNCTIONS.map(f => (
-                            <SelectItem 
-                                key={f.id} 
+                            <SelectItem
+                                key={f.id}
                                 textValue={f.name}
                                 classNames={{ title: "text-xs", description: "text-[10px]" }}
                                 description={f.id}
@@ -898,9 +962,9 @@ export function FormulaEditorModal({
                             }}
                             startContent={<Hash size={14} className="text-default-400 shrink-0" />}
                         />
-                        <Button 
-                            size="sm" 
-                            variant="flat" 
+                        <Button
+                            size="sm"
+                            variant="flat"
                             isDisabled={!constantValue || !validationState.canAddEntity}
                             onPress={addConstant}
                             className="h-9 px-3"
@@ -917,103 +981,103 @@ export function FormulaEditorModal({
                             <TrendingUp size={12} />
                             Avances:
                         </span>
-                        
+
                         <div className="flex items-center gap-2">
-                             <Select
-                                 placeholder="Año"
-                                 size="sm"
-                                 className="w-24"
-                                 aria-label="Año del avance"
-                                 variant="bordered"
-                                 selectedKeys={[advanceYear]}
-                                 classNames={{
-                                     trigger: "bg-white dark:bg-default-100/20 h-8 min-h-8",
-                                     value: "text-xs"
-                                 }}
-                                 onChange={(e) => setAdvanceYear(e.target.value)}
-                             >
-                                 {years.map(y => (
-                                     <SelectItem key={y} textValue={y}>
-                                         {y}
-                                     </SelectItem>
-                                 ))}
-                             </Select>
-                             <Select
-                                 placeholder="Meses"
-                                 size="sm"
-                                 className="w-40 sm:w-48"
-                                 aria-label="Meses del avance"
-                                 variant="bordered"
-                                 selectionMode="multiple"
-                                 selectedKeys={advanceMonths}
-                                 classNames={{
-                                     trigger: "bg-white dark:bg-default-100/20 h-8 min-h-8",
-                                     value: "text-xs"
-                                 }}
-                                 onSelectionChange={(keys) => {
-                                      const newKeys = new Set<string>(Array.from(keys) as string[]);
-                                      if (newKeys.has('ALL') && !advanceMonths.has('ALL')) {
-                                          setAdvanceMonths(new Set<string>(['ALL']));
-                                      } else if (newKeys.has('ALL') && newKeys.size > 1) {
-                                          newKeys.delete('ALL');
-                                          setAdvanceMonths(newKeys);
-                                      } else {
-                                          setAdvanceMonths(newKeys);
-                                      }
-                                 }}
-                                 items={ALL_MONTH_ITEMS}
-                             >
-                                 {(item) => (
-                                     <SelectItem key={item.key} textValue={item.label} className={item.isSpecial ? "text-primary font-medium" : ""}>
-                                         {item.label}
-                                     </SelectItem>
-                                 )}
-                             </Select>
-                             <Button
-                                 size="sm"
-                                 variant="flat"
-                                 color="warning"
-                                 className="h-8"
-                                 isDisabled={advanceMonths.size === 0 || !validationState.canAddEntity || (
-                                     (advanceMonths.has('ALL') || advanceMonths.size > 1) && 
-                                     (!validationState.isInsideFunction || 
-                                      (validationState.currentContext?.type === 'function' && validationState.currentContext?.name === 'IF') ||
-                                      // Check if context is "clean" (last step is '(' OR 'function' which implies '(')
-                                      (
-                                          (currentSteps[currentSteps.length - 1]?.type !== 'parenthesis' || currentSteps[currentSteps.length - 1]?.value !== '(') &&
-                                          currentSteps[currentSteps.length - 1]?.type !== 'function'
-                                      )
-                                     )
-                                 )}
-                                 onPress={() => {
-                                     const isAll = advanceMonths.has('ALL');
-                                     const monthsArray = isAll 
-                                         ? [1,2,3,4,5,6,7,8,9,10,11,12] 
-                                         : Array.from(advanceMonths).map(m => parseInt(m)).sort((a,b) => a-b);
-                                         
-                                     const monthNames = monthsArray.map(m => MONTHS.find(x => x.value === m)?.label).filter(Boolean);
-                                     
-                                     const label = isAll
-                                         ? `Avance ${advanceYear} (Todo el año)`
-                                         : monthsArray.length === 1
-                                             ? `Avance ${monthNames[0]} ${advanceYear}`
-                                             : `Avance ${advanceYear} (${monthsArray.length} meses)`;
-                                             
-                                     insertStep({
-                                         type: 'advance',
-                                         value: {
-                                             id: `adv-${advanceYear}-${isAll ? 'ALL' : monthsArray.join(',')}`,
-                                             year: parseInt(advanceYear),
-                                             months: monthsArray,
-                                             label
-                                         }
-                                     });
-                                     setAdvanceMonths(new Set());
-                                 }}
-                                 startContent={<TrendingUp size={14} />}
-                             >
-                                 Insertar
-                             </Button>
+                            <Select
+                                placeholder="Año"
+                                size="sm"
+                                className="w-24"
+                                aria-label="Año del avance"
+                                variant="bordered"
+                                selectedKeys={[advanceYear]}
+                                classNames={{
+                                    trigger: "bg-white dark:bg-default-100/20 h-8 min-h-8",
+                                    value: "text-xs"
+                                }}
+                                onChange={(e) => setAdvanceYear(e.target.value)}
+                            >
+                                {years.map(y => (
+                                    <SelectItem key={y} textValue={y}>
+                                        {y}
+                                    </SelectItem>
+                                ))}
+                            </Select>
+                            <Select
+                                placeholder="Meses"
+                                size="sm"
+                                className="w-40 sm:w-48"
+                                aria-label="Meses del avance"
+                                variant="bordered"
+                                selectionMode="multiple"
+                                selectedKeys={advanceMonths}
+                                classNames={{
+                                    trigger: "bg-white dark:bg-default-100/20 h-8 min-h-8",
+                                    value: "text-xs"
+                                }}
+                                onSelectionChange={(keys) => {
+                                    const newKeys = new Set<string>(Array.from(keys) as string[]);
+                                    if (newKeys.has('ALL') && !advanceMonths.has('ALL')) {
+                                        setAdvanceMonths(new Set<string>(['ALL']));
+                                    } else if (newKeys.has('ALL') && newKeys.size > 1) {
+                                        newKeys.delete('ALL');
+                                        setAdvanceMonths(newKeys);
+                                    } else {
+                                        setAdvanceMonths(newKeys);
+                                    }
+                                }}
+                                items={ALL_MONTH_ITEMS}
+                            >
+                                {(item) => (
+                                    <SelectItem key={item.key} textValue={item.label} className={item.isSpecial ? "text-primary font-medium" : ""}>
+                                        {item.label}
+                                    </SelectItem>
+                                )}
+                            </Select>
+                            <Button
+                                size="sm"
+                                variant="flat"
+                                color="warning"
+                                className="h-8"
+                                isDisabled={advanceMonths.size === 0 || !validationState.canAddEntity || (
+                                    (advanceMonths.has('ALL') || advanceMonths.size > 1) &&
+                                    (!validationState.isInsideFunction ||
+                                        (validationState.currentContext?.type === 'function' && validationState.currentContext?.name === 'IF') ||
+                                        // Check if context is "clean" (last step is '(' OR 'function' which implies '(')
+                                        (
+                                            (currentSteps[currentSteps.length - 1]?.type !== 'parenthesis' || currentSteps[currentSteps.length - 1]?.value !== '(') &&
+                                            currentSteps[currentSteps.length - 1]?.type !== 'function'
+                                        )
+                                    )
+                                )}
+                                onPress={() => {
+                                    const isAll = advanceMonths.has('ALL');
+                                    const monthsArray = isAll
+                                        ? [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+                                        : Array.from(advanceMonths).map(m => parseInt(m)).sort((a, b) => a - b);
+
+                                    const monthNames = monthsArray.map(m => MONTHS.find(x => x.value === m)?.label).filter(Boolean);
+
+                                    const label = isAll
+                                        ? `Avance ${advanceYear} (Todo el año)`
+                                        : monthsArray.length === 1
+                                            ? `Avance ${monthNames[0]} ${advanceYear}`
+                                            : `Avance ${advanceYear} (${monthsArray.length} meses)`;
+
+                                    insertStep({
+                                        type: 'advance',
+                                        value: {
+                                            id: `adv-${advanceYear}-${isAll ? 'ALL' : monthsArray.join(',')}`,
+                                            year: parseInt(advanceYear),
+                                            months: monthsArray,
+                                            label
+                                        }
+                                    });
+                                    setAdvanceMonths(new Set());
+                                }}
+                                startContent={<TrendingUp size={14} />}
+                            >
+                                Insertar
+                            </Button>
                         </div>
                     </div>
                 )}
@@ -1029,9 +1093,9 @@ export function FormulaEditorModal({
         return (
             <div className="flex-1 flex flex-col bg-white dark:bg-content1 rounded-xl border border-default-200 dark:border-default-800 shadow-sm overflow-hidden">
                 {renderEditorToolbar()}
-                
+
                 {/* Formula Canvas */}
-                <div 
+                <div
                     className={`
                         flex-1 p-4 flex flex-wrap items-start content-start gap-1.5 cursor-text
                         min-h-[120px] transition-colors
@@ -1046,7 +1110,7 @@ export function FormulaEditorModal({
                             <span className="text-xs mt-1">Use los controles de arriba para construir su fórmula</span>
                         </div>
                     )}
-                    
+
                     {steps.map((step, index) => (
                         <React.Fragment key={index}>
                             {cursorIndex === index && (
@@ -1064,9 +1128,9 @@ export function FormulaEditorModal({
                 <div className={`
                     px-4 py-2 text-xs border-t flex items-center justify-between
                     ${statusObj.type === 'error' ? 'bg-danger-50 dark:bg-danger-950/30 text-danger-600 dark:text-danger-400 border-danger-200 dark:border-danger-800' :
-                      statusObj.type === 'success' ? 'bg-success-50 dark:bg-success-950/30 text-success-600 dark:text-success-400 border-success-200 dark:border-success-800' :
-                      statusObj.type === 'warning' ? 'bg-warning-50 dark:bg-warning-950/30 text-warning-600 dark:text-warning-400 border-warning-200 dark:border-warning-800' :
-                      'bg-default-50 dark:bg-default-100/10 text-default-500 border-default-200 dark:border-default-800'}
+                        statusObj.type === 'success' ? 'bg-success-50 dark:bg-success-950/30 text-success-600 dark:text-success-400 border-success-200 dark:border-success-800' :
+                            statusObj.type === 'warning' ? 'bg-warning-50 dark:bg-warning-950/30 text-warning-600 dark:text-warning-400 border-warning-200 dark:border-warning-800' :
+                                'bg-default-50 dark:bg-default-100/10 text-default-500 border-default-200 dark:border-default-800'}
                 `}>
                     <div className="flex items-center gap-2 font-medium">
                         {statusObj.type === 'error' && <AlertCircle size={14} />}
@@ -1076,10 +1140,10 @@ export function FormulaEditorModal({
                     </div>
                     <div className="flex items-center gap-1">
                         <Tooltip content="Deshacer último">
-                            <Button 
-                                size="sm" 
-                                isIconOnly 
-                                variant="light" 
+                            <Button
+                                size="sm"
+                                isIconOnly
+                                variant="light"
                                 isDisabled={steps.length === 0}
                                 onPress={undoLastStep}
                                 className="w-7 h-7 min-w-7"
@@ -1088,10 +1152,10 @@ export function FormulaEditorModal({
                             </Button>
                         </Tooltip>
                         <Tooltip content="Borrar todo">
-                            <Button 
-                                size="sm" 
-                                isIconOnly 
-                                variant="light" 
+                            <Button
+                                size="sm"
+                                isIconOnly
+                                variant="light"
                                 color="danger"
                                 isDisabled={steps.length === 0}
                                 onPress={clearAllSteps}
@@ -1107,9 +1171,9 @@ export function FormulaEditorModal({
     };
 
     return (
-        <Modal 
-            isOpen={isOpen} 
-            onClose={onClose} 
+        <Modal
+            isOpen={isOpen}
+            onClose={onClose}
             size="5xl"
             scrollBehavior="outside"
             placement="center"
@@ -1127,7 +1191,7 @@ export function FormulaEditorModal({
                             <h2 className="text-base sm:text-lg font-semibold text-foreground">{title}</h2>
                             <p className="text-xs text-default-400">Configure las fórmulas de cálculo</p>
                         </div>
-                        
+
                         <div className="flex items-center gap-2 sm:ml-auto sm:mr-16">
                             <span className="text-xs text-default-400">Año:</span>
                             <Select
@@ -1150,17 +1214,17 @@ export function FormulaEditorModal({
                         </div>
                     </div>
                 </ModalHeader>
-                
+
                 <ModalBody className="flex-1 flex flex-col min-h-0 bg-default-50/50 dark:bg-default-100/5 overflow-auto">
                     {isLoading && (
                         <div className="absolute inset-0 z-50 flex items-center justify-center bg-content1/80 backdrop-blur-sm">
                             <Spinner label="Cargando datos..." color="primary" />
                         </div>
                     )}
-                    
-                    <Tabs 
-                        aria-label="Editor Options" 
-                        color="primary" 
+
+                    <Tabs
+                        aria-label="Editor Options"
+                        color="primary"
                         variant="solid"
                         radius="lg"
                         classNames={{
@@ -1186,15 +1250,15 @@ export function FormulaEditorModal({
                                     /* Variable Formula Editor View */
                                     <div className="flex flex-col h-full gap-2 sm:gap-3 px-3 sm:px-5 pb-3 sm:pb-5">
                                         <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 shrink-0">
-                                            <Button 
-                                                variant="flat" 
+                                            <Button
+                                                variant="flat"
                                                 size="sm"
                                                 onPress={() => setSelectedVariableId(null)}
                                                 startContent={<Undo2 size={14} />}
                                             >
                                                 Volver
                                             </Button>
-                                            
+
                                             <Button
                                                 variant="flat"
                                                 size="sm"
@@ -1209,7 +1273,7 @@ export function FormulaEditorModal({
                                             <Divider orientation="vertical" className="h-6 hidden sm:block" />
                                             <div>
                                                 <h3 className="text-sm sm:text-base font-semibold flex flex-wrap items-center gap-1 sm:gap-2 text-foreground">
-                                                    <span>Fórmula:</span> 
+                                                    <span>Fórmula:</span>
                                                     <span className="text-primary">{variables.find(v => v.id === selectedVariableId)?.name}</span>
                                                 </h3>
                                                 <p className="text-[10px] sm:text-xs text-default-400 mt-0.5">
@@ -1228,7 +1292,7 @@ export function FormulaEditorModal({
                                                 Seleccione una variable para configurar su fórmula de cálculo.
                                             </p>
                                         </div>
-                                        
+
                                         {variables.length === 0 && !isLoading ? (
                                             <div className="flex flex-col items-center justify-center py-16 text-center">
                                                 <div className="w-16 h-16 rounded-2xl bg-default-100 dark:bg-default-100/20 flex items-center justify-center mb-4">
@@ -1244,7 +1308,7 @@ export function FormulaEditorModal({
                                                 {variables.map((v) => {
                                                     const formulaSteps = variableFormulas[v.id] || [];
                                                     const hasFormula = formulaSteps.length > 0;
-                                                    
+
                                                     return (
                                                         <button
                                                             key={v.id}
@@ -1253,8 +1317,8 @@ export function FormulaEditorModal({
                                                                 group relative p-3 sm:p-4 rounded-xl border bg-white dark:bg-content1
                                                                 hover:border-primary hover:shadow-lg hover:shadow-primary/10
                                                                 transition-all duration-200 text-left
-                                                                ${hasFormula 
-                                                                    ? 'border-success-200 dark:border-success-800' 
+                                                                ${hasFormula
+                                                                    ? 'border-success-200 dark:border-success-800'
                                                                     : 'border-default-200 dark:border-default-700'}
                                                             `}
                                                         >
@@ -1263,7 +1327,7 @@ export function FormulaEditorModal({
                                                                 absolute top-2.5 right-2.5 sm:top-3 sm:right-3 w-2 h-2 rounded-full
                                                                 ${hasFormula ? 'bg-success-500' : 'bg-default-300'}
                                                             `} />
-                                                            
+
                                                             <div className="flex items-start gap-2.5 sm:gap-3">
                                                                 <div className={`
                                                                     w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center shrink-0
@@ -1279,12 +1343,12 @@ export function FormulaEditorModal({
                                                                     <p className="text-[9px] sm:text-[10px] font-mono text-default-400 mb-1.5 sm:mb-2">
                                                                         {v.code || "Sin código"}
                                                                     </p>
-                                                                    
+
                                                                     {/* Formula preview or status */}
                                                                     <div className={`
                                                                         text-[10px] px-2 py-1 rounded-md inline-flex items-center gap-1
-                                                                        ${hasFormula 
-                                                                            ? 'bg-success-50 dark:bg-success-950/30 text-success-600 dark:text-success-400' 
+                                                                        ${hasFormula
+                                                                            ? 'bg-success-50 dark:bg-success-950/30 text-success-600 dark:text-success-400'
                                                                             : 'bg-warning-50 dark:bg-warning-950/30 text-warning-600 dark:text-warning-400'}
                                                                     `}>
                                                                         {hasFormula ? (
@@ -1336,10 +1400,10 @@ export function FormulaEditorModal({
                 </ModalBody>
 
                 <ModalFooter className="py-2 sm:py-3 bg-content1 rounded-b-2xl shrink-0 flex-wrap gap-2">
-                    <Button 
+                    <Button
 
-                        variant="light" 
-                        onPress={() => setIsGuideOpen(true)} 
+                        variant="light"
+                        onPress={() => setIsGuideOpen(true)}
                         className="mr-auto text-default-500 hidden sm:flex"
                         startContent={<HelpCircle size={16} />}
                         size="sm"
@@ -1350,8 +1414,8 @@ export function FormulaEditorModal({
                     <Button variant="flat" onPress={onClose} size="sm">
                         Cerrar
                     </Button>
-                    <Button 
-                        color="primary" 
+                    <Button
+                        color="primary"
                         onPress={handleSave}
                         startContent={<Save size={16} />}
                         size="sm"
@@ -1364,15 +1428,15 @@ export function FormulaEditorModal({
                 </ModalFooter>
             </ModalContent>
 
-            <ReplicateFormulaModal 
+            <ReplicateFormulaModal
                 isOpen={isReplicateModalOpen}
                 onClose={() => setIsReplicateModalOpen(false)}
                 sourceVariable={selectedVariableId ? { ...variables.find(v => v.id === selectedVariableId)!, formula: getCurrentSteps() } : null}
                 allVariables={variables}
                 onReplicate={handleReplicate}
             />
-            
-            <FormulaGuideModal 
+
+            <FormulaGuideModal
                 isOpen={isGuideOpen}
                 onClose={() => setIsGuideOpen(false)}
             />

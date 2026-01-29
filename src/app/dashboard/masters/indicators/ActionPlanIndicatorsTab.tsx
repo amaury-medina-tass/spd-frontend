@@ -14,7 +14,7 @@ import { EditActionPlanIndicatorModal } from "@/components/modals/masters/indica
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal"
 import { ActionPlanIndicatorDetailModal } from "@/components/modals/masters/indicators/action-plan/ActionPlanIndicatorDetailModal"
 import { ActionPlanIndicatorGoalsModal } from "@/components/modals/masters/indicators/action-plan/ActionPlanIndicatorGoalsModal"
-import { createFormula } from "@/services/masters/formulas.service"
+import { createFormula, updateFormula } from "@/services/masters/formulas.service"
 
 const indicatorColumns: ColumnDef<ActionPlanIndicator>[] = [
     { key: "code", label: "Código", sortable: true },
@@ -296,7 +296,7 @@ export function ActionPlanIndicatorsTab() {
                 indicatorCode={indicatorForGoals?.code}
             />
 
-           <ManageIndicatorVariablesModal
+            <ManageIndicatorVariablesModal
                 isOpen={isVariablesModalOpen}
                 onClose={() => setIsVariablesModalOpen(false)}
                 indicatorId={indicatorForVariables?.id ?? null}
@@ -327,11 +327,19 @@ export function ActionPlanIndicatorsTab() {
                 onSave={async (payload: any) => {
                     console.log("PAYLOAD TO BACKEND:", payload)
                     try {
-                        await createFormula({
-                            expression: payload.expression,
-                            ast: payload.ast,
-                            actionIndicatorId: indicatorForFormula?.id
-                        });
+                        if (payload.id) {
+                            await updateFormula(payload.id, {
+                                expression: payload.expression,
+                                ast: payload.ast,
+                                actionIndicatorId: indicatorForFormula?.id
+                            });
+                        } else {
+                            await createFormula({
+                                expression: payload.expression,
+                                ast: payload.ast,
+                                actionIndicatorId: indicatorForFormula?.id
+                            });
+                        }
                         addToast({
                             title: "Fórmula Guardada",
                             description: "La fórmula se ha guardado correctamente",

@@ -129,14 +129,14 @@ export function parseFormulaString(
         else if (token.startsWith('[MV:') && token.endsWith(']')) {
             const idMeta = token.slice(4, -1);
             const goal = goalsVariables.find(g => g.idMeta === idMeta);
-             // Also check inside variables if goalsVariables param is empty/flat
-             let foundGoal = goal;
-             if (!foundGoal) {
-                 for (const v of variables) {
-                     const g = v.goals?.find(vg => vg.idMeta === idMeta);
-                     if (g) { foundGoal = g; break; }
-                 }
-             }
+            // Also check inside variables if goalsVariables param is empty/flat
+            let foundGoal = goal;
+            if (!foundGoal) {
+                for (const v of variables) {
+                    const g = v.goals?.find(vg => vg.idMeta === idMeta);
+                    if (g) { foundGoal = g; break; }
+                }
+            }
 
             if (foundGoal) {
                 const label = `Meta Var [${foundGoal.valorMeta}]`;
@@ -174,7 +174,7 @@ export function parseFormulaString(
         else if (token.startsWith('[QI:') && token.endsWith(']')) {
             const id = token.slice(4, -1);
             const quad = indicatorQuadrenniums.find(q => q.id === id);
-            
+
             if (quad) {
                 const label = `Cuatrenio Ind [${quad.startYear}-${quad.endYear}]`;
                 steps.push({ type: 'quadrennium_indicator', value: { ...quad, label } });
@@ -287,9 +287,9 @@ export function validateFormula(steps: FormulaStep[]): ValidationResult {
                     result.isValid = false;
                     result.errors.push('Operadores consecutivos no permitidos');
                 }
-                
+
                 const isUnary = step.value.symbol === '-' || step.value.symbol === '+';
-                
+
                 if (!prevStep) {
                     if (!isUnary) {
                         result.isValid = false;
@@ -551,4 +551,155 @@ export function buildAST(steps: FormulaStep[], expandVariables = false) {
         console.error("AST Parse Error", e);
         return { kind: 'error', message: e.message };
     }
+}
+
+/**
+ * Convert an AST structure back to Formula Steps (for editor loading)
+ */
+export function convertAstToSteps(
+    node: any,
+    variables: Variable[],
+    goalsVariables: GoalVariable[],
+    goalsIndicators: GoalIndicator[],
+    variableQuadrenniums: VariableQuadrenium[],
+    indicatorQuadrenniums: IndicatorQuadrennium[]
+): FormulaStep[] {
+    const steps: FormulaStep[] = [];
+    if (!node) return steps;
+
+    const getPrecedence = (op: string) => {
+        if (['*', '/'].includes(op)) return 2;
+        if (['+', '-'].includes(op)) return 1;
+        return 0;
+    };
+
+    switch (node.kind) {
+        case 'binary':
+            const currentPrec = getPrecedence(node.op);
+
+            // Left Child
+            let leftWrapped = false;
+            if (node.left.kind === 'binary' && getPrecedence(node.left.op) < currentPrec) {
+                steps.push({ type: 'parenthesis', value: '(' });
+                leftWrapped = true;
+            }
+            steps.push(...convertAstToSteps(node.left, variables, goalsVariables, goalsIndicators, variableQuadrenniums, indicatorQuadrenniums));
+            if (leftWrapped) steps.push({ type: 'parenthesis', value: ')' });
+
+            // Operator
+            const op = FORMULA_OPERATORS.find(o => o.symbol === node.op) || COMPARISON_OPERATORS.find(o => o.symbol === node.op);
+            if (op) {
+                steps.push({ type: 'operator', value: op }); // Or comparison, but type check is loose here. If separate type needed:
+                // Actually operator step type covers both usually in simple logic or split. Editor uses 'operator' and 'comparison'
+                // Let's distinguish
+                const isComp = ['=', '!=', '>', '<', '>=', '<='].includes(node.op);
+                if (isComp) {
+                    steps[steps.length - 1].type = 'comparison';
+                }
+            }
+
+            // Right Child
+            let rightWrapped = false;
+            // For right child, if same precedence (e.g. -), we might need parens if non-associative?
+            // A - (B - C). right is binary(-). prec is same. 
+            // Simple rule: wrap right binary if precedence <= current (for non-associative like - /).
+            // For + *, it doesn't matter. But safe to wrap if < current.
+            // Let's implement strict wrapping if lower precedence. 
+            if (node.right.kind === 'binary' && getPrecedence(node.right.op) < currentPrec) {
+                steps.push({ type: 'parenthesis', value: '(' });
+                rightWrapped = true;
+            }
+            steps.push(...convertAstToSteps(node.right, variables, goalsVariables, goalsIndicators, variableQuadrenniums, indicatorQuadrenniums));
+            if (rightWrapped) steps.push({ type: 'parenthesis', value: ')' });
+
+            break;
+
+        case 'call':
+            const func = FORMULA_FUNCTIONS.find(f => f.id === node.func);
+            if (func) {
+                steps.push({ type: 'function', value: func });
+                node.args.forEach((arg: any, idx: number) => {
+                    if (idx > 0) steps.push({ type: 'separator', value: ',' });
+                    steps.push(...convertAstToSteps(arg, variables, goalsVariables, goalsIndicators, variableQuadrenniums, indicatorQuadrenniums));
+                });
+                steps.push({ type: 'parenthesis', value: ')' });
+            }
+            break;
+
+        case 'ref':
+            const v = variables.find(x => x.id === node.value);
+            if (v) steps.push({ type: 'variable', value: v });
+            else steps.push({ type: 'variable', value: { id: node.value, name: 'Desconocido', formula: [] } as any });
+            break;
+
+        case 'const':
+            steps.push({ type: 'constant', value: node.value.toString() });
+            break;
+
+        case 'goal_var':
+            let gVar = goalsVariables.find(x => x.idMeta === node.value);
+            // Search inside variables if not found flat
+            if (!gVar) {
+                for (const variable of variables) {
+                    const found = variable.goals?.find(g => g.idMeta === node.value);
+                    if (found) { gVar = found; break; }
+                }
+            }
+            if (gVar) {
+                const label = `Meta Var [${gVar.valorMeta}]`;
+                steps.push({ type: 'goal_variable', value: { ...gVar, label } });
+            } else {
+                steps.push({ type: 'goal_variable', value: { idMeta: node.value, valorMeta: '?', label: `Meta [${node.value}]` } });
+            }
+            break;
+
+        case 'goal_ind':
+            const gInd = goalsIndicators.find(x => x.idMeta === node.value);
+            if (gInd) {
+                const label = `Meta Ind [${gInd.valorMeta}]`;
+                steps.push({ type: 'goal_indicator', value: { ...gInd, label } });
+            } else {
+                steps.push({ type: 'goal_indicator', value: { idMeta: node.value, valorMeta: '?', label: `Meta Ind [${node.value}]` } });
+            }
+            break;
+
+        case 'quad_var':
+            const qVar = variableQuadrenniums.find(x => x.id === node.value);
+            // Search inside variables if not found flat
+            let foundQ = qVar;
+            if (!foundQ) {
+                for (const variable of variables) {
+                    const found = variable.quadrenniums?.find(q => q.id === node.value);
+                    if (found) { foundQ = found; break; }
+                }
+            }
+
+            if (foundQ) {
+                const label = `Cuatrenio Var [${foundQ.startYear}-${foundQ.endYear}]`;
+                steps.push({ type: 'quadrennium_variable', value: { ...foundQ, label } });
+            } else {
+                steps.push({ type: 'quadrennium_variable', value: { id: node.value, startYear: 0, endYear: 0, value: '?', label: `Cuatrenio Var [${node.value}]` } });
+            }
+            break;
+
+        case 'quad_ind':
+            const qInd = indicatorQuadrenniums.find(x => x.id === node.value);
+            if (qInd) {
+                const label = `Cuatrenio Ind [${qInd.startYear}-${qInd.endYear}]`;
+                steps.push({ type: 'quadrennium_indicator', value: { ...qInd, label } });
+            } else {
+                steps.push({ type: 'quadrennium_indicator', value: { id: node.value, startYear: 0, endYear: 0, value: '?', label: `Cuatrenio Ind [${node.value}]` } });
+            }
+            break;
+
+        case 'baseline':
+            steps.push({ type: 'baseline', value: { id: 'LINEA_BASE', label: 'Línea Base' } });
+            break;
+
+        case 'ref_advance':
+            steps.push({ type: 'advance', value: node.value });
+            break;
+    }
+
+    return steps;
 }
