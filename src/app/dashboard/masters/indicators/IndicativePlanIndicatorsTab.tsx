@@ -17,6 +17,7 @@ import { ConfirmationModal } from "@/components/modals/ConfirmationModal"
 import { EditIndicatorModal } from "@/components/modals/masters/indicators/indicative-plan/EditIndicatorModal"
 import { Pencil, Target } from "lucide-react"
 import { IndicativePlanIndicatorGoalsModal } from "@/components/modals/masters/indicators/indicative-plan/IndicativePlanIndicatorGoalsModal"
+import { createFormula, updateFormula } from "@/services/masters/formulas.service"
 
 const indicatorColumns: ColumnDef<Indicator>[] = [
     { key: "code", label: "Código", sortable: true },
@@ -48,7 +49,8 @@ const indicatorColumns: ColumnDef<Indicator>[] = [
 ]
 
 import { ManageIndicatorVariablesModal } from "@/components/modals/masters/indicators/ManageIndicatorVariablesModal"
-import { Calculator } from "lucide-react"
+import { Calculator, FunctionSquare } from "lucide-react"
+import { FormulaEditorModal } from "@/components/modals/masters/indicators/formulas"
 
 export function IndicativePlanIndicatorsTab() {
     const { canRead, canCreate, canUpdate, canDelete } = usePermissions("/masters/indicators")
@@ -64,7 +66,10 @@ export function IndicativePlanIndicatorsTab() {
     const [isGoalsModalOpen, setIsGoalsModalOpen] = useState(false)
     const [indicatorForGoals, setIndicatorForGoals] = useState<Indicator | null>(null)
     const [isVariablesModalOpen, setIsVariablesModalOpen] = useState(false)
+
     const [indicatorForVariables, setIndicatorForVariables] = useState<Indicator | null>(null)
+    const [isFormulaModalOpen, setIsFormulaModalOpen] = useState(false)
+    const [indicatorForFormula, setIndicatorForFormula] = useState<Indicator | null>(null)
 
     // Table State
     const [items, setItems] = useState<Indicator[]>([])
@@ -223,6 +228,16 @@ export function IndicativePlanIndicatorsTab() {
                     setIsVariablesModalOpen(true)
                 },
             })
+
+            actions.push({
+                key: "formula",
+                label: "Fórmula",
+                icon: <FunctionSquare size={16} />,
+                onClick: (item) => {
+                    setIndicatorForFormula(item)
+                    setIsFormulaModalOpen(true)
+                },
+            })
         }
 
         return actions
@@ -316,6 +331,44 @@ export function IndicativePlanIndicatorsTab() {
                 indicatorId={indicatorForVariables?.id ?? null}
                 indicatorCode={indicatorForVariables?.code}
                 type="indicative"
+            />
+
+            <FormulaEditorModal
+                isOpen={isFormulaModalOpen}
+                onClose={() => setIsFormulaModalOpen(false)}
+                type="indicative"
+                onSave={async (payload: any) => {
+                    try {
+                        if (payload.id) {
+                            await updateFormula(payload.id, {
+                                expression: payload.expression,
+                                ast: payload.ast,
+                                indicativeIndicatorId: indicatorForFormula?.id
+                            });
+                        } else {
+                            await createFormula({
+                                expression: payload.expression,
+                                ast: payload.ast,
+                                indicativeIndicatorId: indicatorForFormula?.id
+                            });
+                        }
+                        addToast({
+                            title: "Fórmula Guardada",
+                            description: "La fórmula se ha guardado correctamente",
+                            color: "success"
+                        })
+                        fetchIndicators();
+                        setIsFormulaModalOpen(false);
+                    } catch (error: any) {
+                        addToast({
+                            title: "Error al guardar fórmula",
+                            description: error.message || "Ocurrió un error inesperado",
+                            color: "danger"
+                        })
+                    }
+                }}
+                title={`Editor de Fórmula - ${indicatorForFormula?.code || ''}`}
+                indicatorId={indicatorForFormula?.id || ''}
             />
         </>
     )

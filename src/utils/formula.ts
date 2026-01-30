@@ -16,6 +16,7 @@ export interface Variable {
 export interface GoalVariable {
     idMeta: string;
     valorMeta: string;
+    year?: number;
     label?: string;
 }
 
@@ -29,7 +30,8 @@ export interface VariableQuadrenium {
 
 export interface GoalIndicator {
     idMeta: string;
-    valorMeta: string; // Changed from metaIndicador to match likely API or normalize
+    valorMeta: string;
+    year?: number;
     label?: string;
 }
 
@@ -702,4 +704,13 @@ export function convertAstToSteps(
     }
 
     return steps;
+}
+
+export interface FormulaValidationResponse {
+    variables: any[];
+    indicator: {
+        goals: any[];
+        quadrenniums: any[];
+        formulas: any[];
+    };
 }

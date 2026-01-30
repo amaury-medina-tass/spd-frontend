@@ -67,33 +67,37 @@ export const ReplicateFormulaModal = ({
                     break;
                 }
 
-                // Goal Matching
+                // Goal Matching - Match by year, not by label/value
                 if (step.type === 'goal_variable') {
-                    const sourceLabel = cleanLabel(step.value.label, step.value.valorMeta);
-                    // Try to find matching goal in target
-                    const match = target.goals?.find(g => cleanLabel(g.label, g.valorMeta) === sourceLabel);
-                    
+                    const sourceYear = step.value.year;
+                    // Try to find matching goal in target by year
+                    const match = target.goals?.find(g => g.year === sourceYear);
+
                     if (!match) {
                         isValid = false;
-                        reason = `Falta meta compatible: "${sourceLabel}"`;
+                        reason = `Falta meta para el año ${sourceYear}`;
                         break;
                     }
-                    // If valid, we push a mapped step (conceptually)
-                    mappedSteps.push({ ...step, value: match });
-                    continue; 
+                    // If valid, we push a mapped step with the target's goal
+                    mappedSteps.push({ ...step, value: { ...match, label: `Meta [${match.year}]` } });
+                    continue;
                 }
 
-                // Quadrennium Matching
+                // Quadrennium Matching - Match by startYear and endYear
                 if (step.type === 'quadrennium_variable') {
                     const sourceStart = step.value.startYear;
-                    const match = target.quadrenniums?.find(q => q.startYear === sourceStart);
+                    const sourceEnd = step.value.endYear;
+                    // Match by both start and end year
+                    const match = target.quadrenniums?.find(q =>
+                        q.startYear === sourceStart && q.endYear === sourceEnd
+                    );
 
                     if (!match) {
                         isValid = false;
-                        reason = `Falta cuatrenio compatible: "${step.value.label || sourceStart}"`;
+                        reason = `Falta cuatrenio ${sourceStart}-${sourceEnd}`;
                         break;
                     }
-                    mappedSteps.push({ ...step, value: match });
+                    mappedSteps.push({ ...step, value: { ...match, label: `Cuatrenio [${match.startYear}-${match.endYear}]` } });
                     continue;
                 }
 
@@ -149,8 +153,8 @@ export const ReplicateFormulaModal = ({
     const validCount = candidates.filter(v => validationMap[v.id]?.isValid).length;
 
     return (
-        <Modal 
-            isOpen={isOpen} 
+        <Modal
+            isOpen={isOpen}
             onClose={onClose}
             size="2xl"
             scrollBehavior="inside"
@@ -168,10 +172,10 @@ export const ReplicateFormulaModal = ({
                 <ModalBody>
                     <div className="flex justify-between items-center mb-2">
                         <span className="text-sm text-default-500">{selectedIds.size} seleccionados</span>
-                        <Button 
-                            size="sm" 
-                            variant="light" 
-                            color="primary" 
+                        <Button
+                            size="sm"
+                            variant="light"
+                            color="primary"
                             onPress={handleToggleAll}
                             isDisabled={validCount === 0}
                         >
@@ -190,17 +194,17 @@ export const ReplicateFormulaModal = ({
                                 const isSelected = selectedIds.has(variable.id);
 
                                 return (
-                                    <div 
+                                    <div
                                         key={variable.id}
                                         className={`p-3 flex items-center gap-3 transition-colors ${!validation?.isValid ? 'opacity-60 bg-danger-50/20' : 'hover:bg-default-50'}`}
                                     >
-                                        <Checkbox 
+                                        <Checkbox
                                             isSelected={isSelected}
                                             onValueChange={() => handleToggle(variable.id)}
                                             isDisabled={!validation?.isValid}
                                             classNames={{ wrapper: "shrink-0" }}
                                         />
-                                        
+
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2 mb-0.5">
                                                 <span className="text-sm font-medium truncate">
@@ -212,7 +216,7 @@ export const ReplicateFormulaModal = ({
                                                     </Chip>
                                                 )}
                                             </div>
-                                            
+
                                             {!validation?.isValid && (
                                                 <div className="flex items-center gap-1.5 text-danger text-xs">
                                                     <AlertCircle size={12} />
@@ -230,8 +234,8 @@ export const ReplicateFormulaModal = ({
                     <Button variant="light" onPress={onClose}>
                         Cancelar
                     </Button>
-                    <Button 
-                        color="primary" 
+                    <Button
+                        color="primary"
                         onPress={handleConfirm}
                         isDisabled={selectedIds.size === 0}
                         startContent={<Copy size={16} />}

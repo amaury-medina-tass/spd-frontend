@@ -30,17 +30,17 @@ interface FormulaGuideModalProps {
 
 export const FormulaGuideModal = ({ isOpen, onClose }: FormulaGuideModalProps) => {
     return (
-        <Modal 
-            isOpen={isOpen} 
-            onClose={onClose} 
-            size="3xl" 
+        <Modal
+            isOpen={isOpen}
+            onClose={onClose}
+            size="3xl"
             scrollBehavior="inside"
             classNames={{
                 backdrop: "bg-black/50"
             }}
         >
             <ModalContent>
-                <ModalHeader className="flex flex-col gap-1 bg-default-50 border-b border-default-100">
+                <ModalHeader className="flex flex-col gap-1">
                     <div className="flex items-center gap-2 text-primary">
                         <HelpCircle size={24} />
                         <h2 className="text-xl font-bold">Guía de Fórmulas e Indicadores</h2>
@@ -52,13 +52,13 @@ export const FormulaGuideModal = ({ isOpen, onClose }: FormulaGuideModalProps) =
 
                 <ModalBody className="p-0">
                     <ScrollShadow className="h-[500px] p-4 sm:p-6 space-y-6">
-                        
+
                         {/* Section 1: Workflow */}
                         <section className="bg-warning-50/50 dark:bg-warning-900/10 border border-warning-200 dark:border-warning-800 rounded-xl p-4">
                             <h3 className="text-sm font-bold text-warning-700 dark:text-warning-500 uppercase tracking-wider mb-4 flex items-center gap-2">
                                 <Info size={16} /> Flujo de Trabajo Recomendado
                             </h3>
-                            
+
                             <div className="space-y-4">
                                 <div className="flex gap-4">
                                     <div className="w-8 h-8 rounded-full bg-warning-100 text-warning-700 font-bold flex items-center justify-center shrink-0">1</div>
@@ -66,7 +66,7 @@ export const FormulaGuideModal = ({ isOpen, onClose }: FormulaGuideModalProps) =
                                         <h4 className="font-semibold text-foreground">Definir Sub-fórmulas de Variables</h4>
                                         <p className="text-sm text-default-500 mt-1">
                                             Antes de usar una variable en la fórmula principal, configure cómo se calcula.
-                                            Seleccione una variable del panel (pestaña <span className="inline-flex items-center gap-1 bg-default-100 px-1 rounded text-xs"><Variable size={10}/> Variables</span>).
+                                            Seleccione una variable del panel (pestaña <span className="inline-flex items-center gap-1 bg-default-100 px-1 rounded text-xs"><Variable size={10} /> Variables</span>).
                                         </p>
                                     </div>
                                 </div>
@@ -75,8 +75,8 @@ export const FormulaGuideModal = ({ isOpen, onClose }: FormulaGuideModalProps) =
                                     <div>
                                         <h4 className="font-semibold text-foreground">Replicar (Opcional)</h4>
                                         <p className="text-sm text-default-500 mt-1">
-                                            Si varias variables comparten la misma lógica (ej. consumidos anuales), use el botón 
-                                            <span className="inline-flex items-center gap-1 mx-1 bg-default-100 px-1 rounded text-xs font-medium"><Copy size={10}/> Replicar</span>
+                                            Si varias variables comparten la misma lógica (ej. consumidos anuales), use el botón
+                                            <span className="inline-flex items-center gap-1 mx-1 bg-default-100 px-1 rounded text-xs font-medium"><Copy size={10} /> Replicar</span>
                                             para copiar la fórmula a otras variables compatibles (que tengan las mismas metas/cuatrenios).
                                         </p>
                                     </div>
@@ -103,7 +103,7 @@ export const FormulaGuideModal = ({ isOpen, onClose }: FormulaGuideModalProps) =
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="p-3 rounded-lg border border-default-200 dark:border-default-700">
                                     <h4 className="text-sm font-semibold flex items-center gap-2 mb-2">
-                                        <Variable size={16} className="text-primary"/> Variables
+                                        <Variable size={16} className="text-primary" /> Variables
                                     </h4>
                                     <p className="text-xs text-default-500 mb-2">
                                         Referencia al valor calculado de otra variable. Requiere que la variable tenga su propia fórmula definida.
@@ -113,11 +113,11 @@ export const FormulaGuideModal = ({ isOpen, onClose }: FormulaGuideModalProps) =
 
                                 <div className="p-3 rounded-lg border border-default-200 dark:border-default-700">
                                     <h4 className="text-sm font-semibold flex items-center gap-2 mb-2">
-                                        <TrendingUp size={16} className="text-warning"/> Avances
+                                        <TrendingUp size={16} className="text-warning" /> Avances
                                     </h4>
                                     <p className="text-xs text-default-500 mb-2">
                                         Valor reportado en un periodo (Mes/Año).
-                                        <br/>
+                                        <br />
                                         <span className="text-danger font-medium">* Restricción:</span> Múltiples avances (2+ meses) solo se pueden insertar dentro de funciones vacías como <code>SUMA( )</code>.
                                     </p>
                                     <Chip size="sm" variant="flat" color="warning">Avance 2024</Chip>
@@ -125,7 +125,7 @@ export const FormulaGuideModal = ({ isOpen, onClose }: FormulaGuideModalProps) =
 
                                 <div className="p-3 rounded-lg border border-default-200 dark:border-default-700">
                                     <h4 className="text-sm font-semibold flex items-center gap-2 mb-2">
-                                        <Target size={16} className="text-success"/> Metas
+                                        <Target size={16} className="text-success" /> Metas
                                     </h4>
                                     <p className="text-xs text-default-500 mb-2">
                                         Valor objetivo de la variable o indicador para un año específico.
@@ -153,7 +153,7 @@ export const FormulaGuideModal = ({ isOpen, onClose }: FormulaGuideModalProps) =
                                             <td className="p-3 font-mono text-primary font-medium">SUMA(a, b, ...)</td>
                                             <td className="p-3 text-default-600">
                                                 Suma valores. Use comas (<code>,</code>) para separar argumentos.
-                                                <br/>
+                                                <br />
                                                 <span className="text-xs text-warning-600 block mt-1">
                                                     Nota: Dentro de SUMA/PROMEDIO, no se permiten operadores (+ -) directos. Use paréntesis internos si necesita operar: <code>SUMA(10, (5+2))</code>.
                                                 </span>
@@ -162,8 +162,8 @@ export const FormulaGuideModal = ({ isOpen, onClose }: FormulaGuideModalProps) =
                                         <tr>
                                             <td className="p-3 font-mono text-primary font-medium">SI(cond, true, false)</td>
                                             <td className="p-3 text-default-600">
-                                                Condicional lógico. 
-                                                <br/>
+                                                Condicional lógico.
+                                                <br />
                                                 Ej: <code>SI(VAR &gt; 100, 1, 0)</code>.
                                             </td>
                                         </tr>
@@ -192,7 +192,7 @@ export const FormulaGuideModal = ({ isOpen, onClose }: FormulaGuideModalProps) =
 
                     </ScrollShadow>
                 </ModalBody>
-                <ModalFooter className="bg-default-50 border-t border-default-100">
+                <ModalFooter>
                     <Button color="primary" onPress={onClose}>
                         Entendido
                     </Button>

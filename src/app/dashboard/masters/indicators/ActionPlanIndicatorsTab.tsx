@@ -38,7 +38,7 @@ const indicatorColumns: ColumnDef<ActionPlanIndicator>[] = [
 import { ManageIndicatorVariablesModal } from "@/components/modals/masters/indicators/ManageIndicatorVariablesModal"
 import { ManageActionPlanProjectsModal } from "@/components/modals/masters/indicators/action-plan/ManageActionPlanProjectsModal"
 import { Calculator, Briefcase, FunctionSquare } from "lucide-react"
-import { FormulaEditorModal } from "@/components/modals/common/FormulaEditorModal"
+import { FormulaEditorModal } from "@/components/modals/masters/indicators/formulas"
 
 export function ActionPlanIndicatorsTab() {
     const { canRead, canCreate, canUpdate, canDelete } = usePermissions("/masters/indicators") // Adjust permission path if needed
