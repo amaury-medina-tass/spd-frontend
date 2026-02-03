@@ -69,4 +69,13 @@ export const endpoints = {
     cdpPositionDetailedActivitiesRemove: (positionId: string, activityId: string) => `/financial/cdps/positions/${positionId}/detailed-activities/${activityId}`,
     cdpPositionConsume: (positionId: string) => `/financial/cdps/positions/${positionId}/consume`,
   },
+  sub: {
+    variableAdvances: {
+      base: "/sub/variable-advances",
+      contextual: {
+        actionIndicator: (id: string) => `/sub/variable-advances/contextual/action-indicator/${id}`,
+        indicativeIndicator: (id: string) => `/sub/variable-advances/contextual/indicative-indicator/${id}`,
+      },
+    },
+  },
 }

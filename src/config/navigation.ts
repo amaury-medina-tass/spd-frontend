@@ -146,6 +146,20 @@ export const menuItems: (MenuItem | MenuGroup)[] = [
             },
         ],
     },
+
+    // Sub - Item principal
+    {
+        label: "Sub",
+        icon: React.createElement(Layers, { size: 20 }),
+        items: [
+            {
+                label: "Indicadores",
+                href: "/dashboard/sub/indicators",
+                permissionPath: "/sub/indicators",
+                icon: React.createElement(Goal, { size: 18 }),
+            },
+        ],
+    },
 ]
 
 // Helper to check if an item is a group

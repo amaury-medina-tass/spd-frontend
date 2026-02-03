@@ -1,0 +1,161 @@
+"use client"
+
+import { DataTable, ColumnDef, SortDescriptor, TopAction, RowAction } from "@/components/tables/DataTable"
+import { Indicator } from "@/types/masters/indicators"
+import { useCallback, useEffect, useMemo, useState } from "react"
+import { RefreshCw, Calculator } from "lucide-react"
+import { getIndicators } from "@/services/masters/indicators.service"
+import { PaginatedData, PaginationMeta } from "@/lib/http"
+import { VariableAdvancesModal } from "@/components/modals/sub/VariableAdvancesModal"
+import { useDebounce } from "@/hooks/useDebounce"
+
+const indicatorColumns: ColumnDef<Indicator>[] = [
+    { key: "code", label: "Código", sortable: true },
+    { key: "name", label: "Nombre", sortable: true },
+    { key: "pillarName", label: "Pilar", sortable: false, render: (i) => i.pillarName },
+    { key: "programName", label: "Programa", sortable: false, render: (i) => i.programName },
+    {
+        key: "indicatorType",
+        label: "Tipo",
+        sortable: false,
+        render: (i) => (
+            <span className="px-2 py-1 text-xs font-medium rounded-full bg-default-100 text-default-600">
+                {i.indicatorType?.name || "N/A"}
+            </span>
+        )
+    },
+    { key: "unitMeasure", label: "Unidad", sortable: false, render: (i) => i.unitMeasure?.name || "N/A" },
+    { key: "baseline", label: "Línea Base", sortable: false },
+    {
+        key: "advancePercentage",
+        label: "Avance",
+        sortable: false,
+        render: (i) => (
+            <span className={`font-semibold ${Number(i.advancePercentage) >= 100 ? "text-success" : "text-warning"}`}>
+                {i.advancePercentage}%
+            </span>
+        )
+    },
+]
+
+export function IndicativePlanSubTab() {
+    // State
+    const [items, setItems] = useState<Indicator[]>([])
+    const [meta, setMeta] = useState<PaginationMeta | null>(null)
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
+
+    // Pagination & Search
+    const [page, setPage] = useState(1)
+    const [limit, setLimit] = useState(10)
+    const [search, setSearch] = useState("")
+    const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({
+        column: "code",
+        direction: "ascending",
+    })
+    const [searchInput, setSearchInput] = useState("")
+
+    const debouncedSearch = useDebounce(searchInput, 400)
+
+    // Modal
+    const [isAdvancesModalOpen, setIsAdvancesModalOpen] = useState(false)
+    const [selectedIndicator, setSelectedIndicator] = useState<Indicator | null>(null)
+
+    const fetchIndicators = useCallback(async () => {
+        setLoading(true)
+        setError(null)
+        try {
+            const params = new URLSearchParams({
+                page: page.toString(),
+                limit: limit.toString(),
+            })
+            if (search.trim()) {
+                params.set("search", search.trim())
+            }
+
+            if (sortDescriptor.column) {
+                params.set("sortBy", sortDescriptor.column as string)
+                params.set("sortOrder", sortDescriptor.direction === "ascending" ? "ASC" : "DESC")
+            }
+
+            const result = await getIndicators(params.toString())
+            setItems(result.data)
+            setMeta(result.meta)
+        } catch (e: any) {
+            setError(e.message ?? "Error al cargar indicadores")
+        } finally {
+            setLoading(false)
+        }
+    }, [page, limit, search, sortDescriptor])
+
+    useEffect(() => {
+        fetchIndicators()
+    }, [fetchIndicators])
+
+    useEffect(() => {
+        setSearch(debouncedSearch)
+        setPage(1)
+    }, [debouncedSearch])
+
+    const topActions: TopAction[] = useMemo(() => {
+        return [
+            {
+                key: "refresh",
+                label: "Actualizar",
+                icon: <RefreshCw size={16} />,
+                color: "default",
+                onClick: fetchIndicators,
+            },
+        ]
+    }, [fetchIndicators])
+
+    const rowActions: RowAction<Indicator>[] = useMemo(() => {
+        return [
+            {
+                key: "advances",
+                label: "Avances Variables",
+                icon: <Calculator size={16} />,
+                onClick: (item) => {
+                    setSelectedIndicator(item)
+                    setIsAdvancesModalOpen(true)
+                },
+            },
+        ]
+    }, [])
+
+    return (
+        <>
+            <DataTable
+                items={items}
+                columns={indicatorColumns}
+                isLoading={loading}
+                rowActions={rowActions}
+                topActions={topActions}
+                searchValue={searchInput}
+                onSearchChange={setSearchInput}
+                searchPlaceholder="Buscar indicadores..."
+                ariaLabel="Tabla de indicadores plan indicativo"
+                sortDescriptor={sortDescriptor}
+                onSortChange={setSortDescriptor}
+                pagination={meta ? {
+                    page: page,
+                    totalPages: meta.totalPages,
+                    onChange: setPage,
+                    pageSize: limit,
+                    onPageSizeChange: (newLimit) => {
+                        setLimit(newLimit)
+                        setPage(1)
+                    }
+                } : undefined}
+            />
+
+            <VariableAdvancesModal
+                isOpen={isAdvancesModalOpen}
+                onClose={() => setIsAdvancesModalOpen(false)}
+                indicatorId={selectedIndicator?.id ?? null}
+                indicatorCode={selectedIndicator?.code}
+                type="indicative"
+            />
+        </>
+    )
+}
