@@ -13,3 +13,21 @@ export const getVariableAdvancesByActionIndicator = async (id: string, params: s
 export const getVariableAdvancesByIndicativeIndicator = async (id: string, params: string) => {
     return await get<PaginatedData<VariableWithAdvances>>(`${endpoints.sub.variableAdvances.contextual.indicativeIndicator(id)}?${params}`)
 }
+
+import { IndicatorDetailedData } from "@/types/sub/indicator-dashboard"
+
+export const getActionIndicatorDetailed = async (id: string, year: string | number, month: string | number) => {
+    const params = new URLSearchParams({
+        year: year.toString(),
+        month: month.toString(),
+    })
+    return await get<IndicatorDetailedData>(`${endpoints.sub.indicatorAdvances.actionDetailed(id)}?${params.toString()}`)
+}
+
+export const getIndicativeIndicatorDetailed = async (id: string, year: string | number, month: string | number) => {
+    const params = new URLSearchParams({
+        year: year.toString(),
+        month: month.toString(),
+    })
+    return await get<IndicatorDetailedData>(`${endpoints.sub.indicatorAdvances.indicativeDetailed(id)}?${params.toString()}`)
+}

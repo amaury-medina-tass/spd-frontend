@@ -47,6 +47,7 @@ export function useFormulaEditor({ indicatorId, isOpen, onSave, type = 'action' 
     const [goalVariables, setGoalVariables] = useState<GoalVariable[]>([]);
     const [goalIndicators, setGoalIndicators] = useState<GoalIndicator[]>([]);
     const [indicatorQuadrenniums, setIndicatorQuadrenniums] = useState<IndicatorQuadrennium[]>([]);
+    const [baseline, setBaseline] = useState<string | undefined>(undefined);
     const [existingFormulaId, setExistingFormulaId] = useState<string | null>(null);
 
     // Editor State
@@ -184,6 +185,7 @@ export function useFormulaEditor({ indicatorId, isOpen, onSave, type = 'action' 
 
             if (data) {
                 const fetchedVariables = data.variables || [];
+                setBaseline(data.indicator?.baseline);
                 const mappedVariables: Variable[] = fetchedVariables.map((v: any) => ({
                     id: v.id,
                     code: v.code,
@@ -293,6 +295,7 @@ export function useFormulaEditor({ indicatorId, isOpen, onSave, type = 'action' 
             setGoalVariables([]);
             setGoalIndicators([]);
             setIndicatorQuadrenniums([]);
+            setBaseline(undefined);
             setExistingFormulaId(null);
             setActiveTab("variables");
             setSelectedVariableId(null);
@@ -458,6 +461,7 @@ export function useFormulaEditor({ indicatorId, isOpen, onSave, type = 'action' 
         goalVariables,
         goalIndicators,
         indicatorQuadrenniums,
+        baseline,
         existingFormulaId,
         activeTab,
         setActiveTab,

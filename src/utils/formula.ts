@@ -709,6 +709,7 @@ export function convertAstToSteps(
 export interface FormulaValidationResponse {
     variables: any[];
     indicator: {
+        baseline?: string;
         goals: any[];
         quadrenniums: any[];
         formulas: any[];

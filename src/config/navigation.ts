@@ -158,6 +158,12 @@ export const menuItems: (MenuItem | MenuGroup)[] = [
                 permissionPath: "/sub/indicators",
                 icon: React.createElement(Goal, { size: 18 }),
             },
+            {
+                label: "Variables",
+                href: "/dashboard/sub/variables",
+                permissionPath: "/sub/variables",
+                icon: React.createElement(Variable, { size: 18 }),
+            },
         ],
     },
 ]

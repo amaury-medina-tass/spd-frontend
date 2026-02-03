@@ -3,10 +3,11 @@
 import { DataTable, ColumnDef, SortDescriptor, TopAction, RowAction } from "@/components/tables/DataTable"
 import { ActionPlanIndicator } from "@/types/masters/indicators"
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { RefreshCw, Calculator } from "lucide-react"
+import { RefreshCw, Calculator, BarChart3 } from "lucide-react"
 import { getActionPlanIndicators } from "@/services/masters/indicators.service"
 import { PaginatedData, PaginationMeta } from "@/lib/http"
 import { VariableAdvancesModal } from "@/components/modals/sub/VariableAdvancesModal"
+import { IndicatorDashboardModal } from "@/components/modals/sub/IndicatorDashboardModal"
 import { useDebounce } from "@/hooks/useDebounce"
 
 const indicatorColumns: ColumnDef<ActionPlanIndicator>[] = [
@@ -47,8 +48,9 @@ export function ActionPlanSubTab() {
 
     const debouncedSearch = useDebounce(searchInput, 400)
 
-    // Modal
+    // Modals
     const [isAdvancesModalOpen, setIsAdvancesModalOpen] = useState(false)
+    const [isDashboardModalOpen, setIsDashboardModalOpen] = useState(false)
     const [selectedIndicator, setSelectedIndicator] = useState<ActionPlanIndicator | null>(null)
 
     const fetchIndicators = useCallback(async () => {
@@ -102,6 +104,15 @@ export function ActionPlanSubTab() {
     const rowActions: RowAction<ActionPlanIndicator>[] = useMemo(() => {
         return [
             {
+                key: "dashboard",
+                label: "Dashboard",
+                icon: <BarChart3 size={16} />,
+                onClick: (item) => {
+                    setSelectedIndicator(item)
+                    setIsDashboardModalOpen(true)
+                },
+            },
+            {
                 key: "advances",
                 label: "Avances Variables",
                 icon: <Calculator size={16} />,
@@ -146,6 +157,15 @@ export function ActionPlanSubTab() {
                 indicatorCode={selectedIndicator?.code}
                 type="action"
             />
+
+            <IndicatorDashboardModal
+                isOpen={isDashboardModalOpen}
+                onClose={() => setIsDashboardModalOpen(false)}
+                indicatorId={selectedIndicator?.id ?? null}
+                indicatorCode={selectedIndicator?.code}
+                type="action"
+            />
         </>
     )
 }
+

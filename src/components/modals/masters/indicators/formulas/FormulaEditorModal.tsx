@@ -69,6 +69,8 @@ export function FormulaEditorModal({
             insertStep={editor.insertStep}
             addConstant={editor.addConstant}
             variableFormulas={editor.variableFormulas}
+            baseline={editor.baseline}
+            type={type}
         />
     );
 

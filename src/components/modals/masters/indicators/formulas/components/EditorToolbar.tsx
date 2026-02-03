@@ -52,6 +52,8 @@ export interface EditorToolbarProps {
     // Handlers
     insertStep: (step: FormulaStep) => void;
     addConstant: () => void;
+    baseline?: string;
+    type?: 'action' | 'indicative';
 }
 
 export const EditorToolbar: React.FC<EditorToolbarProps> = ({
@@ -71,7 +73,9 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
     advanceMonths,
     setAdvanceMonths,
     insertStep,
-    addConstant
+    addConstant,
+    baseline,
+    type
 }) => {
     const selectedVariable = selectedVariableId ? variables.find(v => v.id === selectedVariableId) : null;
     const currentVariableGoals = selectedVariable?.goals || [];
@@ -198,6 +202,21 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
                                         </SelectItem>
                                     ))}
                                 </Select>
+                            )}
+
+                            {type === 'indicative' && baseline && (
+                                <Tooltip content={`Insertar Línea Base (${baseline})`}>
+                                    <Button
+                                        size="sm"
+                                        variant="bordered"
+                                        className="bg-white dark:bg-default-100/20 h-9 min-h-9 px-3"
+                                        startContent={<TrendingUp size={14} className="text-blue-500 shrink-0" />}
+                                        isDisabled={!validationState.canAddEntity}
+                                        onPress={() => insertStep({ type: 'baseline', value: { id: 'LINEA_BASE', label: 'Línea Base' } })}
+                                    >
+                                        Línea Base
+                                    </Button>
+                                </Tooltip>
                             )}
                         </>
                     )}

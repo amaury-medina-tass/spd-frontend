@@ -77,5 +77,9 @@ export const endpoints = {
         indicativeIndicator: (id: string) => `/sub/variable-advances/contextual/indicative-indicator/${id}`,
       },
     },
+    indicatorAdvances: {
+      actionDetailed: (id: string) => `/sub/indicator-advances/action/${id}/detailed`,
+      indicativeDetailed: (id: string) => `/sub/indicator-advances/indicative/${id}/detailed`,
+    },
   },
 }
