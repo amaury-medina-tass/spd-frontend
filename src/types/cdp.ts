@@ -44,6 +44,18 @@ export type CdpPositionDetail = {
   fundingSourceCode: string | null
   observations: string
   totalConsumed: number
+  masterContract: {
+    id: string
+    number: string
+    object: string
+    totalValue: number
+  } | null
+  associatedRps: Array<{
+    id: string
+    number: string
+    totalValue: number
+    balance: number
+  }>
   consumedByActivity: {
     data: ConsumedActivity[]
     meta: ConsumedActivityMeta

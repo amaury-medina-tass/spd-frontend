@@ -20,6 +20,7 @@ export type ColumnDef = {
     uid: string
     sortable?: boolean
     align?: "start" | "center" | "end"
+    width?: number
 }
 
 interface Props<T> {
@@ -101,6 +102,7 @@ export function CleanTable<T extends { id: string | number }>({
                                 key={column.uid}
                                 allowsSorting={column.sortable ?? true}
                                 align={column.align || "start"}
+                                width={column.width}
                             >
                                 {column.name}
                             </TableColumn>

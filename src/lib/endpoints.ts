@@ -68,6 +68,7 @@ export const endpoints = {
     cdpPositionDetailedActivities: (positionId: string) => `/financial/cdps/positions/${positionId}/detailed-activities`,
     cdpPositionDetailedActivitiesRemove: (positionId: string, activityId: string) => `/financial/cdps/positions/${positionId}/detailed-activities/${activityId}`,
     cdpPositionConsume: (positionId: string) => `/financial/cdps/positions/${positionId}/consume`,
+    masterContractCdpPositions: (id: string) => `/financial/master-contracts/${id}/cdp-positions`,
   },
   sub: {
     variableAdvances: {

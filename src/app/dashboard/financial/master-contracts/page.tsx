@@ -8,10 +8,11 @@ import { usePermissions } from "@/hooks/usePermissions"
 import { MasterContractDetailModal } from "@/components/modals/financial/contracts/MasterContractDetailModal"
 import { get, PaginatedData, PaginationMeta } from "@/lib/http"
 import { endpoints } from "@/lib/endpoints"
-import { Eye, RefreshCw } from "lucide-react"
+import { Eye, RefreshCw, Briefcase } from "lucide-react"
 import { addToast } from "@heroui/toast"
 import type { MasterContract } from "@/types/financial"
 import { getErrorMessage } from "@/lib/error-codes"
+import { MasterContractCdpsModal } from "@/components/modals/financial/contracts/MasterContractCdpsModal"
 
 const formatCurrency = (amount: string) => {
     return new Intl.NumberFormat("es-CO", {
@@ -142,6 +143,9 @@ export default function MasterContractsPage() {
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
     const [selectedContract, setSelectedContract] = useState<MasterContract | null>(null)
 
+    const [isCdpsModalOpen, setIsCdpsModalOpen] = useState(false)
+    const [selectedContractForCdps, setSelectedContractForCdps] = useState<MasterContract | null>(null)
+
     const fetchContracts = useCallback(async () => {
         setLoading(true)
         setError(null)
@@ -201,6 +205,15 @@ export default function MasterContractsPage() {
                 label: "Ver Detalles",
                 icon: <Eye size={16} />,
                 onClick: onViewDetails,
+            })
+            actions.push({
+                key: "view-cdps",
+                label: "Ver CDPs",
+                icon: <Briefcase size={16} />,
+                onClick: (contract) => {
+                    setSelectedContractForCdps(contract)
+                    setIsCdpsModalOpen(true)
+                },
             })
         }
         return actions
@@ -270,6 +283,16 @@ export default function MasterContractsPage() {
                 onClose={() => {
                     setIsDetailModalOpen(false)
                     setSelectedContract(null)
+                }}
+            />
+
+            <MasterContractCdpsModal
+                isOpen={isCdpsModalOpen}
+                masterContractId={selectedContractForCdps?.id || null}
+                masterContractNumber={selectedContractForCdps?.number || null}
+                onClose={() => {
+                    setIsCdpsModalOpen(false)
+                    setSelectedContractForCdps(null)
                 }}
             />
         </div>

@@ -139,8 +139,10 @@ export function VariableDashboardModal({ isOpen, onClose, variableId, variableCo
                                     startContent={<Calendar size={14} />}
                                     disallowEmptySelection
                                 >
-                                    <SelectItem key="all">Todos</SelectItem>
-                                    {years.map((y) => (
+                                    {[
+                                        { key: "all", label: "Todos" },
+                                        ...years
+                                    ].map((y) => (
                                         <SelectItem key={y.key}>
                                             {y.label}
                                         </SelectItem>
@@ -156,10 +158,12 @@ export function VariableDashboardModal({ isOpen, onClose, variableId, variableCo
                                     startContent={<Calendar size={14} />}
                                     disallowEmptySelection
                                 >
-                                    <SelectItem key="all">Todos</SelectItem>
-                                    {MONTHS.map((m, i) => (
-                                        <SelectItem key={(i + 1).toString()}>
-                                            {m}
+                                    {[
+                                        { key: "all", label: "Todos" },
+                                        ...MONTHS.map((m, i) => ({ key: (i + 1).toString(), label: m }))
+                                    ].map((m) => (
+                                        <SelectItem key={m.key}>
+                                            {m.label}
                                         </SelectItem>
                                     ))}
                                 </Select>

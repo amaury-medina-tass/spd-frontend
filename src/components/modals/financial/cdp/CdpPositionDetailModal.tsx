@@ -33,7 +33,7 @@ import { endpoints } from "@/lib/endpoints"
 import { useDebounce } from "@/hooks/useDebounce"
 import { CleanTable, ColumnDef } from "@/components/tables/CleanTable"
 
-type TabKey = "info" | "funding"
+type TabKey = "info" | "funding" | "masterContract" | "rps"
 
 const columns: ColumnDef[] = [
     { name: "CÓDIGO", uid: "activityCode" },
@@ -340,30 +340,14 @@ export function CdpPositionDetailModal({
                                         </div>
 
                                         {/* Funding Source Name */}
-                                        {position.fundingSourceName && (
-                                            <div className="flex items-start gap-3 col-span-2">
-                                                <div className="w-8 h-8 rounded-lg bg-default-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                                                    <FileText size={16} className="text-default-500" />
-                                                </div>
-                                                <div>
-                                                    <span className="text-tiny text-default-400 uppercase tracking-wide">
-                                                        Origen Presupuesto
-                                                    </span>
-                                                    <p className="text-small font-medium text-foreground">
-                                                        {position.fundingSourceName}
-                                                    </p>
-                                                    {position.fundingSourceCode && (
-                                                        <p className="text-tiny text-default-400 font-mono mt-1">
-                                                            Fondo: {position.fundingSourceCode}
-                                                        </p>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        )}
+
                                     </div>
                                 </div>
 
-                                <Divider />
+                                {/* Master Contract Section moved to tab */}
+                                {/* Associated RPS Section moved to tab */}
+
+
 
                                 {/* Observations */}
                                 <div className="space-y-2">
@@ -380,12 +364,122 @@ export function CdpPositionDetailModal({
                             </div>
                         </Tab>
 
+                        {position.masterContract && (
+                            <Tab
+                                key="masterContract"
+                                title={
+                                    <div className="flex items-center gap-2">
+                                        <FileText size={16} />
+                                        <span>Contrato Marco</span>
+                                    </div>
+                                }
+                            >
+                                <div className="space-y-6 pt-4">
+                                    <div>
+                                        <h3 className="text-sm font-semibold text-default-500 uppercase tracking-wider mb-3">
+                                            Contrato Marco
+                                        </h3>
+                                        <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+                                            {/* Contract Number */}
+                                            <div className="flex items-start gap-3">
+                                                <div className="w-8 h-8 rounded-lg bg-default-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                                    <FileText size={16} className="text-default-500" />
+                                                </div>
+                                                <div>
+                                                    <span className="text-tiny text-default-400 uppercase tracking-wide">
+                                                        Número Contrato
+                                                    </span>
+                                                    <p className="text-medium font-semibold text-foreground">
+                                                        {position.masterContract.number}
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            {/* Total Value */}
+                                            <div className="flex items-start gap-3">
+                                                <div className="w-8 h-8 rounded-lg bg-default-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                                    <DollarSign size={16} className="text-default-500" />
+                                                </div>
+                                                <div>
+                                                    <span className="text-tiny text-default-400 uppercase tracking-wide">
+                                                        Valor Total
+                                                    </span>
+                                                    <p className="text-medium font-semibold text-foreground">
+                                                        {formatCurrency(position.masterContract.totalValue)}
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            {/* Object */}
+                                            <div className="flex items-start gap-3 col-span-2">
+                                                <div className="w-8 h-8 rounded-lg bg-default-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                                    <Info size={16} className="text-default-500" />
+                                                </div>
+                                                <div>
+                                                    <span className="text-tiny text-default-400 uppercase tracking-wide">
+                                                        Objeto
+                                                    </span>
+                                                    <p className="text-small font-medium text-foreground">
+                                                        {position.masterContract.object}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </Tab>
+                        )}
+
+                        {position.associatedRps && position.associatedRps.length > 0 && (
+                            <Tab
+                                key="rps"
+                                title={
+                                    <div className="flex items-center gap-2">
+                                        <Receipt size={16} />
+                                        <span>RPS Asociados</span>
+                                        <span className="text-tiny text-default-400">
+                                            ({position.associatedRps.length})
+                                        </span>
+                                    </div>
+                                }
+                            >
+                                <div className="space-y-3 pt-4">
+                                    {position.associatedRps.map((rp) => (
+                                        <Card key={rp.id} className="bg-default-50 shadow-none border border-default-200">
+                                            <CardBody className="py-2 px-3">
+                                                <div className="flex justify-between items-center">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-8 h-8 rounded-lg bg-white dark:bg-default-100 flex items-center justify-center flex-shrink-0">
+                                                            <Receipt size={16} className="text-default-500" />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-small font-semibold text-foreground">
+                                                                {rp.number}
+                                                            </p>
+                                                            <div className="flex gap-3">
+                                                                <p className="text-tiny text-default-500">
+                                                                    Valor: {formatCurrency(rp.totalValue)}
+                                                                </p>
+                                                                <p className="text-tiny text-success-600 font-medium">
+                                                                    Saldo: {formatCurrency(rp.balance)}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </CardBody>
+                                        </Card>
+                                    ))}
+                                </div>
+                            </Tab>
+                        )}
+
                         <Tab
                             key="funding"
                             title={
                                 <div className="flex items-center gap-2">
                                     <Wallet size={16} />
-                                    <span>Fuentes de Financiación</span>
+                                    <span>Actividades Detalladas</span>
                                     {activityMeta && (
                                         <span className="text-tiny text-default-400">
                                             ({activityMeta.total})
@@ -435,7 +529,7 @@ export function CdpPositionDetailModal({
                                     emptyContent={
                                         <div className="flex items-center justify-center py-8 text-default-400">
                                             <p className="text-small">
-                                                {activitySearch ? "Sin resultados para la búsqueda" : "Sin actividades asociadas"}
+                                                {activitySearch ? "Sin resultados para la búsqueda" : "No hay actividades detalladas"}
                                             </p>
                                         </div>
                                     }

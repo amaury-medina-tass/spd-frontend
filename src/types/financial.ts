@@ -178,3 +178,17 @@ export type NeedCdpPositionsResponse = {
     data: NeedCdpPosition[]
     meta: PaginationMeta
 }
+
+export type MasterContractCdpPosition = {
+    id: string
+    projectCode: string
+    rubricCode: string
+    positionNumber: string
+    positionValue: number
+    needCode: string
+    cdpNumber: string
+    cdpTotalValue: number
+    fundingSourceName: string
+    fundingSourceCode: string
+    observations: string
+}
