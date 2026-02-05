@@ -162,18 +162,64 @@ export const AuditActions = {
   CDP_FUNDING_CONSUMED: "CDP_FUNDING_CONSUMED",
 
   // ========================
+  // SPD-CORE — MASTERS (Más entidades)
+  // ========================
+
+  // Rubros
+  RUBRIC_CREATED: "RUBRIC_CREATED",
+  RUBRIC_UPDATED: "RUBRIC_UPDATED",
+  RUBRIC_DELETED: "RUBRIC_DELETED",
+
+  // Productos
+  PRODUCT_CREATED: "PRODUCT_CREATED",
+  PRODUCT_UPDATED: "PRODUCT_UPDATED",
+  PRODUCT_DELETED: "PRODUCT_DELETED",
+
+  // Contratistas
+  CONTRACTOR_CREATED: "CONTRACTOR_CREATED",
+  CONTRACTOR_UPDATED: "CONTRACTOR_UPDATED",
+  CONTRACTOR_DELETED: "CONTRACTOR_DELETED",
+
+  // Contratos Marco
+  MASTER_CONTRACT_CREATED: "MASTER_CONTRACT_CREATED",
+  MASTER_CONTRACT_UPDATED: "MASTER_CONTRACT_UPDATED",
+  MASTER_CONTRACT_DELETED: "MASTER_CONTRACT_DELETED",
+
+  // Necesidades
+  NEED_CREATED: "NEED_CREATED",
+  NEED_UPDATED: "NEED_UPDATED",
+  NEED_DELETED: "NEED_DELETED",
+
+  // Estudios Previos
+  PREVIOUS_STUDY_CREATED: "PREVIOUS_STUDY_CREATED",
+  PREVIOUS_STUDY_UPDATED: "PREVIOUS_STUDY_UPDATED",
+  PREVIOUS_STUDY_DELETED: "PREVIOUS_STUDY_DELETED",
+
+  // Dependencias
+  DEPENDENCY_CREATED: "DEPENDENCY_CREATED",
+  DEPENDENCY_UPDATED: "DEPENDENCY_UPDATED",
+  DEPENDENCY_DELETED: "DEPENDENCY_DELETED",
+
+  // CDPs
+  CDP_CREATED: "CDP_CREATED",
+  CDP_UPDATED: "CDP_UPDATED",
+  CDP_DELETED: "CDP_DELETED",
+
+  // ========================
   // SPD-CORE — SUB (Seguimiento)
   // ========================
 
   // Avances
   VARIABLE_ADVANCE_CREATED: "VARIABLE_ADVANCE_CREATED",
+  VARIABLE_ADVANCE_UPDATED: "VARIABLE_ADVANCE_UPDATED",
+  INDICATOR_ADVANCE_CREATED: "INDICATOR_ADVANCE_CREATED",
   INDICATOR_ADVANCE_UPDATED: "INDICATOR_ADVANCE_UPDATED",
 
   // ========================
   // SPD-CORE — SAP SYNC
   // ========================
 
-  SAP_SYNC_ENQUEUED: "SAP_SYNC_ENQUEUED",
+  SAP_SYNC_REQUESTED: "SAP_SYNC_REQUESTED",
   SAP_SYNC_COMPLETED: "SAP_SYNC_COMPLETED",
   SAP_SYNC_FAILED: "SAP_SYNC_FAILED",
 } as const
@@ -286,12 +332,56 @@ export const ACTION_LABELS: Record<string, string> = {
   [AuditActions.CDP_POSITION_ACTIVITY_DISASSOCIATED]: "Actividad Desasociada de Posición CDP",
   [AuditActions.CDP_FUNDING_CONSUMED]: "Financiamiento CDP Consumido",
 
-  // Sub — Avances
+  // Rubros
+  [AuditActions.RUBRIC_CREATED]: "Rubro Creado",
+  [AuditActions.RUBRIC_UPDATED]: "Rubro Actualizado",
+  [AuditActions.RUBRIC_DELETED]: "Rubro Eliminado",
+
+  // Productos
+  [AuditActions.PRODUCT_CREATED]: "Producto Creado",
+  [AuditActions.PRODUCT_UPDATED]: "Producto Actualizado",
+  [AuditActions.PRODUCT_DELETED]: "Producto Eliminado",
+
+  // Contratistas
+  [AuditActions.CONTRACTOR_CREATED]: "Contratista Creado",
+  [AuditActions.CONTRACTOR_UPDATED]: "Contratista Actualizado",
+  [AuditActions.CONTRACTOR_DELETED]: "Contratista Eliminado",
+
+  // Contratos Marco
+  [AuditActions.MASTER_CONTRACT_CREATED]: "Contrato Marco Creado",
+  [AuditActions.MASTER_CONTRACT_UPDATED]: "Contrato Marco Actualizado",
+  [AuditActions.MASTER_CONTRACT_DELETED]: "Contrato Marco Eliminado",
+
+  // Necesidades
+  [AuditActions.NEED_CREATED]: "Necesidad Creada",
+  [AuditActions.NEED_UPDATED]: "Necesidad Actualizada",
+  [AuditActions.NEED_DELETED]: "Necesidad Eliminada",
+
+  // Estudios Previos
+  [AuditActions.PREVIOUS_STUDY_CREATED]: "Estudio Previo Creado",
+  [AuditActions.PREVIOUS_STUDY_UPDATED]: "Estudio Previo Actualizado",
+  [AuditActions.PREVIOUS_STUDY_DELETED]: "Estudio Previo Eliminado",
+
+  // Dependencias
+  [AuditActions.DEPENDENCY_CREATED]: "Dependencia Creada",
+  [AuditActions.DEPENDENCY_UPDATED]: "Dependencia Actualizada",
+  [AuditActions.DEPENDENCY_DELETED]: "Dependencia Eliminada",
+
+  // CDPs
+  [AuditActions.CDP_CREATED]: "CDP Creado",
+  [AuditActions.CDP_UPDATED]: "CDP Actualizado",
+  [AuditActions.CDP_DELETED]: "CDP Eliminado",
+
+  // Avances Variables
   [AuditActions.VARIABLE_ADVANCE_CREATED]: "Avance de Variable Creado",
+  [AuditActions.VARIABLE_ADVANCE_UPDATED]: "Avance de Variable Actualizado",
+
+  // Avances Indicadores
+  [AuditActions.INDICATOR_ADVANCE_CREATED]: "Avance de Indicador Creado",
   [AuditActions.INDICATOR_ADVANCE_UPDATED]: "Avance de Indicador Actualizado",
 
   // SAP Sync
-  [AuditActions.SAP_SYNC_ENQUEUED]: "Sincronización SAP Encolada",
+  [AuditActions.SAP_SYNC_REQUESTED]: "Sincronización SAP Solicitada",
   [AuditActions.SAP_SYNC_COMPLETED]: "Sincronización SAP Completada",
   [AuditActions.SAP_SYNC_FAILED]: "Sincronización SAP Fallida",
 }
@@ -414,16 +504,59 @@ export const ACTION_COLORS: Record<string, "default" | "primary" | "secondary" |
 
   // Sub — Avances
   [AuditActions.VARIABLE_ADVANCE_CREATED]: "success",
+  [AuditActions.VARIABLE_ADVANCE_UPDATED]: "primary",
+  [AuditActions.INDICATOR_ADVANCE_CREATED]: "success",
   [AuditActions.INDICATOR_ADVANCE_UPDATED]: "primary",
 
+  // Rubros
+  [AuditActions.RUBRIC_CREATED]: "success",
+  [AuditActions.RUBRIC_UPDATED]: "primary",
+  [AuditActions.RUBRIC_DELETED]: "danger",
+
+  // Productos
+  [AuditActions.PRODUCT_CREATED]: "success",
+  [AuditActions.PRODUCT_UPDATED]: "primary",
+  [AuditActions.PRODUCT_DELETED]: "danger",
+
+  // Contratistas
+  [AuditActions.CONTRACTOR_CREATED]: "success",
+  [AuditActions.CONTRACTOR_UPDATED]: "primary",
+  [AuditActions.CONTRACTOR_DELETED]: "danger",
+
+  // Contratos Marco
+  [AuditActions.MASTER_CONTRACT_CREATED]: "success",
+  [AuditActions.MASTER_CONTRACT_UPDATED]: "primary",
+  [AuditActions.MASTER_CONTRACT_DELETED]: "danger",
+
+  // Necesidades
+  [AuditActions.NEED_CREATED]: "success",
+  [AuditActions.NEED_UPDATED]: "primary",
+  [AuditActions.NEED_DELETED]: "danger",
+
+  // Estudios Previos
+  [AuditActions.PREVIOUS_STUDY_CREATED]: "success",
+  [AuditActions.PREVIOUS_STUDY_UPDATED]: "primary",
+  [AuditActions.PREVIOUS_STUDY_DELETED]: "danger",
+
+  // Dependencias
+  [AuditActions.DEPENDENCY_CREATED]: "success",
+  [AuditActions.DEPENDENCY_UPDATED]: "primary",
+  [AuditActions.DEPENDENCY_DELETED]: "danger",
+
+  // CDPs
+  [AuditActions.CDP_CREATED]: "success",
+  [AuditActions.CDP_UPDATED]: "primary",
+  [AuditActions.CDP_DELETED]: "danger",
+
   // SAP Sync
-  [AuditActions.SAP_SYNC_ENQUEUED]: "secondary",
+  [AuditActions.SAP_SYNC_REQUESTED]: "secondary",
   [AuditActions.SAP_SYNC_COMPLETED]: "success",
   [AuditActions.SAP_SYNC_FAILED]: "danger",
 }
 
 // === Labels legibles por campo ===
 export const FIELD_LABELS: Record<string, string> = {
+  // Auth
   email: "Correo Electrónico",
   first_name: "Nombre",
   last_name: "Apellido",
@@ -432,15 +565,75 @@ export const FIELD_LABELS: Record<string, string> = {
   password: "Contraseña",
   role: "Rol",
   permission: "Permiso",
+
+  // General
   name: "Nombre",
   description: "Descripción",
   code: "Código",
   system: "Sistema",
   is_default: "Por Defecto",
+  observations: "Observaciones",
+  state: "Estado",
+
+  // Financial
+  number: "Número",
+  totalValue: "Valor Total",
+  balance: "Saldo",
+  value: "Valor",
+  dateIssue: "Fecha de Emisión",
+  positionNumber: "Número de Posición",
+  assignedValue: "Valor Asignado",
+  initialBudget: "Presupuesto Inicial",
+  currentBudget: "Presupuesto Actual",
+  execution: "Ejecución",
+  origin: "Origen",
+  amount: "Monto",
+  previousBalance: "Saldo Anterior",
+  newBalance: "Nuevo Saldo",
+
+  // POAI PPA
+  year: "Año",
+  projectedPoai: "POAI Proyectado",
+  assignedPoai: "POAI Asignado",
+  projectCode: "Código de Proyecto",
+
+  // Activities
+  activityDate: "Fecha de Actividad",
+  budgetCeiling: "Techo Presupuestal",
+  cpc: "CPC",
+
+  // Indicators
+  programName: "Nombre del Programa",
+  pillarName: "Nombre del Pilar",
+  componentName: "Nombre del Componente",
+  statisticalCode: "Código Estadístico",
+  sequenceNumber: "Número de Secuencia",
+  plannedQuantity: "Cantidad Planificada",
+  executionCut: "Corte de Ejecución",
+  compliancePercentage: "Porcentaje de Cumplimiento",
+  startYear: "Año Inicio",
+  endYear: "Año Fin",
+  measureUnit: "Unidad de Medida",
+  baselineValue: "Valor Línea Base",
+
+  // Formulas
+  expression: "Expresión",
+  formulaType: "Tipo de Fórmula",
+
+  // Budget Modifications
+  modificationType: "Tipo de Modificación",
+  legalDocument: "Documento Legal",
+  previousRubricId: "Rubro Anterior",
+  newRubricId: "Nuevo Rubro",
+
+  // SAP
+  nit: "NIT",
+  object: "Objeto",
 }
 
 // === Enum de Tipos de Entidad ===
 export const AuditEntityTypes = {
+  // Auth
   USER: "User",
   ROLE: "Role",
   ROLE_PERMISSIONS: "RolePermissions",
@@ -448,12 +641,63 @@ export const AuditEntityTypes = {
   MODULE: "Module",
   PERMISSION: "Permission",
   ACTION: "Action",
+
+  // SPD-Core — Masters
+  VARIABLE: "Variable",
+  VARIABLE_GOAL: "VariableGoal",
+  VARIABLE_QUADRENNIUM: "VariableQuadrennium",
+  VARIABLE_LOCATION: "VariableLocation",
+  LOCATION: "Location",
+  MGA_ACTIVITY: "MgaActivity",
+  MGA_DETAILED_RELATION: "MgaDetailedRelation",
+  DETAILED_ACTIVITY: "DetailedActivity",
+  BUDGET_MODIFICATION: "BudgetModification",
+  FORMULA: "Formula",
+  RUBRIC: "Rubric",
+  PRODUCT: "Product",
+
+  // SPD-Core — Indicators
+  INDICATIVE_INDICATOR: "IndicativePlanIndicator",
+  INDICATIVE_INDICATOR_GOAL: "IndicativePlanIndicatorGoal",
+  INDICATIVE_INDICATOR_QUADRENNIUM: "IndicativePlanIndicatorQuadrennium",
+  INDICATIVE_INDICATOR_LOCATION: "IndicativePlanIndicatorLocation",
+  ACTION_INDICATOR: "ActionPlanIndicator",
+  ACTION_INDICATOR_GOAL: "ActionPlanIndicatorGoal",
+  ACTION_INDICATOR_QUADRENNIUM: "ActionPlanIndicatorQuadrennium",
+  ACTION_INDICATOR_LOCATION: "ActionPlanIndicatorLocation",
+  VARIABLE_INDICATIVE_RELATION: "VariableIndicativeRelation",
+  VARIABLE_ACTION_RELATION: "VariableActionRelation",
+  PROJECT_ACTION_INDICATOR_RELATION: "ProjectActionIndicatorRelation",
+  INDICATOR_LOCATION: "IndicatorLocation",
+
+  // SPD-Core — Financial
+  PROJECT: "Project",
+  DEPENDENCY: "Dependency",
+  FUNDING_SOURCE: "FundingSource",
+  POAI_PPA: "PoaiPpa",
+  CDP: "Cdp",
+  CDP_POSITION: "CdpPosition",
+  CDP_POSITION_FUNDING: "CdpPositionFunding",
+  CDP_FUNDING: "CdpFunding",
+  MASTER_CONTRACT: "MasterContract",
+  NEED: "Need",
+  PREVIOUS_STUDY: "PreviousStudy",
+  CONTRACTOR: "Contractor",
+
+  // SPD-Core — Sub (Seguimiento)
+  VARIABLE_ADVANCE: "VariableAdvance",
+  INDICATOR_ADVANCE: "IndicatorAdvance",
+
+  // SPD-Core — Budget & SAP
+  BUDGET_RECORD: "BudgetRecord",
+  SAP_SYNC: "SapSync",
 } as const
 
 export type AuditEntityType = typeof AuditEntityTypes[keyof typeof AuditEntityTypes]
 
 // === Labels por tipo de entidad ===
 export const ENTITY_TYPE_LABELS: Record<string, string> = {
+  // Auth
   [AuditEntityTypes.USER]: "Usuario",
   [AuditEntityTypes.ROLE]: "Rol",
   [AuditEntityTypes.ROLE_PERMISSIONS]: "Permisos de Rol",
@@ -461,6 +705,56 @@ export const ENTITY_TYPE_LABELS: Record<string, string> = {
   [AuditEntityTypes.MODULE]: "Módulo",
   [AuditEntityTypes.PERMISSION]: "Permiso",
   [AuditEntityTypes.ACTION]: "Acción",
+
+  // SPD-Core — Masters
+  [AuditEntityTypes.VARIABLE]: "Variable",
+  [AuditEntityTypes.VARIABLE_GOAL]: "Meta de Variable",
+  [AuditEntityTypes.VARIABLE_QUADRENNIUM]: "Cuatrienio de Variable",
+  [AuditEntityTypes.VARIABLE_LOCATION]: "Ubicación de Variable",
+  [AuditEntityTypes.LOCATION]: "Ubicación",
+  [AuditEntityTypes.MGA_ACTIVITY]: "Actividad MGA",
+  [AuditEntityTypes.MGA_DETAILED_RELATION]: "Relación MGA-Detallada",
+  [AuditEntityTypes.DETAILED_ACTIVITY]: "Actividad Detallada",
+  [AuditEntityTypes.BUDGET_MODIFICATION]: "Modificación Presupuestal",
+  [AuditEntityTypes.FORMULA]: "Fórmula",
+  [AuditEntityTypes.RUBRIC]: "Rubro",
+  [AuditEntityTypes.PRODUCT]: "Producto",
+
+  // SPD-Core — Indicators
+  [AuditEntityTypes.INDICATIVE_INDICATOR]: "Indicador Plan Indicativo",
+  [AuditEntityTypes.INDICATIVE_INDICATOR_GOAL]: "Meta de Indicador (Plan Indicativo)",
+  [AuditEntityTypes.INDICATIVE_INDICATOR_QUADRENNIUM]: "Cuatrienio de Indicador (Plan Indicativo)",
+  [AuditEntityTypes.INDICATIVE_INDICATOR_LOCATION]: "Ubicación de Indicador (Plan Indicativo)",
+  [AuditEntityTypes.ACTION_INDICATOR]: "Indicador Plan de Acción",
+  [AuditEntityTypes.ACTION_INDICATOR_GOAL]: "Meta de Indicador (Plan de Acción)",
+  [AuditEntityTypes.ACTION_INDICATOR_QUADRENNIUM]: "Cuatrienio de Indicador (Plan de Acción)",
+  [AuditEntityTypes.ACTION_INDICATOR_LOCATION]: "Ubicación de Indicador (Plan de Acción)",
+  [AuditEntityTypes.VARIABLE_INDICATIVE_RELATION]: "Relación Variable-Indicador Indicativo",
+  [AuditEntityTypes.VARIABLE_ACTION_RELATION]: "Relación Variable-Indicador de Acción",
+  [AuditEntityTypes.PROJECT_ACTION_INDICATOR_RELATION]: "Relación Proyecto-Indicador de Acción",
+  [AuditEntityTypes.INDICATOR_LOCATION]: "Ubicación de Indicador",
+
+  // SPD-Core — Financial
+  [AuditEntityTypes.PROJECT]: "Proyecto",
+  [AuditEntityTypes.DEPENDENCY]: "Dependencia",
+  [AuditEntityTypes.FUNDING_SOURCE]: "Fuente de Financiación",
+  [AuditEntityTypes.POAI_PPA]: "POAI-PPA",
+  [AuditEntityTypes.CDP]: "CDP",
+  [AuditEntityTypes.CDP_POSITION]: "Posición CDP",
+  [AuditEntityTypes.CDP_POSITION_FUNDING]: "Financiamiento Posición CDP",
+  [AuditEntityTypes.CDP_FUNDING]: "Financiamiento CDP",
+  [AuditEntityTypes.MASTER_CONTRACT]: "Contrato Marco",
+  [AuditEntityTypes.NEED]: "Necesidad",
+  [AuditEntityTypes.PREVIOUS_STUDY]: "Estudio Previo",
+  [AuditEntityTypes.CONTRACTOR]: "Contratista",
+
+  // SPD-Core — Sub (Seguimiento)
+  [AuditEntityTypes.VARIABLE_ADVANCE]: "Avance de Variable",
+  [AuditEntityTypes.INDICATOR_ADVANCE]: "Avance de Indicador",
+
+  // SPD-Core — Budget & SAP
+  [AuditEntityTypes.BUDGET_RECORD]: "Registro Presupuestal",
+  [AuditEntityTypes.SAP_SYNC]: "Sincronización SAP",
 }
 
 // === Labels para metadatos de auditoría ===
