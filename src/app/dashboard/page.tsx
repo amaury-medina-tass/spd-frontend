@@ -58,7 +58,7 @@ const COMMUNE_DATA = [
 ];
 
 function Home() {
-  const API_KEY = 'Up7CswQjdBiVje5gktOs'; 
+  const API_KEY = 'Up7CswQjdBiVje5gktOs';
   const MAP_STYLE = `https://api.maptiler.com/maps/streets-v2/style.json?key=${API_KEY}`;
 
   const onMapClick = (event: any) => {
@@ -78,7 +78,7 @@ function Home() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-white">
       <div className="bg-white rounded-2xl shadow-xl overflow-hidden w-full max-w-7xl">
-        
+
         {/* Map Container */}
         <div className="relative w-full h-[80vh]">
           <Map
@@ -101,7 +101,7 @@ function Home() {
           >
             {COMMUNE_DATA.map((region) => (
               <Source key={region.id} id={`source-${region.id}`} type="geojson" data={region.data as any}>
-                <Layer 
+                <Layer
                   id={region.id}
                   type="fill"
                   paint={{
@@ -109,7 +109,7 @@ function Home() {
                     'fill-opacity': 0.4
                   }}
                 />
-                <Layer 
+                <Layer
                   id={`${region.id}-line`}
                   type="line"
                   paint={{
@@ -127,13 +127,13 @@ function Home() {
           <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Leyenda de Zonas</h3>
           <div className="flex flex-wrap gap-2">
             {COMMUNE_DATA.map((region) => (
-              <div 
-                key={region.id} 
+              <div
+                key={region.id}
                 className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-white border border-gray-200 shadow-sm"
               >
-                <span 
-                  className="w-3 h-3 rounded-full mr-2" 
-                  style={{ backgroundColor: region.color }} 
+                <span
+                  className="w-3 h-3 rounded-full mr-2"
+                  style={{ backgroundColor: region.color }}
                 />
                 <span className="text-gray-700">
                   {region.name.replace(/Comuna \d+ - /, '')}

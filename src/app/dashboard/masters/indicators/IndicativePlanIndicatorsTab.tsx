@@ -15,7 +15,7 @@ import { CreateIndicatorModal } from "@/components/modals/masters/indicators/ind
 import { deleteIndicator } from "@/services/masters/indicators.service"
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal"
 import { EditIndicatorModal } from "@/components/modals/masters/indicators/indicative-plan/EditIndicatorModal"
-import { Pencil, Target } from "lucide-react"
+import { Pencil, Target, MapPin } from "lucide-react"
 import { IndicativePlanIndicatorGoalsModal } from "@/components/modals/masters/indicators/indicative-plan/IndicativePlanIndicatorGoalsModal"
 import { createFormula, updateFormula } from "@/services/masters/formulas.service"
 
@@ -51,6 +51,7 @@ const indicatorColumns: ColumnDef<Indicator>[] = [
 import { ManageIndicatorVariablesModal } from "@/components/modals/masters/indicators/ManageIndicatorVariablesModal"
 import { Calculator, FunctionSquare } from "lucide-react"
 import { FormulaEditorModal } from "@/components/modals/masters/indicators/formulas"
+import { IndicatorLocationModal } from "@/components/modals/masters/indicators/IndicatorLocationModal"
 
 export function IndicativePlanIndicatorsTab() {
     const { canRead, canCreate, canUpdate, canDelete } = usePermissions("/masters/indicators")
@@ -70,6 +71,8 @@ export function IndicativePlanIndicatorsTab() {
     const [indicatorForVariables, setIndicatorForVariables] = useState<Indicator | null>(null)
     const [isFormulaModalOpen, setIsFormulaModalOpen] = useState(false)
     const [indicatorForFormula, setIndicatorForFormula] = useState<Indicator | null>(null)
+    const [isLocationModalOpen, setIsLocationModalOpen] = useState(false)
+    const [indicatorForLocation, setIndicatorForLocation] = useState<Indicator | null>(null)
 
     // Table State
     const [items, setItems] = useState<Indicator[]>([])
@@ -238,6 +241,16 @@ export function IndicativePlanIndicatorsTab() {
                     setIsFormulaModalOpen(true)
                 },
             })
+
+            actions.push({
+                key: "location",
+                label: "Ubicación",
+                icon: <MapPin size={16} />,
+                onClick: (item) => {
+                    setIndicatorForLocation(item)
+                    setIsLocationModalOpen(true)
+                },
+            })
         }
 
         return actions
@@ -369,6 +382,13 @@ export function IndicativePlanIndicatorsTab() {
                 }}
                 title={`Editor de Fórmula - ${indicatorForFormula?.code || ''}`}
                 indicatorId={indicatorForFormula?.id || ''}
+            />
+
+            <IndicatorLocationModal
+                isOpen={isLocationModalOpen}
+                onClose={() => setIsLocationModalOpen(false)}
+                indicatorId={indicatorForLocation?.id ?? null}
+                type="indicative"
             />
         </>
     )

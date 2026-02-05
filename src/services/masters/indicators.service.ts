@@ -113,3 +113,29 @@ export const associateActionPlanIndicatorProject = async (id: string, projectId:
 export const disassociateActionPlanIndicatorProject = async (id: string, projectId: string) => {
     return await del<void>(endpoints.masters.actionPlanIndicatorProjectsDissociate(id, projectId))
 }
+
+// Indicator Locations
+
+export const getIndicativePlanIndicatorLocations = async (id: string) => {
+    return await get<any[]>(endpoints.masters.indicativePlanIndicatorLocations(id))
+}
+
+export const getActionPlanIndicatorLocations = async (id: string) => {
+    return await get<any[]>(endpoints.masters.actionPlanIndicatorLocations(id))
+}
+
+export const associateIndicativePlanIndicatorLocation = async (id: string, locationId: string) => {
+    return await post<any>(endpoints.masters.indicativePlanIndicatorLocations(id), { locationId })
+}
+
+export const associateActionPlanIndicatorLocation = async (id: string, locationId: string) => {
+    return await post<any>(endpoints.masters.actionPlanIndicatorLocations(id), { locationId })
+}
+
+export const disassociateIndicativePlanIndicatorLocation = async (id: string, locationId: string) => {
+    return await del<void>(endpoints.masters.indicativePlanIndicatorLocationsDissociate(id, locationId))
+}
+
+export const disassociateActionPlanIndicatorLocation = async (id: string, locationId: string) => {
+    return await del<void>(endpoints.masters.actionPlanIndicatorLocationsDissociate(id, locationId))
+}

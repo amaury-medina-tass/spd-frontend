@@ -50,6 +50,13 @@ export const endpoints = {
     // Action Plan Indicator Projects
     actionPlanIndicatorProjects: (id: string) => `/masters/action-plan-indicators/${id}/projects`,
     actionPlanIndicatorProjectsDissociate: (id: string, projectId: string) => `/masters/action-plan-indicators/${id}/projects/${projectId}`,
+    locations: "/masters/locations",
+    locationsSelect: "/masters/locations/select",
+    communesSelect: "/masters/communes/select",
+    indicativePlanIndicatorLocations: (id: string) => `/masters/indicative-plan-indicators/${id}/locations`,
+    indicativePlanIndicatorLocationsDissociate: (id: string, locationId: string) => `/masters/indicative-plan-indicators/${id}/locations/${locationId}`,
+    actionPlanIndicatorLocations: (id: string) => `/masters/action-plan-indicators/${id}/locations`,
+    actionPlanIndicatorLocationsDissociate: (id: string, locationId: string) => `/masters/action-plan-indicators/${id}/locations/${locationId}`,
   },
   audit: "/audit",
   financial: {
