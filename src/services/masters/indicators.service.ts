@@ -139,3 +139,17 @@ export const disassociateIndicativePlanIndicatorLocation = async (id: string, lo
 export const disassociateActionPlanIndicatorLocation = async (id: string, locationId: string) => {
     return await del<void>(endpoints.masters.actionPlanIndicatorLocationsDissociate(id, locationId))
 }
+
+// Location-based indicator queries
+
+export const getIndicatorsByLocation = async (communeId: string, params: string) => {
+    return await get<PaginatedData<Indicator & { matchSource: string }>>(`${endpoints.masters.indicatorsByLocation(communeId)}?${params}`)
+}
+
+export const getActionPlanIndicatorsByLocation = async (communeId: string, params: string) => {
+    return await get<PaginatedData<ActionPlanIndicator & { matchSource: string }>>(`${endpoints.masters.actionPlanIndicatorsByLocation(communeId)}?${params}`)
+}
+
+export const getIndicatorLocationVariables = async (indicatorId: string, type: 'indicative' | 'action', params: string) => {
+    return await get<PaginatedData<any>>(`${endpoints.masters.indicatorLocationVariables(indicatorId, type)}?${params}`)
+}

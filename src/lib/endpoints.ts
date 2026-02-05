@@ -31,6 +31,8 @@ export const endpoints = {
     rubricsSelect: "/masters/rubrics/select",
     budgetModifications: "/masters/budget-modifications",
     variables: "/masters/variables",
+    variableLocations: (id: string) => `/masters/variables/${id}/locations`,
+    variableLocationsDissociate: (id: string, locationId: string) => `/masters/variables/${id}/locations/${locationId}`,
     variableGoals: "/masters/variable-goals",
     variableQuadrenniums: "/masters/variable-quadrenniums",
     indicators: "/masters/indicators",
@@ -57,6 +59,13 @@ export const endpoints = {
     indicativePlanIndicatorLocationsDissociate: (id: string, locationId: string) => `/masters/indicative-plan-indicators/${id}/locations/${locationId}`,
     actionPlanIndicatorLocations: (id: string) => `/masters/action-plan-indicators/${id}/locations`,
     actionPlanIndicatorLocationsDissociate: (id: string, locationId: string) => `/masters/action-plan-indicators/${id}/locations/${locationId}`,
+    // Location-based indicator queries
+    indicatorsByLocation: (communeId: string) => `/masters/indicative-plan-indicators/locations/by-commune/${communeId}`,
+    actionPlanIndicatorsByLocation: (communeId: string) => `/masters/action-plan-indicators/locations/by-commune/${communeId}`,
+    indicatorLocationVariables: (id: string, type: 'indicative' | 'action') =>
+      type === 'indicative'
+        ? `/masters/indicative-plan-indicators/${id}/locations/variables`
+        : `/masters/action-plan-indicators/${id}/locations/variables`,
   },
   audit: "/audit",
   financial: {

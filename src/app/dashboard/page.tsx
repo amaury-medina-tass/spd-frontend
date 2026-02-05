@@ -1,9 +1,15 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import Map, { Source, Layer } from 'react-map-gl/maplibre';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import { PieChart, ListChecks, X } from 'lucide-react';
+import { Button } from '@heroui/react';
+import { DashboardIndicativePlanTab } from './components/DashboardIndicativePlanTab';
+import { DashboardActionPlanTab } from './components/DashboardActionPlanTab';
+import { IndicatorVariablesModal } from './components/IndicatorVariablesModal';
+import { Indicator, ActionPlanIndicator } from '@/types/masters/indicators';
 
 // Communes
 import commune1Data from '@/data/communes/commune_1.json';
@@ -61,42 +67,68 @@ function Home() {
   const API_KEY = 'Up7CswQjdBiVje5gktOs';
   const MAP_STYLE = `https://api.maptiler.com/maps/streets-v2/style.json?key=${API_KEY}`;
 
+  // State for selected commune/corregimiento
+  const [selectedCommune, setSelectedCommune] = useState<string | null>(null);
+  const [selectedTab, setSelectedTab] = useState<'indicative' | 'action'>('indicative');
+
+  // Variables modal state
+  const [isVariablesModalOpen, setIsVariablesModalOpen] = useState(false);
+  const [selectedIndicatorForVariables, setSelectedIndicatorForVariables] = useState<{
+    id: string;
+    code: string;
+    type: 'indicative' | 'action';
+  } | null>(null);
+
+  const selectedRegion = COMMUNE_DATA.find(c => c.id === selectedCommune);
+
   const onMapClick = (event: any) => {
     const feature = event.features?.[0];
     if (feature) {
       const layerId = feature.layer?.id;
       const region = COMMUNE_DATA.find(c => c.id === layerId);
       if (region) {
-        console.log(`Has hecho clic en ${region.name}:`, feature.properties);
-        alert(`${region.type === 'Corregimiento' ? 'Corregimiento ' : ''}${region.name}`);
+        console.log(`Seleccionando ${region.name}`);
+        setSelectedCommune(region.id);
       }
     }
+  };
+
+  const handleViewVariables = useCallback((indicator: (Indicator | ActionPlanIndicator) & { matchSource: string }) => {
+    setSelectedIndicatorForVariables({
+      id: indicator.id,
+      code: indicator.code,
+      type: selectedTab,
+    });
+    setIsVariablesModalOpen(true);
+  }, [selectedTab]);
+
+  const handleClearSelection = () => {
+    setSelectedCommune(null);
   };
 
   const interactiveLayerIds = COMMUNE_DATA.map(c => c.id);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-white">
-      <div className="bg-white rounded-2xl shadow-xl overflow-hidden w-full max-w-7xl">
-
-        {/* Map Container */}
-        <div className="relative w-full h-[80vh]">
+    <div className="flex flex-col gap-6 min-h-screen bg-gray-50 py-6 px-4">
+      {/* Map Container */}
+      <div className="bg-white rounded-2xl shadow-xl overflow-hidden w-full">
+        <div className="relative w-full h-[60vh]">
           <Map
             mapLib={maplibregl}
             initialViewState={{
               longitude: -75.5700,
               latitude: 6.2700,
-              zoom: 10.8
+              zoom: 10.7
             }}
             style={{ width: '100%', height: '100%' }}
             mapStyle={MAP_STYLE}
             onClick={onMapClick}
             interactiveLayerIds={interactiveLayerIds}
             cursor="pointer"
-            minZoom={10}
+            minZoom={10.7}
             maxBounds={[
-              [-75.80, 6.00], // Southwest coordinates
-              [-75.30, 6.50]  // Northeast coordinates
+              [-76.00, 5.90], // Southwest coordinates
+              [-75.10, 6.60]  // Northeast coordinates
             ]}
           >
             {COMMUNE_DATA.map((region) => (
@@ -106,7 +138,7 @@ function Home() {
                   type="fill"
                   paint={{
                     'fill-color': region.color,
-                    'fill-opacity': 0.4
+                    'fill-opacity': selectedCommune === region.id ? 0.7 : 0.4
                   }}
                 />
                 <Layer
@@ -114,7 +146,7 @@ function Home() {
                   type="line"
                   paint={{
                     'line-color': region.lineColor,
-                    'line-width': 2
+                    'line-width': selectedCommune === region.id ? 4 : 2
                   }}
                 />
               </Source>
@@ -129,21 +161,110 @@ function Home() {
             {COMMUNE_DATA.map((region) => (
               <div
                 key={region.id}
-                className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-white border border-gray-200 shadow-sm"
+                onClick={() => setSelectedCommune(region.id)}
+                className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium cursor-pointer transition-all ${selectedCommune === region.id
+                  ? 'bg-primary text-white shadow-md ring-2 ring-primary/30'
+                  : 'bg-white border border-gray-200 shadow-sm hover:bg-gray-50'
+                  }`}
               >
                 <span
                   className="w-3 h-3 rounded-full mr-2"
                   style={{ backgroundColor: region.color }}
                 />
-                <span className="text-gray-700">
+                <span className={selectedCommune === region.id ? 'text-white' : 'text-gray-700'}>
                   {region.name.replace(/Comuna \d+ - /, '')}
                 </span>
               </div>
             ))}
           </div>
         </div>
-
       </div>
+
+      {/* Indicators Section */}
+      <div className="bg-white rounded-2xl shadow-xl overflow-hidden w-full">
+        {/* Header with Selection Info and Tabs */}
+        <div className="p-4 border-b border-gray-100">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            {/* Selection Info */}
+            <div className="flex items-center gap-3">
+              {selectedRegion ? (
+                <div className="flex items-center gap-2">
+                  <span
+                    className="w-4 h-4 rounded-full"
+                    style={{ backgroundColor: selectedRegion.color }}
+                  />
+                  <span className="font-semibold text-gray-800">
+                    {selectedRegion.type === 'Corregimiento' ? 'Corregimiento ' : ''}{selectedRegion.name}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="flat"
+                    color="default"
+                    onPress={handleClearSelection}
+                    startContent={<X size={14} />}
+                  >
+                    Ver Todos
+                  </Button>
+                </div>
+              ) : (
+                <span className="font-semibold text-gray-800">
+                  Todos los Indicadores
+                </span>
+              )}
+            </div>
+
+            {/* Tab Pills */}
+            <div className="flex gap-3">
+              <div
+                onClick={() => setSelectedTab('indicative')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full cursor-pointer transition-all ${selectedTab === 'indicative'
+                  ? 'bg-primary text-white shadow-sm'
+                  : 'bg-default-100 text-default-600 hover:bg-default-200'
+                  }`}
+              >
+                <PieChart size={16} />
+                <span className="text-sm font-medium">Plan Indicativo</span>
+              </div>
+
+              <div
+                onClick={() => setSelectedTab('action')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full cursor-pointer transition-all ${selectedTab === 'action'
+                  ? 'bg-primary text-white shadow-sm'
+                  : 'bg-default-100 text-default-600 hover:bg-default-200'
+                  }`}
+              >
+                <ListChecks size={16} />
+                <span className="text-sm font-medium">Plan de Acción</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Table Content */}
+        <div className="p-4">
+          {selectedTab === 'indicative' && (
+            <DashboardIndicativePlanTab
+              communeId={selectedCommune}
+              onViewVariables={handleViewVariables}
+            />
+          )}
+          {selectedTab === 'action' && (
+            <DashboardActionPlanTab
+              communeId={selectedCommune}
+              onViewVariables={handleViewVariables}
+            />
+          )}
+        </div>
+      </div>
+
+      {/* Variables Modal */}
+      <IndicatorVariablesModal
+        isOpen={isVariablesModalOpen}
+        onClose={() => setIsVariablesModalOpen(false)}
+        indicatorId={selectedIndicatorForVariables?.id ?? null}
+        indicatorCode={selectedIndicatorForVariables?.code}
+        type={selectedIndicatorForVariables?.type ?? 'indicative'}
+      />
     </div>
   );
 }

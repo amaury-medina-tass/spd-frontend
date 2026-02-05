@@ -8,12 +8,13 @@ import { usePermissions } from "@/hooks/usePermissions"
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal"
 import { get, post, patch, del, PaginatedData, PaginationMeta } from "@/lib/http"
 import { endpoints } from "@/lib/endpoints"
-import { Pencil, Trash2, Plus, RefreshCw, Eye, Target } from "lucide-react"
+import { Pencil, Trash2, Plus, RefreshCw, Eye, Target, MapPin } from "lucide-react"
 import { addToast } from "@heroui/toast"
 import { getErrorMessage } from "@/lib/error-codes"
 import { VariableModal } from "@/components/modals/masters/variables/VariableModal"
 import { VariableDetailModal } from "@/components/modals/masters/variables/VariableDetailModal"
 import { VariableGoalsModal } from "@/components/modals/masters/variables/VariableGoalsModal"
+import { VariableLocationModal } from "@/components/modals/masters/variables/VariableLocationModal"
 import type { Variable } from "@/types/variable"
 
 const columns: ColumnDef<Variable>[] = [
@@ -66,6 +67,7 @@ export default function MastersVariablesPage() {
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
     const [isGoalsModalOpen, setIsGoalsModalOpen] = useState(false)
+    const [isLocationModalOpen, setIsLocationModalOpen] = useState(false)
 
     // Selection State
     const [editing, setEditing] = useState<Variable | null>(null)
@@ -123,6 +125,11 @@ export default function MastersVariablesPage() {
     const onViewGoals = (variable: Variable) => {
         setSelectedVariable(variable)
         setIsGoalsModalOpen(true)
+    }
+
+    const onViewLocations = (variable: Variable) => {
+        setSelectedVariable(variable)
+        setIsLocationModalOpen(true)
     }
 
     const onEdit = async (variable: Variable) => {
@@ -203,6 +210,12 @@ export default function MastersVariablesPage() {
                 label: "Metas",
                 icon: <Target size={16} />,
                 onClick: onViewGoals,
+            },
+            {
+                key: "location",
+                label: "Ubicación",
+                icon: <MapPin size={16} />,
+                onClick: onViewLocations,
             },
         ]
         if (canUpdate) {
@@ -338,6 +351,16 @@ export default function MastersVariablesPage() {
                 confirmText="Eliminar"
                 confirmColor="danger"
                 isLoading={saving}
+            />
+
+            <VariableLocationModal
+                isOpen={isLocationModalOpen}
+                onClose={() => {
+                    setIsLocationModalOpen(false)
+                    setSelectedVariable(null)
+                }}
+                variableId={selectedVariable?.id || null}
+                variableCode={selectedVariable?.code}
             />
         </div>
     )

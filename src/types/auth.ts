@@ -23,6 +23,7 @@ export type SessionMeResponse = {
   first_name: string
   last_name: string
   is_active: boolean
+  system: string
   roles: string[]
   permissions: PermissionsMap
 }

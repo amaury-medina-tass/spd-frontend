@@ -43,17 +43,24 @@ const DEFAULT_FILTERS: AuditFilters = {
   sortOrder: "DESC",
 }
 
-export function useInfiniteAuditLogs(): UseInfiniteAuditLogsReturn {
+export function useInfiniteAuditLogs(defaultFilters?: Partial<AuditFilters>): UseInfiniteAuditLogsReturn {
+  const mergedDefaults: AuditFilters = { ...DEFAULT_FILTERS, ...defaultFilters }
+
   const [logs, setLogs] = useState<AuditLog[]>([])
   const [meta, setMeta] = useState<PaginationMeta | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [error, setError] = useState<Error | null>(null)
   const [page, setPage] = useState(1)
-  const [filters, setFiltersState] = useState<AuditFilters>(DEFAULT_FILTERS)
+  const [filters, setFiltersState] = useState<AuditFilters>(mergedDefaults)
   
   // Track if we're currently fetching to prevent duplicate requests
   const isFetchingRef = useRef(false)
+
+  // Sync default filters when they change (e.g. tab switch)
+  useEffect(() => {
+    setFiltersState(prev => ({ ...prev, ...defaultFilters }))
+  }, [defaultFilters?.system])
 
   const fetchLogs = useCallback(async (pageNum: number, isRefresh: boolean = false) => {
     if (isFetchingRef.current) return
@@ -147,8 +154,8 @@ export function useInfiniteAuditLogs(): UseInfiniteAuditLogsReturn {
 
   // Reset filters
   const resetFilters = useCallback(() => {
-    setFiltersState(DEFAULT_FILTERS)
-  }, [])
+    setFiltersState(mergedDefaults)
+  }, [mergedDefaults])
 
   const hasMore = meta?.hasNextPage ?? false
 
