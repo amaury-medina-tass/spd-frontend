@@ -26,4 +26,5 @@ export interface CreateVariableAdvanceDto {
     month: number
     value: number
     observations: string
+    communeIds?: string[]
 }

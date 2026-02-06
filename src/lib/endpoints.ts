@@ -93,6 +93,12 @@ export const endpoints = {
         actionIndicator: (id: string) => `/sub/variable-advances/contextual/action-indicator/${id}`,
         indicativeIndicator: (id: string) => `/sub/variable-advances/contextual/indicative-indicator/${id}`,
       },
+      locations: {
+        variable: (variableId: string) => `/sub/variable-advances/locations/variable/${variableId}`,
+        indicator: (indicatorId: string, type: string) => `/sub/variable-advances/locations/indicator/${indicatorId}/${type}`,
+      },
+      withLocations: (variableId: string) => `/sub/variable-advances/with-locations/variable/${variableId}`,
+      details: (variableId: string) => `/sub/variable-advances/${variableId}/details`,
     },
     indicatorAdvances: {
       actionDetailed: (id: string) => `/sub/indicator-advances/action/${id}/detailed`,

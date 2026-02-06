@@ -1,15 +1,18 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
-import Map, { Source, Layer } from 'react-map-gl/maplibre';
+import Map, { Source, Layer, Marker } from 'react-map-gl/maplibre';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { PieChart, ListChecks, X } from 'lucide-react';
+import { PieChart, ListChecks, X, MapPin } from 'lucide-react';
 import { Button } from '@heroui/react';
 import { DashboardIndicativePlanTab } from './components/DashboardIndicativePlanTab';
 import { DashboardActionPlanTab } from './components/DashboardActionPlanTab';
 import { IndicatorVariablesModal } from './components/IndicatorVariablesModal';
+import { VariableAdvancesChartsSection } from './components/VariableAdvancesChartsSection';
 import { Indicator, ActionPlanIndicator } from '@/types/masters/indicators';
+import { VariableLocationData } from '@/types/sub/variable-locations';
+import { getIndicatorVariablesLocations } from '@/services/sub/variable-advances.service';
 
 // Communes
 import commune1Data from '@/data/communes/commune_1.json';
@@ -79,6 +82,18 @@ function Home() {
     type: 'indicative' | 'action';
   } | null>(null);
 
+  // Locations and georeferencing state
+  const [variableLocations, setVariableLocations] = useState<VariableLocationData[]>([]);
+  const [selectedIndicatorId, setSelectedIndicatorId] = useState<string | null>(null);
+  const [loadingLocations, setLoadingLocations] = useState(false);
+
+  // Variable advances visualization state
+  const [selectedVariableForAdvances, setSelectedVariableForAdvances] = useState<{
+    id: string;
+    code: string;
+    name: string;
+  } | null>(null);
+
   const selectedRegion = COMMUNE_DATA.find(c => c.id === selectedCommune);
 
   const onMapClick = (event: any) => {
@@ -93,23 +108,45 @@ function Home() {
     }
   };
 
-  const handleViewVariables = useCallback((indicator: (Indicator | ActionPlanIndicator) & { matchSource: string }) => {
+  const handleViewVariables = useCallback(async (indicator: (Indicator | ActionPlanIndicator) & { matchSource: string }) => {
     setSelectedIndicatorForVariables({
       id: indicator.id,
       code: indicator.code,
       type: selectedTab,
     });
     setIsVariablesModalOpen(true);
+    
+    // Load locations for georeferencing
+    setSelectedIndicatorId(indicator.id);
+    setLoadingLocations(true);
+    try {
+      const locations = await getIndicatorVariablesLocations(indicator.id, selectedTab);
+      setVariableLocations(locations);
+    } catch (error) {
+      console.error('Error loading variable locations:', error);
+      setVariableLocations([]);
+    } finally {
+      setLoadingLocations(false);
+    }
   }, [selectedTab]);
 
   const handleClearSelection = () => {
     setSelectedCommune(null);
   };
 
+  const handleViewVariableAdvances = useCallback((variableId: string, variableCode: string, variableName: string) => {
+    setSelectedVariableForAdvances({
+      id: variableId,
+      code: variableCode,
+      name: variableName,
+    });
+    setIsVariablesModalOpen(false);
+  }, []);
+
   const interactiveLayerIds = COMMUNE_DATA.map(c => c.id);
 
   return (
-    <div className="flex flex-col gap-6 min-h-screen bg-gray-50 py-6 px-4">
+    <div className="flex flex-col gap-6 min-h-screen py-6 px-4">
       {/* Map Container */}
       <div className="bg-white rounded-2xl shadow-xl overflow-hidden w-full">
         <div className="relative w-full h-[60vh]">
@@ -151,6 +188,31 @@ function Home() {
                 />
               </Source>
             ))}
+            
+            {/* Markers for variable locations */}
+            {variableLocations.map((varLocation) => 
+              varLocation.locations
+                .filter(loc => loc.latitude && loc.longitude)
+                .map((loc) => (
+                  <Marker
+                    key={loc.id}
+                    longitude={loc.longitude!}
+                    latitude={loc.latitude!}
+                    anchor="bottom"
+                  >
+                    <div className="relative group">
+                      <div className="bg-red-500 rounded-full p-2 shadow-lg cursor-pointer hover:bg-red-600 transition-all">
+                        <MapPin size={20} className="text-white" />
+                      </div>
+                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block bg-gray-900 text-white text-xs rounded py-2 px-3 whitespace-nowrap z-50">
+                        <div className="font-semibold">{varLocation.variableName}</div>
+                        <div className="text-gray-300">{loc.communeName}</div>
+                        {loc.address && <div className="text-gray-400 text-xs">{loc.address}</div>}
+                      </div>
+                    </div>
+                  </Marker>
+                ))
+            )}
           </Map>
         </div>
 
@@ -257,6 +319,18 @@ function Home() {
         </div>
       </div>
 
+      {/* Variable Advances Charts Section */}
+      {selectedVariableForAdvances && (
+        <div className="w-full">
+          <VariableAdvancesChartsSection
+            variableId={selectedVariableForAdvances.id}
+            variableCode={selectedVariableForAdvances.code}
+            variableName={selectedVariableForAdvances.name}
+            onClose={() => setSelectedVariableForAdvances(null)}
+          />
+        </div>
+      )}
+
       {/* Variables Modal */}
       <IndicatorVariablesModal
         isOpen={isVariablesModalOpen}
@@ -264,6 +338,7 @@ function Home() {
         indicatorId={selectedIndicatorForVariables?.id ?? null}
         indicatorCode={selectedIndicatorForVariables?.code}
         type={selectedIndicatorForVariables?.type ?? 'indicative'}
+        onViewVariableAdvances={handleViewVariableAdvances}
       />
     </div>
   );

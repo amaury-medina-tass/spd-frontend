@@ -440,11 +440,13 @@ export function IndicatorLocationModal({ isOpen, onClose, indicatorId, type }: I
                                                     isLoading={loadingCommunes}
                                                     selectedKey={field.value}
                                                     onSelectionChange={(key) => field.onChange(key as string)}
+                                                    inputValue={communes.find(c => c.id === field.value) ? `${communes.find(c => c.id === field.value)?.code} - ${communes.find(c => c.id === field.value)?.name}` : ''}
+                                                    onInputChange={() => {}}
                                                     isInvalid={!!errors.communeId}
                                                     errorMessage={errors.communeId?.message}
                                                     variant="bordered"
                                                 >
-                                                    {(item) => <AutocompleteItem key={item.id}>{item.name}</AutocompleteItem>}
+                                                    {(item) => <AutocompleteItem key={item.id}>{item.code} - {item.name}</AutocompleteItem>}
                                                 </Autocomplete>
                                             )}
                                         />

@@ -1,9 +1,10 @@
 "use client"
 
-import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Select, SelectItem, Tabs, Tab, Table, TableHeader, TableColumn, TableBody, TableRow, TableCell, Pagination, Input, Textarea, Tooltip } from "@heroui/react"
+import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Select, SelectItem, Tabs, Tab, Table, TableHeader, TableColumn, TableBody, TableRow, TableCell, Pagination, Input, Textarea, Tooltip, Chip } from "@heroui/react"
 import { useCallback, useEffect, useState } from "react"
 import { VariableWithAdvances } from "@/types/sub/variable-advances"
 import { getVariableAdvancesByActionIndicator, getVariableAdvancesByIndicativeIndicator, createVariableAdvance } from "@/services/sub/variable-advances.service"
+import { getCommunesSelect, Commune } from "@/services/masters/communes.service"
 import { Calendar, Search, Eye, Plus, Loader2 } from "lucide-react"
 import { addToast } from "@heroui/toast"
 import { PaginatedData, PaginationMeta } from "@/lib/http"
@@ -40,13 +41,18 @@ export function VariableAdvancesModal({ isOpen, onClose, indicatorId, indicatorC
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
     const [selectedVariableId, setSelectedVariableId] = useState<string | null>(null)
 
+    // Communes state
+    const [communes, setCommunes] = useState<Commune[]>([])
+    const [loadingCommunes, setLoadingCommunes] = useState(false)
+
     // Form state for creating advances
     const [formLoading, setFormLoading] = useState(false)
     const [formErrors, setFormErrors] = useState<{ value?: string; month?: string }>({})
     const [newAdvance, setNewAdvance] = useState({
         month: (new Date().getMonth() + 1).toString(),
         value: "",
-        observations: ""
+        observations: "",
+        communeIds: [] as string[]
     })
 
     const years = Array.from({ length: 11 }, (_, i) => new Date().getFullYear() - 5 + i)
@@ -88,6 +94,7 @@ export function VariableAdvancesModal({ isOpen, onClose, indicatorId, indicatorC
     useEffect(() => {
         if (isOpen && indicatorId) {
             fetchData()
+            fetchCommunes()
         } else if (!isOpen) {
             setData([])
             setMeta(null)
@@ -95,6 +102,22 @@ export function VariableAdvancesModal({ isOpen, onClose, indicatorId, indicatorC
             setFormErrors({})
         }
     }, [isOpen, indicatorId, fetchData])
+
+    const fetchCommunes = async () => {
+        setLoadingCommunes(true)
+        try {
+            const params = new URLSearchParams({
+                page: "1",
+                limit: "100"
+            })
+            const result = await getCommunesSelect(params.toString())
+            setCommunes(result.data)
+        } catch (e: any) {
+            console.error("Error loading communes:", e)
+        } finally {
+            setLoadingCommunes(false)
+        }
+    }
 
     useEffect(() => {
         setPage(1)
@@ -105,7 +128,8 @@ export function VariableAdvancesModal({ isOpen, onClose, indicatorId, indicatorC
         setNewAdvance({
             month: (new Date().getMonth() + 1).toString(),
             value: "",
-            observations: ""
+            observations: "",
+            communeIds: []
         })
         setFormErrors({})
         setIsCreateModalOpen(true)
@@ -135,7 +159,8 @@ export function VariableAdvancesModal({ isOpen, onClose, indicatorId, indicatorC
                 year,
                 month: Number(newAdvance.month),
                 value: Number(newAdvance.value),
-                observations: newAdvance.observations
+                observations: newAdvance.observations,
+                communeIds: newAdvance.communeIds.length > 0 ? newAdvance.communeIds : undefined
             })
 
             addToast({ title: "Éxito", description: "Avance registrado correctamente", color: "success" })
@@ -356,6 +381,47 @@ export function VariableAdvancesModal({ isOpen, onClose, indicatorId, indicatorC
                             errorMessage={formErrors.value}
                             color={formErrors.value ? "danger" : "default"}
                         />
+                        <Select
+                            label="Comunas / Corregimientos (Opcional)"
+                            placeholder="Seleccionar ubicaciones"
+                            selectionMode="multiple"
+                            selectedKeys={newAdvance.communeIds}
+                            onSelectionChange={(keys) => {
+                                const selectedKeys = Array.from(keys) as string[]
+                                setNewAdvance({ ...newAdvance, communeIds: selectedKeys })
+                            }}
+                            className="max-w-full"
+                            isLoading={loadingCommunes}
+                            description="Seleccione las comunas/corregimientos donde aplica este avance"
+                            renderValue={(items) => {
+                                if (items.length === 0) return null
+                                if (items.length <= 2) {
+                                    return (
+                                        <div className="flex gap-1 flex-wrap">
+                                            {items.map((item) => {
+                                                const commune = communes.find(c => c.id === item.key)
+                                                return commune ? (
+                                                    <Chip key={item.key} size="sm" variant="flat">
+                                                        {commune.code} - {commune.name}
+                                                    </Chip>
+                                                ) : null
+                                            })}
+                                        </div>
+                                    )
+                                }
+                                return (
+                                    <div className="flex gap-1 items-center">
+                                        <Chip size="sm" variant="flat">{items.length} comunas seleccionadas</Chip>
+                                    </div>
+                                )
+                            }}
+                        >
+                            {communes.map((commune) => (
+                                <SelectItem key={commune.id} value={commune.id}>
+                                    {commune.code} - {commune.name}
+                                </SelectItem>
+                            ))}
+                        </Select>
                         <Textarea
                             label="Observaciones"
                             placeholder="Escribe aquí los detalles del avance..."

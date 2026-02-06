@@ -1,9 +1,10 @@
 "use client"
 
-import { Modal, ModalContent, ModalHeader, ModalBody, Spinner, Table, TableHeader, TableColumn, TableBody, TableRow, TableCell } from "@heroui/react"
+import { Modal, ModalContent, ModalHeader, ModalBody, Spinner, Table, TableHeader, TableColumn, TableBody, TableRow, TableCell, Button } from "@heroui/react"
 import { useCallback, useEffect, useState } from "react"
 import { getIndicatorLocationVariables } from "@/services/masters/indicators.service"
 import { PaginationMeta } from "@/lib/http"
+import { TrendingUp } from "lucide-react"
 
 interface VariableData {
     variable: {
@@ -23,9 +24,10 @@ interface IndicatorVariablesModalProps {
     indicatorId: string | null
     indicatorCode?: string
     type: 'indicative' | 'action'
+    onViewVariableAdvances?: (variableId: string, variableCode: string, variableName: string) => void
 }
 
-export function IndicatorVariablesModal({ isOpen, onClose, indicatorId, indicatorCode, type }: IndicatorVariablesModalProps) {
+export function IndicatorVariablesModal({ isOpen, onClose, indicatorId, indicatorCode, type, onViewVariableAdvances }: IndicatorVariablesModalProps) {
     const [variables, setVariables] = useState<VariableData[]>([])
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
@@ -90,6 +92,7 @@ export function IndicatorVariablesModal({ isOpen, onClose, indicatorId, indicato
                                 <TableColumn>Código</TableColumn>
                                 <TableColumn>Nombre</TableColumn>
                                 <TableColumn>Tipo de Coincidencia</TableColumn>
+                                <TableColumn>Acciones</TableColumn>
                             </TableHeader>
                             <TableBody>
                                 {variables.map((item) => (
@@ -102,6 +105,19 @@ export function IndicatorVariablesModal({ isOpen, onClose, indicatorId, indicato
                                             <span className={`px-2 py-1 text-xs font-medium rounded-full ${item.matchType === 'direct' ? 'bg-primary/10 text-primary' : 'bg-secondary/10 text-secondary'}`}>
                                                 {item.matchType === 'direct' ? 'Directa' : item.matchType === 'location' ? 'Por Ubicación' : item.matchType}
                                             </span>
+                                        </TableCell>
+                                        <TableCell>
+                                            {onViewVariableAdvances && (
+                                                <Button
+                                                    size="sm"
+                                                    variant="flat"
+                                                    color="primary"
+                                                    startContent={<TrendingUp size={16} />}
+                                                    onPress={() => onViewVariableAdvances(item.variable.id, item.variable.code, item.variable.name)}
+                                                >
+                                                    Ver Avances
+                                                </Button>
+                                            )}
                                         </TableCell>
                                     </TableRow>
                                 ))}
