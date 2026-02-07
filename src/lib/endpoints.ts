@@ -9,6 +9,7 @@ export const endpoints = {
     me: "/auth/me",
     logout: "/auth/logout",
     refresh: "/auth/refresh",
+    wsToken: "/auth/ws-token",
   },
   accessControl: {
     users: "/users",
@@ -66,6 +67,17 @@ export const endpoints = {
       type === 'indicative'
         ? `/masters/indicative-plan-indicators/${id}/locations/variables`
         : `/masters/action-plan-indicators/${id}/locations/variables`,
+  },
+  exports: {
+    create: "/exports/data",
+    status: (id: string) => `/exports/data/${id}`,
+    list: "/exports/data",
+  },
+  notifications: {
+    list: "/notifications",
+    unreadCount: "/notifications/unread-count",
+    markRead: (id: string) => `/notifications/${id}/read`,
+    readAll: "/notifications/read-all",
   },
   audit: "/audit",
   financial: {
