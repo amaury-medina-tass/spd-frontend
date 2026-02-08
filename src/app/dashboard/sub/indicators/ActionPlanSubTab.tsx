@@ -4,7 +4,7 @@ import { DataTable, ColumnDef, SortDescriptor, TopAction, RowAction } from "@/co
 import { ActionPlanIndicator } from "@/types/masters/indicators"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { RefreshCw, Calculator, BarChart3 } from "lucide-react"
-import { getActionPlanIndicators } from "@/services/masters/indicators.service"
+import { getMyActionPlanIndicators } from "@/services/sub/indicators.service"
 import { PaginatedData, PaginationMeta } from "@/lib/http"
 import { VariableAdvancesModal } from "@/components/modals/sub/VariableAdvancesModal"
 import { IndicatorDashboardModal } from "@/components/modals/sub/IndicatorDashboardModal"
@@ -70,7 +70,7 @@ export function ActionPlanSubTab() {
                 params.set("sortOrder", sortDescriptor.direction === "ascending" ? "ASC" : "DESC")
             }
 
-            const result = await getActionPlanIndicators(params.toString())
+            const result = await getMyActionPlanIndicators(params.toString())
             setItems(result.data)
             setMeta(result.meta)
         } catch (e: any) {

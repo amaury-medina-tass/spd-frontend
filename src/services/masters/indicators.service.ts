@@ -153,3 +153,31 @@ export const getActionPlanIndicatorsByLocation = async (communeId: string, param
 export const getIndicatorLocationVariables = async (indicatorId: string, type: 'indicative' | 'action', params: string) => {
     return await get<PaginatedData<any>>(`${endpoints.masters.indicatorLocationVariables(indicatorId, type)}?${params}`)
 }
+
+// Indicative Plan Indicator User Assignments
+
+export const getIndicatorUsers = async (id: string) => {
+    return await get<any[]>(endpoints.masters.indicatorUsers(id))
+}
+
+export const assignIndicatorUser = async (id: string, userId: string, userName?: string) => {
+    return await post<any>(endpoints.masters.indicatorUsers(id), { userId, userName })
+}
+
+export const unassignIndicatorUser = async (id: string, userId: string) => {
+    return await del<void>(endpoints.masters.indicatorUsersRemove(id, userId))
+}
+
+// Action Plan Indicator User Assignments
+
+export const getActionPlanIndicatorUsers = async (id: string) => {
+    return await get<any[]>(endpoints.masters.actionPlanIndicatorUsers(id))
+}
+
+export const assignActionPlanIndicatorUser = async (id: string, userId: string, userName?: string) => {
+    return await post<any>(endpoints.masters.actionPlanIndicatorUsers(id), { userId, userName })
+}
+
+export const unassignActionPlanIndicatorUser = async (id: string, userId: string) => {
+    return await del<void>(endpoints.masters.actionPlanIndicatorUsersRemove(id, userId))
+}

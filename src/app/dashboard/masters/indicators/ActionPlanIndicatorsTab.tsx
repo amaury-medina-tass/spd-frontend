@@ -17,9 +17,11 @@ import { ActionPlanIndicatorGoalsModal } from "@/components/modals/masters/indic
 import { createFormula, updateFormula } from "@/services/masters/formulas.service"
 import { ManageIndicatorVariablesModal } from "@/components/modals/masters/indicators/ManageIndicatorVariablesModal"
 import { ManageActionPlanProjectsModal } from "@/components/modals/masters/indicators/action-plan/ManageActionPlanProjectsModal"
-import { Calculator, Briefcase, FunctionSquare } from "lucide-react"
+import { Calculator, Briefcase, FunctionSquare, UserPlus } from "lucide-react"
 import { IndicatorLocationModal } from "@/components/modals/masters/indicators/IndicatorLocationModal"
 import { FormulaEditorModal } from "@/components/modals/masters/indicators/formulas"
+import { AssignUserModal } from "@/components/modals/masters/AssignUserModal"
+import { getActionPlanIndicatorUsers, assignActionPlanIndicatorUser, unassignActionPlanIndicatorUser } from "@/services/masters/indicators.service"
 
 const indicatorColumns: ColumnDef<ActionPlanIndicator>[] = [
     { key: "code", label: "Código", sortable: true },
@@ -78,6 +80,8 @@ export function ActionPlanIndicatorsTab() {
     const [indicatorForFormula, setIndicatorForFormula] = useState<ActionPlanIndicator | null>(null)
     const [isLocationModalOpen, setIsLocationModalOpen] = useState(false)
     const [indicatorForLocation, setIndicatorForLocation] = useState<ActionPlanIndicator | null>(null)
+    const [isUsersModalOpen, setIsUsersModalOpen] = useState(false)
+    const [indicatorForUsers, setIndicatorForUsers] = useState<ActionPlanIndicator | null>(null)
 
     const fetchIndicators = useCallback(async () => {
         setLoading(true)
@@ -251,6 +255,16 @@ export function ActionPlanIndicatorsTab() {
                     setIsLocationModalOpen(true)
                 },
             })
+
+            actions.push({
+                key: "users",
+                label: "Usuarios",
+                icon: <UserPlus size={16} />,
+                onClick: (item) => {
+                    setIndicatorForUsers(item)
+                    setIsUsersModalOpen(true)
+                },
+            })
         }
 
         return actions
@@ -376,6 +390,17 @@ export function ActionPlanIndicatorsTab() {
                 onClose={() => setIsLocationModalOpen(false)}
                 indicatorId={indicatorForLocation?.id ?? null}
                 type="action"
+            />
+
+            <AssignUserModal
+                isOpen={isUsersModalOpen}
+                onClose={() => setIsUsersModalOpen(false)}
+                entityId={indicatorForUsers?.id ?? null}
+                entityCode={indicatorForUsers?.code}
+                entityLabel="Indicador"
+                getAssignedUsers={getActionPlanIndicatorUsers}
+                assignUser={assignActionPlanIndicatorUser}
+                unassignUser={unassignActionPlanIndicatorUser}
             />
         </>
     )

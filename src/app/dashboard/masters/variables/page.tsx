@@ -8,13 +8,15 @@ import { usePermissions } from "@/hooks/usePermissions"
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal"
 import { get, post, patch, del, PaginatedData, PaginationMeta } from "@/lib/http"
 import { endpoints } from "@/lib/endpoints"
-import { Pencil, Trash2, Plus, RefreshCw, Eye, Target, MapPin } from "lucide-react"
+import { Pencil, Trash2, Plus, RefreshCw, Eye, Target, MapPin, UserPlus } from "lucide-react"
 import { addToast } from "@heroui/toast"
 import { getErrorMessage } from "@/lib/error-codes"
 import { VariableModal } from "@/components/modals/masters/variables/VariableModal"
 import { VariableDetailModal } from "@/components/modals/masters/variables/VariableDetailModal"
 import { VariableGoalsModal } from "@/components/modals/masters/variables/VariableGoalsModal"
 import { VariableLocationModal } from "@/components/modals/masters/variables/VariableLocationModal"
+import { AssignUserModal } from "@/components/modals/masters/AssignUserModal"
+import { getVariableUsers, assignVariableUser, unassignVariableUser } from "@/services/masters/variables.service"
 import type { Variable } from "@/types/variable"
 
 const columns: ColumnDef<Variable>[] = [
@@ -68,6 +70,8 @@ export default function MastersVariablesPage() {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
     const [isGoalsModalOpen, setIsGoalsModalOpen] = useState(false)
     const [isLocationModalOpen, setIsLocationModalOpen] = useState(false)
+    const [isUsersModalOpen, setIsUsersModalOpen] = useState(false)
+    const [variableForUsers, setVariableForUsers] = useState<Variable | null>(null)
 
     // Selection State
     const [editing, setEditing] = useState<Variable | null>(null)
@@ -235,6 +239,17 @@ export default function MastersVariablesPage() {
                 onClick: onDelete,
             })
         }
+        if (canUpdate) {
+            actions.push({
+                key: "users",
+                label: "Usuarios",
+                icon: <UserPlus size={16} />,
+                onClick: (variable) => {
+                    setVariableForUsers(variable)
+                    setIsUsersModalOpen(true)
+                },
+            })
+        }
         return actions
     }, [canUpdate, canDelete])
 
@@ -361,6 +376,20 @@ export default function MastersVariablesPage() {
                 }}
                 variableId={selectedVariable?.id || null}
                 variableCode={selectedVariable?.code}
+            />
+
+            <AssignUserModal
+                isOpen={isUsersModalOpen}
+                onClose={() => {
+                    setIsUsersModalOpen(false)
+                    setVariableForUsers(null)
+                }}
+                entityId={variableForUsers?.id ?? null}
+                entityCode={variableForUsers?.code}
+                entityLabel="Variable"
+                getAssignedUsers={getVariableUsers}
+                assignUser={assignVariableUser}
+                unassignUser={unassignVariableUser}
             />
         </div>
     )

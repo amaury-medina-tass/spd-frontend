@@ -67,6 +67,14 @@ export const endpoints = {
       type === 'indicative'
         ? `/masters/indicative-plan-indicators/${id}/locations/variables`
         : `/masters/action-plan-indicators/${id}/locations/variables`,
+    // Indicator User Assignments
+    indicatorUsers: (id: string) => `/masters/indicators/${id}/users`,
+    indicatorUsersRemove: (id: string, userId: string) => `/masters/indicators/${id}/users/${userId}`,
+    actionPlanIndicatorUsers: (id: string) => `/masters/action-plan-indicators/${id}/users`,
+    actionPlanIndicatorUsersRemove: (id: string, userId: string) => `/masters/action-plan-indicators/${id}/users/${userId}`,
+    // Variable User Assignments
+    variableUsers: (id: string) => `/masters/variables/${id}/users`,
+    variableUsersRemove: (id: string, userId: string) => `/masters/variables/${id}/users/${userId}`,
   },
   exports: {
     create: "/exports/data",
@@ -115,6 +123,11 @@ export const endpoints = {
     indicatorAdvances: {
       actionDetailed: (id: string) => `/sub/indicator-advances/action/${id}/detailed`,
       indicativeDetailed: (id: string) => `/sub/indicator-advances/indicative/${id}/detailed`,
+    },
+    my: {
+      indicativeIndicators: "/sub/my/indicative-indicators",
+      actionIndicators: "/sub/my/action-indicators",
+      variables: "/sub/my/variables",
     },
   },
 }

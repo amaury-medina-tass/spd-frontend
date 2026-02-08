@@ -4,7 +4,7 @@ import { Breadcrumbs, BreadcrumbItem, Button, Chip } from "@heroui/react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { DataTable, ColumnDef, RowAction, TopAction, SortDescriptor } from "@/components/tables/DataTable"
 import { useDebounce } from "@/hooks/useDebounce"
-import { getVariables } from "@/services/sub/variables.service"
+import { getMyVariables } from "@/services/sub/variables.service"
 import { Variable } from "@/types/masters/variables"
 import { BarChart3, RefreshCw } from "lucide-react"
 import { addToast } from "@heroui/toast"
@@ -63,7 +63,7 @@ export default function VariablesPage() {
             }
 
             // Note: The service expects the query string
-            const result = await getVariables(params.toString())
+            const result = await getMyVariables(params.toString())
             setItems(result.data)
             setMeta(result.meta)
         } catch (e: any) {

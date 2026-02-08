@@ -1,12 +1,14 @@
 "use client"
 
-import { Button, Breadcrumbs, BreadcrumbItem } from "@heroui/react"
+import { Button, Breadcrumbs, BreadcrumbItem, Tooltip } from "@heroui/react"
 import { useCallback, useEffect, useState } from "react"
 import { DataTable, ColumnDef, RowAction, SortDescriptor } from "@/components/tables/DataTable"
 import { useDebounce } from "@/hooks/useDebounce"
 import { get, PaginatedData, PaginationMeta } from "@/lib/http"
 import { endpoints } from "@/lib/endpoints"
-import { RefreshCw, Eye, Link2 } from "lucide-react"
+import { RefreshCw, Eye, Link2, Download } from "lucide-react"
+import { requestExport } from "@/services/exports.service"
+import { addToast } from "@heroui/toast"
 import type { CdpTableRow, CdpPositionDetail } from "@/types/cdp"
 import { getErrorMessage } from "@/lib/error-codes"
 import { CdpPositionDetailModal } from "@/components/modals/financial/cdp/CdpPositionDetailModal"
@@ -60,6 +62,9 @@ export default function FinancialCdpsPage() {
   // Manage Activities Modal State
   const [isActivitiesModalOpen, setIsActivitiesModalOpen] = useState(false)
   const [selectedPositionForActivities, setSelectedPositionForActivities] = useState<CdpTableRow | null>(null)
+
+  // Export State
+  const [exporting, setExporting] = useState(false)
 
   // Filter & Pagination State
   const [page, setPage] = useState(1)
@@ -123,6 +128,28 @@ export default function FinancialCdpsPage() {
     setPage(1)
   }, [debouncedSearch])
 
+  const handleExport = async () => {
+    try {
+      setExporting(true)
+      await requestExport({ system: "SPD", type: "CDP" })
+      addToast({
+        title: "Exportación solicitada",
+        description: "Recibirás una notificación cuando el archivo esté listo para descargar.",
+        color: "primary",
+        timeout: 5000,
+      })
+    } catch {
+      addToast({
+        title: "Error",
+        description: "No se pudo solicitar la exportación. Intenta de nuevo.",
+        color: "danger",
+        timeout: 5000,
+      })
+    } finally {
+      setExporting(false)
+    }
+  }
+
   const rowActions: RowAction<CdpTableRow>[] = [
     {
       key: "view",
@@ -168,6 +195,14 @@ export default function FinancialCdpsPage() {
               icon: <RefreshCw size={16} />,
               color: "default",
               onClick: fetchCdps,
+            },
+            {
+              key: "export",
+              label: "Exportar CDPs",
+              icon: <Download size={16} />,
+              color: "success",
+              onClick: handleExport,
+              isLoading: exporting,
             },
           ]}
           rowActions={rowActions}

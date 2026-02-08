@@ -49,9 +49,11 @@ const indicatorColumns: ColumnDef<Indicator>[] = [
 ]
 
 import { ManageIndicatorVariablesModal } from "@/components/modals/masters/indicators/ManageIndicatorVariablesModal"
-import { Calculator, FunctionSquare } from "lucide-react"
+import { Calculator, FunctionSquare, UserPlus } from "lucide-react"
 import { FormulaEditorModal } from "@/components/modals/masters/indicators/formulas"
 import { IndicatorLocationModal } from "@/components/modals/masters/indicators/IndicatorLocationModal"
+import { AssignUserModal } from "@/components/modals/masters/AssignUserModal"
+import { getIndicatorUsers, assignIndicatorUser, unassignIndicatorUser } from "@/services/masters/indicators.service"
 
 export function IndicativePlanIndicatorsTab() {
     const { canRead, canCreate, canUpdate, canDelete } = usePermissions("/masters/indicators")
@@ -73,6 +75,8 @@ export function IndicativePlanIndicatorsTab() {
     const [indicatorForFormula, setIndicatorForFormula] = useState<Indicator | null>(null)
     const [isLocationModalOpen, setIsLocationModalOpen] = useState(false)
     const [indicatorForLocation, setIndicatorForLocation] = useState<Indicator | null>(null)
+    const [isUsersModalOpen, setIsUsersModalOpen] = useState(false)
+    const [indicatorForUsers, setIndicatorForUsers] = useState<Indicator | null>(null)
 
     // Table State
     const [items, setItems] = useState<Indicator[]>([])
@@ -251,6 +255,16 @@ export function IndicativePlanIndicatorsTab() {
                     setIsLocationModalOpen(true)
                 },
             })
+
+            actions.push({
+                key: "users",
+                label: "Usuarios",
+                icon: <UserPlus size={16} />,
+                onClick: (item) => {
+                    setIndicatorForUsers(item)
+                    setIsUsersModalOpen(true)
+                },
+            })
         }
 
         return actions
@@ -389,6 +403,17 @@ export function IndicativePlanIndicatorsTab() {
                 onClose={() => setIsLocationModalOpen(false)}
                 indicatorId={indicatorForLocation?.id ?? null}
                 type="indicative"
+            />
+
+            <AssignUserModal
+                isOpen={isUsersModalOpen}
+                onClose={() => setIsUsersModalOpen(false)}
+                entityId={indicatorForUsers?.id ?? null}
+                entityCode={indicatorForUsers?.code}
+                entityLabel="Indicador"
+                getAssignedUsers={getIndicatorUsers}
+                assignUser={assignIndicatorUser}
+                unassignUser={unassignIndicatorUser}
             />
         </>
     )

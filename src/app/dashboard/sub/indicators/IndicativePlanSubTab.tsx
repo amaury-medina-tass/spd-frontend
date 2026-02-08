@@ -4,7 +4,7 @@ import { DataTable, ColumnDef, SortDescriptor, TopAction, RowAction } from "@/co
 import { Indicator } from "@/types/masters/indicators"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { RefreshCw, Calculator, BarChart3 } from "lucide-react"
-import { getIndicators } from "@/services/masters/indicators.service"
+import { getMyIndicativeIndicators } from "@/services/sub/indicators.service"
 import { PaginatedData, PaginationMeta } from "@/lib/http"
 import { VariableAdvancesModal } from "@/components/modals/sub/VariableAdvancesModal"
 import { IndicatorDashboardModal } from "@/components/modals/sub/IndicatorDashboardModal"
@@ -80,7 +80,7 @@ export function IndicativePlanSubTab() {
                 params.set("sortOrder", sortDescriptor.direction === "ascending" ? "ASC" : "DESC")
             }
 
-            const result = await getIndicators(params.toString())
+            const result = await getMyIndicativeIndicators(params.toString())
             setItems(result.data)
             setMeta(result.meta)
         } catch (e: any) {
