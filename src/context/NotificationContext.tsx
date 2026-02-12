@@ -149,6 +149,7 @@ export function NotificationProvider({ children }: Props) {
       if (cancelled || !token) return
 
       const socket = io(`${WS_URL}/notifications`, {
+        path: "/public/socket.io",
         auth: { token },
         transports: ["websocket", "polling"],
         reconnection: true,

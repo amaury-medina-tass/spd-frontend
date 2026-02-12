@@ -9,7 +9,7 @@ export interface CreateFormulaDto {
 }
 
 export const createFormula = async (data: CreateFormulaDto) => {
-    return post("/masters/formulas", data);
+    return post("/spd/masters/formulas", data);
 };
 
 export const updateFormula = async (id: string, data: Partial<CreateFormulaDto>) => {

@@ -70,7 +70,7 @@ async function parseBody(res: Response) {
 
 async function refreshSession(): Promise<boolean> {
   try {
-    const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
+    const res = await fetch(`${API_BASE_URL}/public/auth/refresh`, {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },

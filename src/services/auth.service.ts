@@ -25,5 +25,5 @@ export const forgotPassword = async (data: any) => {
     // Actually, explicit string is safer if I'm not sure about endpoints file content.
     // But better to use endpoints object if possible.
     // I will check endpoints file if validation fails.
-    return post("/auth/forgot-password", data); 
+    return post("/public/auth/forgot-password", data); 
 };
