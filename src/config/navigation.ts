@@ -17,6 +17,7 @@ import {
     FileCheck,
     Variable,
     Goal,
+    LayoutDashboard,
 } from "lucide-react"
 import React, { ReactNode } from "react"
 
@@ -82,6 +83,12 @@ export const menuItems: (MenuItem | MenuGroup)[] = [
         label: "Financiero",
         icon: React.createElement(DollarSign, { size: 20 }),
         items: [
+            {
+                label: "Dashboard",
+                href: "/dashboard/financial/dashboard",
+                permissionPath: "/financial/dashboard",
+                icon: React.createElement(LayoutDashboard, { size: 18 }),
+            },
             {
                 label: "Necesidades",
                 href: "/dashboard/financial/needs",

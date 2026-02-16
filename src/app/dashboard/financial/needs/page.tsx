@@ -9,10 +9,11 @@ import { NeedDetailModal } from "@/components/modals/financial/needs/NeedDetailM
 import { NeedCdpPositionsModal } from "@/components/modals/financial/needs/NeedCdpPositionsModal"
 import { get, PaginatedData, PaginationMeta } from "@/lib/http"
 import { endpoints } from "@/lib/endpoints"
-import { Eye, RefreshCw, Layers } from "lucide-react"
+import { Eye, RefreshCw, Layers, Download } from "lucide-react"
 import { addToast } from "@heroui/toast"
 import type { FinancialNeed } from "@/types/financial"
 import { getErrorMessage } from "@/lib/error-codes"
+import { requestExport } from "@/services/exports.service"
 
 const formatCurrency = (amount: string) => {
     return new Intl.NumberFormat("es-CO", {
@@ -136,6 +137,9 @@ export default function FinancialNeedsPage() {
     const [selectedNeed, setSelectedNeed] = useState<FinancialNeed | null>(null)
     const [selectedNeedIdForPositions, setSelectedNeedIdForPositions] = useState<string | null>(null)
 
+    // Export State
+    const [exporting, setExporting] = useState(false)
+
     const fetchNeeds = useCallback(async () => {
         setLoading(true)
         setError(null)
@@ -219,8 +223,26 @@ export default function FinancialNeedsPage() {
                 color: "default",
                 onClick: fetchNeeds,
             },
+            {
+                key: "export",
+                label: "Exportar Necesidades",
+                icon: <Download size={16} />,
+                color: "primary",
+                onClick: async () => {
+                    try {
+                        setExporting(true)
+                        await requestExport({ system: "SPD", type: "NEEDS" })
+                        addToast({ title: "Exportación solicitada", description: "Recibirás una notificación cuando el archivo esté listo para descargar.", color: "primary", timeout: 5000 })
+                    } catch {
+                        addToast({ title: "Error", description: "No se pudo solicitar la exportación. Intenta de nuevo.", color: "danger", timeout: 5000 })
+                    } finally {
+                        setExporting(false)
+                    }
+                },
+                isLoading: exporting,
+            },
         ]
-    }, [fetchNeeds])
+    }, [fetchNeeds, exporting])
 
     return (
         <div className="grid gap-4">

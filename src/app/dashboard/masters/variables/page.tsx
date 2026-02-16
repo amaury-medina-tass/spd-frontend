@@ -8,7 +8,7 @@ import { usePermissions } from "@/hooks/usePermissions"
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal"
 import { get, post, patch, del, PaginatedData, PaginationMeta } from "@/lib/http"
 import { endpoints } from "@/lib/endpoints"
-import { Pencil, Trash2, Plus, RefreshCw, Eye, Target, MapPin, UserPlus } from "lucide-react"
+import { Pencil, Trash2, Plus, RefreshCw, Eye, Target, MapPin, UserPlus, Download } from "lucide-react"
 import { addToast } from "@heroui/toast"
 import { getErrorMessage } from "@/lib/error-codes"
 import { VariableModal } from "@/components/modals/masters/variables/VariableModal"
@@ -18,6 +18,7 @@ import { VariableLocationModal } from "@/components/modals/masters/variables/Var
 import { AssignUserModal } from "@/components/modals/masters/AssignUserModal"
 import { getVariableUsers, assignVariableUser, unassignVariableUser } from "@/services/masters/variables.service"
 import type { Variable } from "@/types/variable"
+import { requestExport } from "@/services/exports.service"
 
 const columns: ColumnDef<Variable>[] = [
     { key: "code", label: "Código", sortable: true },
@@ -72,6 +73,9 @@ export default function MastersVariablesPage() {
     const [isLocationModalOpen, setIsLocationModalOpen] = useState(false)
     const [isUsersModalOpen, setIsUsersModalOpen] = useState(false)
     const [variableForUsers, setVariableForUsers] = useState<Variable | null>(null)
+
+    // Export State
+    const [exporting, setExporting] = useState(false)
 
     // Selection State
     const [editing, setEditing] = useState<Variable | null>(null)
@@ -262,6 +266,24 @@ export default function MastersVariablesPage() {
                 color: "default",
                 onClick: fetchVariables,
             },
+            {
+                key: "export",
+                label: "Exportar Variables",
+                icon: <Download size={16} />,
+                color: "primary",
+                onClick: async () => {
+                    try {
+                        setExporting(true)
+                        await requestExport({ system: "SPD", type: "VARIABLES" })
+                        addToast({ title: "Exportación solicitada", description: "Recibirás una notificación cuando el archivo esté listo para descargar.", color: "primary", timeout: 5000 })
+                    } catch {
+                        addToast({ title: "Error", description: "No se pudo solicitar la exportación. Intenta de nuevo.", color: "danger", timeout: 5000 })
+                    } finally {
+                        setExporting(false)
+                    }
+                },
+                isLoading: exporting,
+            },
         ]
         if (canCreate) {
             actions.push({
@@ -273,7 +295,7 @@ export default function MastersVariablesPage() {
             })
         }
         return actions
-    }, [canCreate, fetchVariables])
+    }, [canCreate, fetchVariables, exporting])
 
     const title = useMemo(() => (editing ? "Editar variable" : "Crear variable"), [editing])
 

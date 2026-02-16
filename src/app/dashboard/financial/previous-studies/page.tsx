@@ -7,9 +7,11 @@ import { useDebounce } from "@/hooks/useDebounce"
 import { usePermissions } from "@/hooks/usePermissions"
 import { get, PaginatedData, PaginationMeta } from "@/lib/http"
 import { endpoints } from "@/lib/endpoints"
-import { RefreshCw } from "lucide-react"
+import { RefreshCw, Download } from "lucide-react"
 import type { PreviousStudy } from "@/types/financial"
 import { getErrorMessage } from "@/lib/error-codes"
+import { requestExport } from "@/services/exports.service"
+import { addToast } from "@heroui/toast"
 
 const columns: ColumnDef<PreviousStudy>[] = [
     { key: "code", label: "Código", sortable: true },
@@ -66,6 +68,9 @@ export default function PreviousStudiesPage() {
     const [searchInput, setSearchInput] = useState("")
     const debouncedSearch = useDebounce(searchInput, 400)
 
+    // Export State
+    const [exporting, setExporting] = useState(false)
+
     const fetchStudies = useCallback(async () => {
         setLoading(true)
         setError(null)
@@ -113,8 +118,26 @@ export default function PreviousStudiesPage() {
                 color: "default",
                 onClick: fetchStudies,
             },
+            {
+                key: "export",
+                label: "Exportar Estudios Previos",
+                icon: <Download size={16} />,
+                color: "primary",
+                onClick: async () => {
+                    try {
+                        setExporting(true)
+                        await requestExport({ system: "SPD", type: "PREVIOUS_STUDIES" })
+                        addToast({ title: "Exportación solicitada", description: "Recibirás una notificación cuando el archivo esté listo para descargar.", color: "primary", timeout: 5000 })
+                    } catch {
+                        addToast({ title: "Error", description: "No se pudo solicitar la exportación. Intenta de nuevo.", color: "danger", timeout: 5000 })
+                    } finally {
+                        setExporting(false)
+                    }
+                },
+                isLoading: exporting,
+            },
         ]
-    }, [fetchStudies])
+    }, [fetchStudies, exporting])
 
     return (
         <div className="grid gap-4">

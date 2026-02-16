@@ -40,6 +40,8 @@ export interface TopAction {
     icon?: ReactNode
     color?: "default" | "primary" | "secondary" | "success" | "warning" | "danger"
     onClick: () => void
+    isLoading?: boolean
+    isDisabled?: boolean
 }
 
 /** Props de paginación */
@@ -192,6 +194,8 @@ export function DataTable<T extends { id: string }>({
                                 color={action.color ?? "primary"}
                                 onPress={action.onClick}
                                 startContent={action.icon}
+                                isLoading={action.isLoading}
+                                isDisabled={action.isDisabled}
                                 size="md"
                                 radius="sm"
                                 className="hidden sm:flex font-medium"
@@ -205,6 +209,8 @@ export function DataTable<T extends { id: string }>({
                                 isIconOnly
                                 color={action.color ?? "primary"}
                                 onPress={action.onClick}
+                                isLoading={action.isLoading}
+                                isDisabled={action.isDisabled}
                                 size="md"
                                 radius="sm"
                                 className="flex sm:hidden"

@@ -66,6 +66,7 @@ export function AssignUserModal({
 
     // All users cache
     const [allUsers, setAllUsers] = useState<User[]>([])
+    const [rawAssignments, setRawAssignments] = useState<AssignedUser[]>([])
     const [assignedUserIds, setAssignedUserIds] = useState<Set<string>>(new Set())
 
     const fetchAssigned = useCallback(async () => {
@@ -73,22 +74,8 @@ export function AssignUserModal({
         setLoadingAssigned(true)
         try {
             const assignments = await getAssignedUsers(entityId)
+            setRawAssignments(assignments)
             setAssignedUserIds(new Set(assignments.map(a => a.userId)))
-
-            // Map assignments to User-like objects for display
-            const assignedUsers = assignments.map(a => ({
-                id: a.userId,
-                assignmentId: a.id,
-                email: a.email || "",
-                document_number: "",
-                first_name: a.firstName || "",
-                last_name: a.lastName || "",
-                is_active: true,
-                created_at: "",
-                updated_at: "",
-                roles: [],
-            }))
-            setAssigned(assignedUsers)
         } catch (e: any) {
             addToast({ title: "Error al cargar usuarios asignados", description: e.message, color: "danger" })
         } finally {
@@ -108,6 +95,31 @@ export function AssignUserModal({
             setLoadingAvailable(false)
         }
     }, [])
+
+    // Enrich assigned users with profile data from allUsers
+    useEffect(() => {
+        if (rawAssignments.length === 0) {
+            setAssigned([])
+            return
+        }
+        const userMap = new Map(allUsers.map(u => [u.id, u]))
+        const enriched = rawAssignments.map(a => {
+            const user = userMap.get(a.userId)
+            return {
+                id: a.userId,
+                assignmentId: a.id,
+                email: user?.email || a.email || "",
+                document_number: user?.document_number || "",
+                first_name: user?.first_name || a.firstName || "",
+                last_name: user?.last_name || a.lastName || "",
+                is_active: user?.is_active ?? true,
+                created_at: user?.created_at || "",
+                updated_at: user?.updated_at || "",
+                roles: user?.roles || [],
+            }
+        })
+        setAssigned(enriched)
+    }, [rawAssignments, allUsers])
 
     useEffect(() => {
         if (isOpen && entityId) {

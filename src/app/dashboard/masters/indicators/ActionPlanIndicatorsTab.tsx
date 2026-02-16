@@ -17,11 +17,12 @@ import { ActionPlanIndicatorGoalsModal } from "@/components/modals/masters/indic
 import { createFormula, updateFormula } from "@/services/masters/formulas.service"
 import { ManageIndicatorVariablesModal } from "@/components/modals/masters/indicators/ManageIndicatorVariablesModal"
 import { ManageActionPlanProjectsModal } from "@/components/modals/masters/indicators/action-plan/ManageActionPlanProjectsModal"
-import { Calculator, Briefcase, FunctionSquare, UserPlus } from "lucide-react"
+import { Calculator, Briefcase, FunctionSquare, UserPlus, Download } from "lucide-react"
 import { IndicatorLocationModal } from "@/components/modals/masters/indicators/IndicatorLocationModal"
 import { FormulaEditorModal } from "@/components/modals/masters/indicators/formulas"
 import { AssignUserModal } from "@/components/modals/masters/AssignUserModal"
 import { getActionPlanIndicatorUsers, assignActionPlanIndicatorUser, unassignActionPlanIndicatorUser } from "@/services/masters/indicators.service"
+import { requestExport } from "@/services/exports.service"
 
 const indicatorColumns: ColumnDef<ActionPlanIndicator>[] = [
     { key: "code", label: "Código", sortable: true },
@@ -82,6 +83,9 @@ export function ActionPlanIndicatorsTab() {
     const [indicatorForLocation, setIndicatorForLocation] = useState<ActionPlanIndicator | null>(null)
     const [isUsersModalOpen, setIsUsersModalOpen] = useState(false)
     const [indicatorForUsers, setIndicatorForUsers] = useState<ActionPlanIndicator | null>(null)
+
+    // Export State
+    const [exporting, setExporting] = useState(false)
 
     const fetchIndicators = useCallback(async () => {
         setLoading(true)
@@ -146,6 +150,28 @@ export function ActionPlanIndicatorsTab() {
         }
     }
 
+    async function handleExport() {
+        try {
+            setExporting(true)
+            await requestExport({ system: "SPD", type: "INDICATORS" })
+            addToast({
+                title: "Exportación solicitada",
+                description: "Recibirás una notificación cuando el archivo esté listo para descargar.",
+                color: "primary",
+                timeout: 5000,
+            })
+        } catch {
+            addToast({
+                title: "Error",
+                description: "No se pudo solicitar la exportación. Intenta de nuevo.",
+                color: "danger",
+                timeout: 5000,
+            })
+        } finally {
+            setExporting(false)
+        }
+    }
+
     const topActions: TopAction[] = useMemo(() => {
         const actions: TopAction[] = [
             {
@@ -167,8 +193,17 @@ export function ActionPlanIndicatorsTab() {
             })
         }
 
+        actions.push({
+            key: "export",
+            label: "Exportar Indicadores",
+            icon: <Download size={16} />,
+            color: "primary",
+            onClick: handleExport,
+            isLoading: exporting,
+        })
+
         return actions
-    }, [fetchIndicators, canCreate])
+    }, [fetchIndicators, canCreate, exporting])
 
     const rowActions: RowAction<ActionPlanIndicator>[] = useMemo(() => {
         const actions: RowAction<ActionPlanIndicator>[] = [

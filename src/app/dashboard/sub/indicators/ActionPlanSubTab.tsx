@@ -3,7 +3,9 @@
 import { DataTable, ColumnDef, SortDescriptor, TopAction, RowAction } from "@/components/tables/DataTable"
 import { ActionPlanIndicator } from "@/types/masters/indicators"
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { RefreshCw, Calculator, BarChart3 } from "lucide-react"
+import { RefreshCw, Calculator, BarChart3, Download } from "lucide-react"
+import { requestExport } from "@/services/exports.service"
+import { addToast } from "@heroui/toast"
 import { getMyActionPlanIndicators } from "@/services/sub/indicators.service"
 import { PaginatedData, PaginationMeta } from "@/lib/http"
 import { VariableAdvancesModal } from "@/components/modals/sub/VariableAdvancesModal"
@@ -53,6 +55,9 @@ export function ActionPlanSubTab() {
     const [isDashboardModalOpen, setIsDashboardModalOpen] = useState(false)
     const [selectedIndicator, setSelectedIndicator] = useState<ActionPlanIndicator | null>(null)
 
+    // Export State
+    const [exporting, setExporting] = useState(false)
+
     const fetchIndicators = useCallback(async () => {
         setLoading(true)
         setError(null)
@@ -89,6 +94,28 @@ export function ActionPlanSubTab() {
         setPage(1)
     }, [debouncedSearch])
 
+    async function handleExport() {
+        try {
+            setExporting(true)
+            await requestExport({ system: "SPD", type: "INDICATORS" })
+            addToast({
+                title: "Exportación solicitada",
+                description: "Recibirás una notificación cuando el archivo esté listo para descargar.",
+                color: "primary",
+                timeout: 5000,
+            })
+        } catch {
+            addToast({
+                title: "Error",
+                description: "No se pudo solicitar la exportación. Intenta de nuevo.",
+                color: "danger",
+                timeout: 5000,
+            })
+        } finally {
+            setExporting(false)
+        }
+    }
+
     const topActions: TopAction[] = useMemo(() => {
         return [
             {
@@ -98,8 +125,16 @@ export function ActionPlanSubTab() {
                 color: "default",
                 onClick: fetchIndicators,
             },
+            {
+                key: "export",
+                label: "Exportar Indicadores",
+                icon: <Download size={16} />,
+                color: "primary",
+                onClick: handleExport,
+                isLoading: exporting,
+            },
         ]
-    }, [fetchIndicators])
+    }, [fetchIndicators, exporting])
 
     const rowActions: RowAction<ActionPlanIndicator>[] = useMemo(() => {
         return [

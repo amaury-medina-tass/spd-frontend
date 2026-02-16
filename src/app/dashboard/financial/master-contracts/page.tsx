@@ -8,11 +8,12 @@ import { usePermissions } from "@/hooks/usePermissions"
 import { MasterContractDetailModal } from "@/components/modals/financial/contracts/MasterContractDetailModal"
 import { get, PaginatedData, PaginationMeta } from "@/lib/http"
 import { endpoints } from "@/lib/endpoints"
-import { Eye, RefreshCw, Briefcase } from "lucide-react"
+import { Eye, RefreshCw, Briefcase, Download } from "lucide-react"
 import { addToast } from "@heroui/toast"
 import type { MasterContract } from "@/types/financial"
 import { getErrorMessage } from "@/lib/error-codes"
 import { MasterContractCdpsModal } from "@/components/modals/financial/contracts/MasterContractCdpsModal"
+import { requestExport } from "@/services/exports.service"
 
 const formatCurrency = (amount: string) => {
     return new Intl.NumberFormat("es-CO", {
@@ -146,6 +147,9 @@ export default function MasterContractsPage() {
     const [isCdpsModalOpen, setIsCdpsModalOpen] = useState(false)
     const [selectedContractForCdps, setSelectedContractForCdps] = useState<MasterContract | null>(null)
 
+    // Export State
+    const [exporting, setExporting] = useState(false)
+
     const fetchContracts = useCallback(async () => {
         setLoading(true)
         setError(null)
@@ -228,8 +232,26 @@ export default function MasterContractsPage() {
                 color: "default",
                 onClick: fetchContracts,
             },
+            {
+                key: "export",
+                label: "Exportar Contratos",
+                icon: <Download size={16} />,
+                color: "primary",
+                onClick: async () => {
+                    try {
+                        setExporting(true)
+                        await requestExport({ system: "SPD", type: "CONTRACTS" })
+                        addToast({ title: "Exportación solicitada", description: "Recibirás una notificación cuando el archivo esté listo para descargar.", color: "primary", timeout: 5000 })
+                    } catch {
+                        addToast({ title: "Error", description: "No se pudo solicitar la exportación. Intenta de nuevo.", color: "danger", timeout: 5000 })
+                    } finally {
+                        setExporting(false)
+                    }
+                },
+                isLoading: exporting,
+            },
         ]
-    }, [fetchContracts])
+    }, [fetchContracts, exporting])
 
     return (
         <div className="grid gap-4">

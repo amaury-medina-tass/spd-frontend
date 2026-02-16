@@ -7,10 +7,11 @@ import { useDebounce } from "@/hooks/useDebounce"
 import { usePermissions } from "@/hooks/usePermissions"
 import { get, PaginatedData, PaginationMeta } from "@/lib/http"
 import { endpoints } from "@/lib/endpoints"
-import { RefreshCw, Eye, Link2, Plus, Pencil } from "lucide-react"
+import { RefreshCw, Eye, Link2, Plus, Pencil, Download } from "lucide-react"
 import { addToast } from "@heroui/toast"
 import type { MGAActivity } from "@/types/activity"
 import { getErrorMessage } from "@/lib/error-codes"
+import { requestExport } from "@/services/exports.service"
 import { MGAActivityModal } from "@/components/modals/masters/activities/mga/MGAActivityModal"
 import { CreateMGAActivityModal } from "@/components/modals/masters/activities/mga/CreateMGAActivityModal"
 import { ManageDetailedActivitiesModal } from "@/components/modals/masters/activities/mga/ManageDetailedActivitiesModal"
@@ -113,6 +114,9 @@ export function MGAActivitiesTab() {
     const [selectedActivity, setSelectedActivity] = useState<MGAActivity | null>(null)
     const [isEditMode, setIsEditMode] = useState(false)
 
+    // Export State
+    const [exporting, setExporting] = useState(false)
+
     // Table State
     const [items, setItems] = useState<MGAActivity[]>([])
     const [meta, setMeta] = useState<PaginationMeta | null>(null)
@@ -170,6 +174,28 @@ export function MGAActivitiesTab() {
         setPage(1)
     }, [debouncedSearch])
 
+    async function handleExport() {
+        try {
+            setExporting(true)
+            await requestExport({ system: "SPD", type: "ACTIVITIES" })
+            addToast({
+                title: "Exportación solicitada",
+                description: "Recibirás una notificación cuando el archivo esté listo para descargar.",
+                color: "primary",
+                timeout: 5000,
+            })
+        } catch {
+            addToast({
+                title: "Error",
+                description: "No se pudo solicitar la exportación. Intenta de nuevo.",
+                color: "danger",
+                timeout: 5000,
+            })
+        } finally {
+            setExporting(false)
+        }
+    }
+
     const topActions: TopAction[] = useMemo(() => {
         const actions: TopAction[] = [
             {
@@ -178,6 +204,14 @@ export function MGAActivitiesTab() {
                 icon: <RefreshCw size={16} />,
                 color: "default",
                 onClick: fetchActivities,
+            },
+            {
+                key: "export",
+                label: "Exportar Actividades",
+                icon: <Download size={16} />,
+                color: "primary",
+                onClick: handleExport,
+                isLoading: exporting,
             },
         ]
 
@@ -192,7 +226,7 @@ export function MGAActivitiesTab() {
         }
 
         return actions
-    }, [fetchActivities, canCreate])
+    }, [fetchActivities, canCreate, exporting])
 
     // View handler
     const onViewActivity = async (activity: MGAActivity) => {

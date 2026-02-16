@@ -200,7 +200,7 @@ export default function FinancialCdpsPage() {
               key: "export",
               label: "Exportar CDPs",
               icon: <Download size={16} />,
-              color: "success",
+              color: "primary",
               onClick: handleExport,
               isLoading: exporting,
             },

@@ -105,6 +105,20 @@ export const endpoints = {
     cdpPositionDetailedActivitiesRemove: (positionId: string, activityId: string) => `/spd/financial/cdps/positions/${positionId}/detailed-activities/${activityId}`,
     cdpPositionConsume: (positionId: string) => `/spd/financial/cdps/positions/${positionId}/consume`,
     masterContractCdpPositions: (id: string) => `/spd/financial/master-contracts/${id}/cdp-positions`,
+    dashboard: {
+      global: "/spd/financial/dashboard/global",
+      needs: "/spd/financial/dashboard/needs",
+      cdpsByNeed: (id: string) => `/spd/financial/dashboard/needs/${id}/cdps`,
+      activitiesByCdp: (id: string) => `/spd/financial/dashboard/cdps/${id}/activities`,
+      contractsByCdp: (id: string) => `/spd/financial/dashboard/cdps/${id}/contracts`,
+      cdpsByContract: (id: string) => `/spd/financial/dashboard/contracts/${id}/cdps`,
+      budgetRecordsByContract: (id: string) => `/spd/financial/dashboard/contracts/${id}/budget-records`,
+      projectBudgetOverview: "/spd/financial/dashboard/projects/budget-overview",
+      projectExecution: "/spd/financial/dashboard/projects/execution",
+      mgaActivitiesByProject: (id: string) => `/spd/financial/dashboard/projects/${id}/mga-activities`,
+      detailedByMga: (id: string) => `/spd/financial/dashboard/mga-activities/${id}/detailed`,
+      modificationsByActivity: (id: string) => `/spd/financial/dashboard/activities/${id}/modifications`,
+    },
   },
   sub: {
     variableAdvances: {

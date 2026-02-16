@@ -7,10 +7,11 @@ import { useDebounce } from "@/hooks/useDebounce"
 import { usePermissions } from "@/hooks/usePermissions"
 import { get, post, patch, del, PaginatedData, PaginationMeta } from "@/lib/http"
 import { endpoints } from "@/lib/endpoints"
-import { RefreshCw, Eye, Pencil, Plus, Trash2, ArrowLeftRight } from "lucide-react"
+import { RefreshCw, Eye, Pencil, Plus, Trash2, ArrowLeftRight, Download } from "lucide-react"
 import { addToast } from "@heroui/toast"
 import type { DetailedActivity, FullDetailedActivity } from "@/types/activity"
 import { getErrorMessage } from "@/lib/error-codes"
+import { requestExport } from "@/services/exports.service"
 import { DetailedActivityModal } from "@/components/modals/masters/activities/detailed/DetailedActivityModal"
 import { CreateDetailedActivityModal, CreateDetailedActivityPayload } from "@/components/modals/masters/activities/detailed/CreateDetailedActivityModal"
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal"
@@ -90,6 +91,9 @@ export function DetailedActivitiesTab() {
     const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false)
     const [activityForModification, setActivityForModification] = useState<DetailedActivity | null>(null)
 
+    // Export State
+    const [exporting, setExporting] = useState(false)
+
     // Table State
     const [items, setItems] = useState<DetailedActivity[]>([])
     const [meta, setMeta] = useState<PaginationMeta | null>(null)
@@ -143,6 +147,28 @@ export function DetailedActivitiesTab() {
         setPage(1)
     }, [debouncedSearch])
 
+    async function handleExport() {
+        try {
+            setExporting(true)
+            await requestExport({ system: "SPD", type: "ACTIVITIES" })
+            addToast({
+                title: "Exportación solicitada",
+                description: "Recibirás una notificación cuando el archivo esté listo para descargar.",
+                color: "primary",
+                timeout: 5000,
+            })
+        } catch {
+            addToast({
+                title: "Error",
+                description: "No se pudo solicitar la exportación. Intenta de nuevo.",
+                color: "danger",
+                timeout: 5000,
+            })
+        } finally {
+            setExporting(false)
+        }
+    }
+
     const topActions: TopAction[] = useMemo(() => {
         const actions: TopAction[] = [
             {
@@ -151,6 +177,14 @@ export function DetailedActivitiesTab() {
                 icon: <RefreshCw size={16} />,
                 color: "default",
                 onClick: fetchActivities,
+            },
+            {
+                key: "export",
+                label: "Exportar Actividades",
+                icon: <Download size={16} />,
+                color: "primary",
+                onClick: handleExport,
+                isLoading: exporting,
             },
         ]
         if (canCreate) {
@@ -163,7 +197,7 @@ export function DetailedActivitiesTab() {
             })
         }
         return actions
-    }, [fetchActivities, canCreate])
+    }, [fetchActivities, canCreate, exporting])
 
     // View/Edit handlers
     const onViewActivity = async (activity: DetailedActivity) => {

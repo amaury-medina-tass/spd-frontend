@@ -6,10 +6,11 @@ import { DataTable, ColumnDef, RowAction, TopAction, SortDescriptor } from "@/co
 import { useDebounce } from "@/hooks/useDebounce"
 import { getMyVariables } from "@/services/sub/variables.service"
 import { Variable } from "@/types/masters/variables"
-import { BarChart3, RefreshCw } from "lucide-react"
+import { BarChart3, RefreshCw, Download } from "lucide-react"
 import { addToast } from "@heroui/toast"
 import { VariableDashboardModal } from "@/components/modals/sub/variables/VariableDashboardModal"
 import { PaginationMeta } from "@/lib/http"
+import { requestExport } from "@/services/exports.service"
 
 const columns: ColumnDef<Variable>[] = [
     { key: "code", label: "Código", sortable: true },
@@ -44,6 +45,9 @@ export default function VariablesPage() {
     // Modal State
     const [isDashboardModalOpen, setIsDashboardModalOpen] = useState(false)
     const [selectedVariable, setSelectedVariable] = useState<Variable | null>(null)
+
+    // Export State
+    const [exporting, setExporting] = useState(false)
 
     const fetchVariables = useCallback(async () => {
         setLoading(true)
@@ -109,8 +113,26 @@ export default function VariablesPage() {
                 color: "default",
                 onClick: fetchVariables,
             },
+            {
+                key: "export",
+                label: "Exportar Variables",
+                icon: <Download size={16} />,
+                color: "primary",
+                onClick: async () => {
+                    try {
+                        setExporting(true)
+                        await requestExport({ system: "SPD", type: "VARIABLES" })
+                        addToast({ title: "Exportación solicitada", description: "Recibirás una notificación cuando el archivo esté listo para descargar.", color: "primary", timeout: 5000 })
+                    } catch {
+                        addToast({ title: "Error", description: "No se pudo solicitar la exportación. Intenta de nuevo.", color: "danger", timeout: 5000 })
+                    } finally {
+                        setExporting(false)
+                    }
+                },
+                isLoading: exporting,
+            },
         ]
-    }, [fetchVariables])
+    }, [fetchVariables, exporting])
 
     return (
         <div className="grid gap-4">

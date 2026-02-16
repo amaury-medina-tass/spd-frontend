@@ -49,11 +49,12 @@ const indicatorColumns: ColumnDef<Indicator>[] = [
 ]
 
 import { ManageIndicatorVariablesModal } from "@/components/modals/masters/indicators/ManageIndicatorVariablesModal"
-import { Calculator, FunctionSquare, UserPlus } from "lucide-react"
+import { Calculator, FunctionSquare, UserPlus, Download } from "lucide-react"
 import { FormulaEditorModal } from "@/components/modals/masters/indicators/formulas"
 import { IndicatorLocationModal } from "@/components/modals/masters/indicators/IndicatorLocationModal"
 import { AssignUserModal } from "@/components/modals/masters/AssignUserModal"
 import { getIndicatorUsers, assignIndicatorUser, unassignIndicatorUser } from "@/services/masters/indicators.service"
+import { requestExport } from "@/services/exports.service"
 
 export function IndicativePlanIndicatorsTab() {
     const { canRead, canCreate, canUpdate, canDelete } = usePermissions("/masters/indicators")
@@ -77,6 +78,9 @@ export function IndicativePlanIndicatorsTab() {
     const [indicatorForLocation, setIndicatorForLocation] = useState<Indicator | null>(null)
     const [isUsersModalOpen, setIsUsersModalOpen] = useState(false)
     const [indicatorForUsers, setIndicatorForUsers] = useState<Indicator | null>(null)
+
+    // Export State
+    const [exporting, setExporting] = useState(false)
 
     // Table State
     const [items, setItems] = useState<Indicator[]>([])
@@ -129,6 +133,28 @@ export function IndicativePlanIndicatorsTab() {
         setPage(1)
     }, [debouncedSearch])
 
+    async function handleExport() {
+        try {
+            setExporting(true)
+            await requestExport({ system: "SPD", type: "INDICATORS" })
+            addToast({
+                title: "Exportación solicitada",
+                description: "Recibirás una notificación cuando el archivo esté listo para descargar.",
+                color: "primary",
+                timeout: 5000,
+            })
+        } catch {
+            addToast({
+                title: "Error",
+                description: "No se pudo solicitar la exportación. Intenta de nuevo.",
+                color: "danger",
+                timeout: 5000,
+            })
+        } finally {
+            setExporting(false)
+        }
+    }
+
     const topActions: TopAction[] = useMemo(() => {
         const actions: TopAction[] = [
             {
@@ -150,8 +176,17 @@ export function IndicativePlanIndicatorsTab() {
             })
         }
 
+        actions.push({
+            key: "export",
+            label: "Exportar Indicadores",
+            icon: <Download size={16} />,
+            color: "primary",
+            onClick: handleExport,
+            isLoading: exporting,
+        })
+
         return actions
-    }, [fetchIndicators, canCreate])
+    }, [fetchIndicators, canCreate, exporting])
 
     const handleDeleteClick = (indicator: Indicator) => {
         setIndicatorToDelete(indicator)

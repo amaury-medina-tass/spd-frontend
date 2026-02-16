@@ -8,10 +8,11 @@ import { usePermissions } from "@/hooks/usePermissions"
 import { ProjectDetailModal } from "@/components/modals/financial/projects/ProjectDetailModal"
 import { get, PaginatedData, PaginationMeta } from "@/lib/http"
 import { endpoints } from "@/lib/endpoints"
-import { Eye, RefreshCw } from "lucide-react"
+import { Eye, RefreshCw, Download } from "lucide-react"
 import { addToast } from "@heroui/toast"
 import type { Project } from "@/types/financial"
 import { getErrorMessage } from "@/lib/error-codes"
+import { requestExport } from "@/services/exports.service"
 
 const formatCurrency = (amount: string) => {
     return new Intl.NumberFormat("es-CO", {
@@ -105,6 +106,9 @@ export default function FinancialProjectsPage() {
     // Selection State
     const [selectedProject, setSelectedProject] = useState<Project | null>(null)
 
+    // Export State
+    const [exporting, setExporting] = useState(false)
+
     const fetchProjects = useCallback(async () => {
         setLoading(true)
         setError(null)
@@ -177,8 +181,26 @@ export default function FinancialProjectsPage() {
                 color: "default",
                 onClick: fetchProjects,
             },
+            {
+                key: "export",
+                label: "Exportar Proyectos",
+                icon: <Download size={16} />,
+                color: "primary",
+                onClick: async () => {
+                    try {
+                        setExporting(true)
+                        await requestExport({ system: "SPD", type: "PROJECTS" })
+                        addToast({ title: "Exportación solicitada", description: "Recibirás una notificación cuando el archivo esté listo para descargar.", color: "primary", timeout: 5000 })
+                    } catch {
+                        addToast({ title: "Error", description: "No se pudo solicitar la exportación. Intenta de nuevo.", color: "danger", timeout: 5000 })
+                    } finally {
+                        setExporting(false)
+                    }
+                },
+                isLoading: exporting,
+            },
         ]
-    }, [fetchProjects])
+    }, [fetchProjects, exporting])
 
     return (
         <div className="grid gap-4">

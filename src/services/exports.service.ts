@@ -1,7 +1,7 @@
 import { get, post } from "@/lib/http"
 import { endpoints } from "@/lib/endpoints"
 
-export type ExportType = "ACTIVITIES" | "CDP" | "CONTRACTS" | "PROJECTS"
+export type ExportType = "ACTIVITIES" | "CDP" | "CONTRACTS" | "PROJECTS" | "NEEDS" | "PREVIOUS_STUDIES" | "POAI_PPA" | "INDICATORS" | "VARIABLES" | "FINANCIAL_DASHBOARD"
 export type ExportFormat = "XLSX" | "CSV"
 
 export interface CreateExportDto {
