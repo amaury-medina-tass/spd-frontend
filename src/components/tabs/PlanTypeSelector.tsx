@@ -3,8 +3,8 @@
 import { PieChart, ListChecks } from "lucide-react"
 
 interface PlanTypeSelectorProps {
-    selectedTab: string
-    onSelectTab: (tab: string) => void
+    selectedTab: 'indicative' | 'action'
+    onSelectTab: (tab: 'indicative' | 'action') => void
 }
 
 export function PlanTypeSelector({ selectedTab, onSelectTab }: Readonly<PlanTypeSelectorProps>) {

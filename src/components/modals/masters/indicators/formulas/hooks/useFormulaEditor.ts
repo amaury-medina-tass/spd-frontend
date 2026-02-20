@@ -86,15 +86,15 @@ function computeCanAddUnary(lastStep: FormulaStep | undefined): boolean {
 
 const RESTRICTED_FUNCTIONS = new Set(['AVG', 'MAX', 'MIN', 'SUM']);
 
-function isRestrictedFunction(ctx: EditorContext | null): boolean {
+function isRestrictedFunction(ctx: EditorContextItem | null): boolean {
     return ctx?.type === 'function' && RESTRICTED_FUNCTIONS.has(ctx.name || '');
 }
 
-function isIfConditionArg(ctx: EditorContext | null): boolean {
+function isIfConditionArg(ctx: EditorContextItem | null): boolean {
     return ctx?.type === 'function' && ctx.name === 'IF' && ctx.argIndex === 0;
 }
 
-function isIfLastArg(ctx: EditorContext | null): boolean {
+function isIfLastArg(ctx: EditorContextItem | null): boolean {
     return ctx?.type === 'function' && ctx.name === 'IF' && (ctx.argIndex ?? 0) >= 2;
 }
 

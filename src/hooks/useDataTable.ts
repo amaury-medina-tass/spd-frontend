@@ -5,7 +5,7 @@ import { useDebounce } from "@/hooks/useDebounce"
 import type { PaginatedData, PaginationMeta } from "@/lib/http"
 import type { SortDescriptor } from "@/components/tables/DataTable"
 import { getErrorMessage } from "@/lib/error-codes"
-import { requestExport } from "@/services/exports.service"
+import { requestExport, type ExportType } from "@/services/exports.service"
 import { addToast } from "@heroui/toast"
 
 export interface UseDataTableOptions<T> {
@@ -13,7 +13,7 @@ export interface UseDataTableOptions<T> {
     defaultSort?: SortDescriptor
     defaultLimit?: number
     errorMessage?: string
-    exportConfig?: { system: string; type: string }
+    exportConfig?: { system: string; type: ExportType }
     sortFieldMap?: Record<string, string>
     useErrorCodes?: boolean
 }

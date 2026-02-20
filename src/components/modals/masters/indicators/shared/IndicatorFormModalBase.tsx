@@ -13,7 +13,7 @@ interface BaseProps {
     onSuccess: () => void
     title: string
     formId: string
-    schema: z.ZodSchema
+    schema: z.ZodType<any, any, any>
     renderFields: (props: {
         control: Control<any>
         errors: FieldErrors<any>

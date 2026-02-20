@@ -430,7 +430,7 @@ export function VariableAdvancesModal({ isOpen, onClose, indicatorId, indicatorC
                             }}
                         >
                             {communes.map((commune) => (
-                                <SelectItem key={commune.id} value={commune.id}>
+                                <SelectItem key={commune.id}>
                                     {commune.code} - {commune.name}
                                 </SelectItem>
                             ))}

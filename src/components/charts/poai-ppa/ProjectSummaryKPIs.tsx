@@ -25,7 +25,7 @@ function formatCurrencyShort(value: number): string {
     return `$${value}`
 }
 
-function renderExecutionLabel(viewBox: { cx?: number; cy?: number } | undefined, executionRate: number) {
+function renderExecutionLabel(viewBox: Record<string, number | undefined> | undefined, executionRate: number) {
     if (viewBox && "cx" in viewBox && "cy" in viewBox) {
         return (
             <text
@@ -164,7 +164,7 @@ export function ProjectSummaryKPIs({ data }: Readonly<Props>) {
                                     strokeWidth={5}
                                 >
                                     <Label
-                                        content={({ viewBox }) => renderExecutionLabel(viewBox, data.executionRate)}
+                                        content={({ viewBox }) => renderExecutionLabel(viewBox as Record<string, number | undefined> | undefined, data.executionRate)}
                                     />
                                 </Pie>
                             </PieChart>

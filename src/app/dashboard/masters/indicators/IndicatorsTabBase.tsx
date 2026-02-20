@@ -35,9 +35,9 @@ interface IndicatorsTabBaseProps<T extends BaseIndicator> {
     variablesType: "action-plan" | "indicative"
     formulaType?: string
     usersFns: {
-        getUsers: (entityId: string, query: string) => Promise<PaginatedData<any>>
-        assignUser: (entityId: string, userId: string) => Promise<unknown>
-        unassignUser: (entityId: string, userId: string) => Promise<unknown>
+        getUsers: (entityId: string) => Promise<any[]>
+        assignUser: (entityId: string, userId: string) => Promise<any>
+        unassignUser: (entityId: string, userId: string) => Promise<void>
     }
     showProjects?: boolean
     showErrorView?: boolean
@@ -226,7 +226,7 @@ export function IndicatorsTabBase<T extends BaseIndicator>({
                 onSave={handleFormulaSave}
                 title={`Editor de Fórmula - ${indicatorForFormula?.code || ''}`}
                 indicatorId={indicatorForFormula?.id || ''}
-                {...(formulaType ? { type: formulaType } : {})}
+                {...(formulaType ? { type: formulaType as 'action' | 'indicative' } : {})}
             />
 
             <IndicatorLocationModal

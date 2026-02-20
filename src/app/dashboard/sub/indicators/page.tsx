@@ -7,7 +7,7 @@ import { IndicativePlanSubTab } from "./IndicativePlanSubTab"
 import { ActionPlanSubTab } from "./ActionPlanSubTab"
 
 export default function SubModulePage() {
-    const [selectedTab, setSelectedTab] = useState<string>("indicative")
+    const [selectedTab, setSelectedTab] = useState<'indicative' | 'action'>('indicative')
 
     return (
         <div className="grid gap-4">

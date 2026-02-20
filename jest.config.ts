@@ -2,7 +2,7 @@ import type { Config } from "jest";
 
 const config: Config = {
   testEnvironment: "jsdom",
-  roots: ["<rootDir>/src"],
+  roots: ["<rootDir>/test"],
   testMatch: ["**/*.test.ts", "**/*.test.tsx"],
   transform: {
     "^.+\\.tsx?$": [
@@ -15,7 +15,7 @@ const config: Config = {
   },
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",
-    "\\.(css|less|scss|sass)$": "<rootDir>/src/__mocks__/styleMock.js",
+    "\\.(css|less|scss|sass)$": "<rootDir>/test/__mocks__/styleMock.js",
   },
   setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
   collectCoverageFrom: [

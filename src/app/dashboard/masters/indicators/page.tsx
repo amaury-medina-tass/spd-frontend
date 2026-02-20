@@ -9,7 +9,7 @@ import { ActionPlanIndicatorsTab } from "./ActionPlanIndicatorsTab"
 
 export default function MastersIndicatorsPage() {
     const { canRead } = usePermissions("/masters/indicators")
-    const [selectedTab, setSelectedTab] = useState<string>("indicative")
+    const [selectedTab, setSelectedTab] = useState<'indicative' | 'action'>('indicative')
 
     return (
         <div className="grid gap-4">

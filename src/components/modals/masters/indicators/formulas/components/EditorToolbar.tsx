@@ -126,7 +126,7 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
                                         </SelectItem>
                                     ))
                                 ) : (
-                                    <SelectItem key="none" textValue="Sin variables" disabled>
+                                    <SelectItem key="none" textValue="Sin variables" isDisabled>
                                         No hay variables con fórmula
                                     </SelectItem>
                                 )}
