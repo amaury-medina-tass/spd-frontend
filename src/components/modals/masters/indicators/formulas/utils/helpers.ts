@@ -29,31 +29,14 @@ export function serializeFormula(steps: FormulaStep[]): string {
             case 'goal_indicator': return `GOAL_IND[${s.value.idMeta}]`;
             case 'quadrennium_variable': return `QUAD_VAR[${s.value.id}]`;
             case 'quadrennium_indicator': return `QUAD_IND[${s.value.id}]`;
-            case 'advance': return `ADVANCE[${s.value.year}${s.value.months ? `:${s.value.months.join(',')}` : ''}]`;
+            case 'advance': {
+                const monthsPart = s.value.months ? `:${s.value.months.join(',')}` : '';
+                return `ADVANCE[${s.value.year}${monthsPart}]`;
+            }
             default: return '';
         }
     }).join('');
 }
 
-/**
- * Month names for advance selection
- */
-export const MONTHS = [
-    { value: 1, label: 'Enero' },
-    { value: 2, label: 'Febrero' },
-    { value: 3, label: 'Marzo' },
-    { value: 4, label: 'Abril' },
-    { value: 5, label: 'Mayo' },
-    { value: 6, label: 'Junio' },
-    { value: 7, label: 'Julio' },
-    { value: 8, label: 'Agosto' },
-    { value: 9, label: 'Septiembre' },
-    { value: 10, label: 'Octubre' },
-    { value: 11, label: 'Noviembre' },
-    { value: 12, label: 'Diciembre' },
-];
-
-export const ALL_MONTH_ITEMS = [
-    { key: 'ALL', label: 'Todo el año', isSpecial: true },
-    ...MONTHS.map(m => ({ key: m.value.toString(), label: m.label, isSpecial: false }))
-];
+// Re-export from canonical source to avoid duplication
+export { MONTHS, ALL_MONTH_ITEMS } from '../constants/months';

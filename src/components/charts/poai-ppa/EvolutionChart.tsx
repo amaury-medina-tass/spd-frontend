@@ -1,7 +1,7 @@
 "use client"
 
 import { Line, LineChart, CartesianGrid, XAxis, YAxis } from "recharts"
-import { TrendingUp, TrendingDown, Layers } from "lucide-react"
+import { Layers } from "lucide-react"
 import {
     ChartConfig,
     ChartContainer,
@@ -34,11 +34,11 @@ function formatCurrencyShort(value: number): string {
     return `${value}`
 }
 
-export function EvolutionChart({ data }: Props) {
+export function EvolutionChart({ data }: Readonly<Props>) {
     const chartData = data.map(item => ({
         year: item.year.toString(),
-        projectedPoai: parseFloat(item.projectedPoai.toString()),
-        assignedPoai: parseFloat(item.assignedPoai.toString()),
+        projectedPoai: Number.parseFloat(item.projectedPoai.toString()),
+        assignedPoai: Number.parseFloat(item.assignedPoai.toString()),
     }))
 
     return (
@@ -64,6 +64,12 @@ export function EvolutionChart({ data }: Props) {
                             tickLine={false}
                             axisLine={false}
                             tickMargin={10}
+                        />
+                        <YAxis
+                            tickFormatter={formatCurrencyShort}
+                            tickLine={false}
+                            axisLine={false}
+                            width={60}
                         />
                         <ChartTooltip
                             cursor={false}

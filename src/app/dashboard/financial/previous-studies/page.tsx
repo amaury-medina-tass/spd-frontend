@@ -1,17 +1,15 @@
 "use client"
 
-import { Button, Breadcrumbs, BreadcrumbItem, Chip } from "@heroui/react"
-import { useCallback, useEffect, useMemo, useState } from "react"
-import { DataTable, ColumnDef, TopAction, SortDescriptor } from "@/components/tables/DataTable"
-import { useDebounce } from "@/hooks/useDebounce"
+import { Breadcrumbs, BreadcrumbItem, Chip } from "@heroui/react"
+import { useMemo } from "react"
+import { DataTable, ColumnDef, TopAction } from "@/components/tables/DataTable"
 import { usePermissions } from "@/hooks/usePermissions"
-import { get, PaginatedData, PaginationMeta } from "@/lib/http"
+import { useDataTable } from "@/hooks/useDataTable"
+import { get, PaginatedData } from "@/lib/http"
 import { endpoints } from "@/lib/endpoints"
-import { RefreshCw, Download } from "lucide-react"
+import { buildBaseTopActions } from "@/components/tables/tableActions"
 import type { PreviousStudy } from "@/types/financial"
-import { getErrorMessage } from "@/lib/error-codes"
-import { requestExport } from "@/services/exports.service"
-import { addToast } from "@heroui/toast"
+import { TableErrorView, AccessDeniedView } from "@/components/tables/TableStatusViews"
 
 const columns: ColumnDef<PreviousStudy>[] = [
     { key: "code", label: "Código", sortable: true },
@@ -48,96 +46,24 @@ const columns: ColumnDef<PreviousStudy>[] = [
 ]
 
 export default function PreviousStudiesPage() {
-    // Permissions
     const { canRead } = usePermissions("/financial/previous-studies")
 
-    // Data State
-    const [items, setItems] = useState<PreviousStudy[]>([])
-    const [meta, setMeta] = useState<PaginationMeta | null>(null)
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState<string | null>(null)
-
-    // Filter & Pagination State
-    const [page, setPage] = useState(1)
-    const [search, setSearch] = useState("")
-    const [limit, setLimit] = useState(5)
-    const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({
-        column: "createAt",
-        direction: "descending",
+    const {
+        items, loading, error, searchInput, setSearchInput,
+        sortDescriptor, setSortDescriptor, fetchData, exporting, handleExport, paginationProps,
+    } = useDataTable<PreviousStudy>({
+        fetchFn: (qs) => get<PaginatedData<PreviousStudy>>(`${endpoints.financial.previousStudies}?${qs}`),
+        defaultSort: { column: "createAt", direction: "descending" },
+        defaultLimit: 5,
+        errorMessage: "Error al cargar estudios previos",
+        exportConfig: { system: "SPD", type: "PREVIOUS_STUDIES" },
+        useErrorCodes: true,
     })
-    const [searchInput, setSearchInput] = useState("")
-    const debouncedSearch = useDebounce(searchInput, 400)
 
-    // Export State
-    const [exporting, setExporting] = useState(false)
-
-    const fetchStudies = useCallback(async () => {
-        setLoading(true)
-        setError(null)
-        try {
-            const params = new URLSearchParams({
-                page: page.toString(),
-                limit: limit.toString(),
-            })
-            if (search.trim()) {
-                params.set("search", search.trim())
-            }
-
-            if (sortDescriptor.column) {
-                params.set("sortBy", sortDescriptor.column as string)
-                params.set("sortOrder", sortDescriptor.direction === "ascending" ? "ASC" : "DESC")
-            }
-
-            const result = await get<PaginatedData<PreviousStudy>>(`${endpoints.financial.previousStudies}?${params}`)
-            setItems(result.data)
-            setMeta(result.meta)
-        } catch (e: any) {
-            const errorCode = e.data?.errors?.code
-            const message = errorCode ? getErrorMessage(errorCode) : (e.message ?? "Error al cargar estudios previos")
-            setError(message)
-        } finally {
-            setLoading(false)
-        }
-    }, [page, search, limit, sortDescriptor])
-
-    useEffect(() => {
-        fetchStudies()
-    }, [fetchStudies])
-
-    useEffect(() => {
-        setSearch(debouncedSearch)
-        setPage(1)
-    }, [debouncedSearch])
-
-    const topActions: TopAction[] = useMemo(() => {
-        return [
-            {
-                key: "refresh",
-                label: "Actualizar",
-                icon: <RefreshCw size={16} />,
-                color: "default",
-                onClick: fetchStudies,
-            },
-            {
-                key: "export",
-                label: "Exportar Estudios Previos",
-                icon: <Download size={16} />,
-                color: "primary",
-                onClick: async () => {
-                    try {
-                        setExporting(true)
-                        await requestExport({ system: "SPD", type: "PREVIOUS_STUDIES" })
-                        addToast({ title: "Exportación solicitada", description: "Recibirás una notificación cuando el archivo esté listo para descargar.", color: "primary", timeout: 5000 })
-                    } catch {
-                        addToast({ title: "Error", description: "No se pudo solicitar la exportación. Intenta de nuevo.", color: "danger", timeout: 5000 })
-                    } finally {
-                        setExporting(false)
-                    }
-                },
-                isLoading: exporting,
-            },
-        ]
-    }, [fetchStudies, exporting])
+    const topActions: TopAction[] = useMemo(
+        () => buildBaseTopActions(fetchData, handleExport, exporting, "Exportar Estudios Previos"),
+        [fetchData, handleExport, exporting]
+    )
 
     return (
         <div className="grid gap-4">
@@ -147,19 +73,10 @@ export default function PreviousStudiesPage() {
                 <BreadcrumbItem>Estudios Previos</BreadcrumbItem>
             </Breadcrumbs>
 
-            {!canRead ? (
-                <div className="text-center py-16">
-                    <p className="text-xl font-semibold text-danger">Acceso Denegado</p>
-                    <p className="text-default-500 mt-2">No tienes permisos para ver este módulo.</p>
-                </div>
-            ) : error ? (
-                <div className="text-center py-8 text-danger">
-                    <p>{error}</p>
-                    <Button variant="flat" className="mt-2" onPress={fetchStudies}>
-                        Reintentar
-                    </Button>
-                </div>
-            ) : (
+            {canRead && error && (
+                <TableErrorView error={error} onRetry={fetchData} />
+            )}
+            {canRead && !error && (
                 <DataTable
                     items={items}
                     columns={columns}
@@ -169,19 +86,13 @@ export default function PreviousStudiesPage() {
                     onSearchChange={setSearchInput}
                     searchPlaceholder="Buscar estudios previos..."
                     ariaLabel="Tabla de estudios previos"
-                    pagination={meta ? {
-                        page,
-                        totalPages: meta.totalPages,
-                        onChange: setPage,
-                        pageSize: limit,
-                        onPageSizeChange: (newLimit) => {
-                            setLimit(newLimit)
-                            setPage(1)
-                        }
-                    } : undefined}
+                    pagination={paginationProps}
                     sortDescriptor={sortDescriptor}
                     onSortChange={setSortDescriptor}
                 />
+            )}
+            {!canRead && (
+                <AccessDeniedView />
             )}
         </div>
     )

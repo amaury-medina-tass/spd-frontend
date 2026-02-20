@@ -18,9 +18,7 @@ import {
 import {
     Variable as VariableIcon,
     Calculator,
-    Save,
     HelpCircle,
-    Sparkles,
     Copy,
     CheckCircle,
     ChevronLeft
@@ -47,7 +45,7 @@ export function FormulaEditorModal({
     title = "Editor de Fórmulas",
     indicatorId,
     type = 'action'
-}: FormulaEditorModalProps) {
+}: Readonly<FormulaEditorModalProps>) {
     const editor = useFormulaEditor({ indicatorId, isOpen, onSave, type });
 
     const renderToolbar = () => (

@@ -1,5 +1,6 @@
 "use client"
 
+import { formatCurrency } from "@/lib/format-utils"
 import {
     Modal,
     ModalBody,
@@ -40,7 +41,7 @@ export function DetailedActivityModal({
     mode,
     onClose,
     onSave,
-}: Props) {
+}: Readonly<Props>) {
     const [name, setName] = useState("")
     const [observations, setObservations] = useState("")
 
@@ -52,15 +53,6 @@ export function DetailedActivityModal({
     }, [activity])
 
     if (!activity) return null
-
-    const formatCurrency = (amount: string) => {
-        return new Intl.NumberFormat("es-CO", {
-            style: "currency",
-            currency: "COP",
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
-        }).format(parseFloat(amount))
-    }
 
     const formatDateTime = (dateStr: string) => {
         return new Date(dateStr).toLocaleString("es-CO", {

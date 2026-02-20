@@ -1,5 +1,6 @@
 "use client"
 
+import { formatCurrency } from "@/lib/format-utils"
 import {
     Modal,
     ModalBody,
@@ -12,12 +13,10 @@ import {
 } from "@heroui/react"
 import {
     FileText,
-    DollarSign,
     Clock,
     BookOpen,
     ClipboardList,
     Calendar,
-    CheckCircle,
     Building2,
     Activity,
     Wallet
@@ -28,21 +27,12 @@ export function ProjectDetailModal({
     isOpen,
     project,
     onClose,
-}: {
+}: Readonly<{
     isOpen: boolean
     project: Project | null
     onClose: () => void
-}) {
+}>) {
     if (!project) return null
-
-    const formatCurrency = (amount: string) => {
-        return new Intl.NumberFormat("es-CO", {
-            style: "currency",
-            currency: "COP",
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
-        }).format(parseFloat(amount))
-    }
 
     const formatDateTime = (dateStr: string) => {
         return new Date(dateStr).toLocaleString("es-CO", {

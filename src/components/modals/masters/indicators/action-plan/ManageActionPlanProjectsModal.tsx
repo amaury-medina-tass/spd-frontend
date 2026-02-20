@@ -26,7 +26,7 @@ export function ManageActionPlanProjectsModal({
     indicatorId,
     indicatorCode,
     onClose,
-}: Props) {
+}: Readonly<Props>) {
     return (
         <Modal
             isOpen={isOpen}

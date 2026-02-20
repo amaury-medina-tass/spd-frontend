@@ -39,7 +39,7 @@ const formatCurrency = (value: number) =>
         maximumFractionDigits: 1,
     }).format(value)
 
-export function ProjectBudgetChart({ data }: Props) {
+export function ProjectBudgetChart({ data }: Readonly<Props>) {
     const chartData = data.map((p) => ({
         name: p.code,
         currentBudget: p.currentBudget,

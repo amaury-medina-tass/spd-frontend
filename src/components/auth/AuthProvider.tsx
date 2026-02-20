@@ -14,7 +14,7 @@ type AuthContextValue = {
 
 export const AuthContext = createContext<AuthContextValue | null>(null)
 
-export function AuthProvider({children}: {children: React.ReactNode}) {
+export function AuthProvider({children}: Readonly<{children: React.ReactNode}>) {
   const [me, setMe] = useState<SessionMeResponse | null>(null)
   const [loading, setLoading] = useState(true)
 

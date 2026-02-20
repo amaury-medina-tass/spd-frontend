@@ -7,8 +7,6 @@ import {
     ChartContainer,
     ChartTooltip,
     ChartTooltipContent,
-    ChartLegend,
-    ChartLegendContent,
 } from "@/components/ui/chart"
 import { Card, CardBody } from "@heroui/react"
 import type { PoaiPpaSummary } from "@/types/financial"
@@ -27,7 +25,36 @@ function formatCurrencyShort(value: number): string {
     return `$${value}`
 }
 
-export function ProjectSummaryKPIs({ data }: Props) {
+function renderExecutionLabel(viewBox: { cx?: number; cy?: number } | undefined, executionRate: number) {
+    if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+        return (
+            <text
+                x={viewBox.cx}
+                y={viewBox.cy}
+                textAnchor="middle"
+                dominantBaseline="middle"
+            >
+                <tspan
+                    x={viewBox.cx}
+                    y={viewBox.cy}
+                    className="fill-foreground text-lg font-bold"
+                >
+                    {executionRate.toFixed(1)}%
+                </tspan>
+                <tspan
+                    x={viewBox.cx}
+                    y={(viewBox.cy || 0) + 16}
+                    className="fill-muted-foreground text-[10px]"
+                >
+                    Ejecutado
+                </tspan>
+            </text>
+        )
+    }
+    return undefined
+}
+
+export function ProjectSummaryKPIs({ data }: Readonly<Props>) {
     const totalRemaining = Math.max(0, data.totalProjected - data.totalAssigned)
 
     // Config for the donut chart
@@ -137,33 +164,7 @@ export function ProjectSummaryKPIs({ data }: Props) {
                                     strokeWidth={5}
                                 >
                                     <Label
-                                        content={({ viewBox }) => {
-                                            if (viewBox && "cx" in viewBox && "cy" in viewBox) {
-                                                return (
-                                                    <text
-                                                        x={viewBox.cx}
-                                                        y={viewBox.cy}
-                                                        textAnchor="middle"
-                                                        dominantBaseline="middle"
-                                                    >
-                                                        <tspan
-                                                            x={viewBox.cx}
-                                                            y={viewBox.cy}
-                                                            className="fill-foreground text-lg font-bold"
-                                                        >
-                                                            {data.executionRate.toFixed(1)}%
-                                                        </tspan>
-                                                        <tspan
-                                                            x={viewBox.cx}
-                                                            y={(viewBox.cy || 0) + 16}
-                                                            className="fill-muted-foreground text-[10px]"
-                                                        >
-                                                            Ejecutado
-                                                        </tspan>
-                                                    </text>
-                                                )
-                                            }
-                                        }}
+                                        content={({ viewBox }) => renderExecutionLabel(viewBox, data.executionRate)}
                                     />
                                 </Pie>
                             </PieChart>

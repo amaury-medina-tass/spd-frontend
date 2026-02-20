@@ -58,7 +58,7 @@ export function AuditTimeline({
   onFiltersChange,
   onResetFilters,
   onRefresh,
-}: AuditTimelineProps) {
+}: Readonly<AuditTimelineProps>) {
   const observerRef = useRef<IntersectionObserver | null>(null)
   const loadMoreRef = useRef<HTMLDivElement | null>(null)
 
@@ -242,7 +242,7 @@ export function AuditTimeline({
       {/* Stats */}
       {meta && (
         <div className="flex items-center gap-2 text-small text-default-500">
-          <Chip variant="flat" size="sm">{meta.total} registro{meta.total !== 1 ? "s" : ""}</Chip>
+          <Chip variant="flat" size="sm">{meta.total} registro{meta.total === 1 ? "" : "s"}</Chip>
           {filters.sortBy && (
             <span className="text-tiny">
               Ordenado por {SORT_OPTIONS.find(o => o.key === filters.sortBy)?.label?.toLowerCase()} ({filters.sortOrder === "ASC" ? "↑" : "↓"})

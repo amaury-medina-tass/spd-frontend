@@ -19,10 +19,12 @@ import {
 } from "lucide-react"
 import { ReactNode } from "react"
 
+type BadgeSize = "sm" | "md" | "lg"
+
 interface AuditActionBadgeProps {
   action: string
   actionLabel?: string
-  size?: "sm" | "md" | "lg"
+  size?: BadgeSize
 }
 
 const ACTION_ICONS: Record<string, ReactNode> = {
@@ -55,7 +57,7 @@ export function AuditActionBadge({
   action,
   actionLabel,
   size = "sm",
-}: AuditActionBadgeProps) {
+}: Readonly<AuditActionBadgeProps>) {
   const color = getActionColor(action)
   const label = actionLabel || getActionLabel(action)
 
@@ -76,10 +78,10 @@ export function AuditActionBadge({
 
 interface AuditStatusBadgeProps {
   success: boolean
-  size?: "sm" | "md" | "lg"
+  size?: BadgeSize
 }
 
-export function AuditStatusBadge({ success, size = "sm" }: AuditStatusBadgeProps) {
+export function AuditStatusBadge({ success, size = "sm" }: Readonly<AuditStatusBadgeProps>) {
   return (
     <Chip
       color={success ? "success" : "danger"}
@@ -94,10 +96,10 @@ export function AuditStatusBadge({ success, size = "sm" }: AuditStatusBadgeProps
 
 interface AuditEntityBadgeProps {
   entityType: string
-  size?: "sm" | "md" | "lg"
+  size?: BadgeSize
 }
 
-export function AuditEntityBadge({ entityType, size = "sm" }: AuditEntityBadgeProps) {
+export function AuditEntityBadge({ entityType, size = "sm" }: Readonly<AuditEntityBadgeProps>) {
   return (
     <Chip color="default" variant="bordered" size={size}>
       {getEntityTypeLabel(entityType)}

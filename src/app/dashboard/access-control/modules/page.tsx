@@ -1,16 +1,17 @@
 "use client"
 
-import { Button, Breadcrumbs, BreadcrumbItem } from "@heroui/react"
-import { useCallback, useEffect, useMemo, useState } from "react"
-import { DataTable, ColumnDef, RowAction, TopAction, SortDescriptor } from "@/components/tables/DataTable"
-import { useDebounce } from "@/hooks/useDebounce"
+import { useMemo, useState } from "react"
+import { DataTable, ColumnDef, RowAction } from "@/components/tables/DataTable"
 import { usePermissions } from "@/hooks/usePermissions"
+import { useDataTable } from "@/hooks/useDataTable"
 import { ModuleModal } from "@/components/modals/modules/ModuleModal"
 import { ModuleActionsModal } from "@/components/modals/modules/ModuleActionsModal"
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal"
-import { get, post, patch, del, PaginatedData, PaginationMeta } from "@/lib/http"
+import { AccessControlPageShell } from "@/components/layout/AccessControlPageShell"
+import { buildCrudTopActions } from "@/components/tables/tableActions"
+import { get, post, patch, del, PaginatedData } from "@/lib/http"
 import { endpoints } from "@/lib/endpoints"
-import { Pencil, Trash2, Plus, RefreshCw, Zap } from "lucide-react"
+import { Pencil, Trash2, Zap } from "lucide-react"
 import { addToast } from "@heroui/toast"
 import type { Module, ModuleWithActions } from "@/types/module"
 import { getErrorMessage } from "@/lib/error-codes"
@@ -37,23 +38,14 @@ export default function AccessControlModulesPage() {
   // Permissions
   const { canRead, canCreate, canUpdate, canDelete, canAssignAction } = usePermissions("/access-control/modules")
 
-  // Data State
-  const [items, setItems] = useState<Module[]>([])
-  const [meta, setMeta] = useState<PaginationMeta | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  // Filter & Pagination State
-  const [page, setPage] = useState(1)
-  const [search, setSearch] = useState("")
-  const [limit, setLimit] = useState(5)
-  const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({
-    column: "name",
-    direction: "ascending",
+  const { items, loading, error, searchInput, setSearchInput, sortDescriptor, setSortDescriptor, fetchData, paginationProps } = useDataTable<Module>({
+    fetchFn: (params) => get<PaginatedData<Module>>(`${endpoints.accessControl.modules}?${params}`),
+    defaultSort: { column: "name", direction: "ascending" },
+    defaultLimit: 5,
+    useErrorCodes: true,
   })
-  const [searchInput, setSearchInput] = useState("")
-  const debouncedSearch = useDebounce(searchInput, 400)
+
+  const [saving, setSaving] = useState(false)
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -64,44 +56,6 @@ export default function AccessControlModulesPage() {
   const [editing, setEditing] = useState<Module | null>(null)
   const [selectedModuleForActions, setSelectedModuleForActions] = useState<ModuleWithActions | null>(null)
   const [moduleToDelete, setModuleToDelete] = useState<Module | null>(null)
-
-  const fetchModules = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: limit.toString(),
-      })
-      if (search.trim()) {
-        params.set("search", search.trim())
-      }
-
-      if (sortDescriptor.column) {
-        params.set("sortBy", sortDescriptor.column as string)
-        params.set("sortOrder", sortDescriptor.direction === "ascending" ? "ASC" : "DESC")
-      }
-
-      const result = await get<PaginatedData<Module>>(`${endpoints.accessControl.modules}?${params}`)
-      setItems(result.data)
-      setMeta(result.meta)
-    } catch (e: any) {
-      const errorCode = e.data?.errors?.code
-      const message = errorCode ? getErrorMessage(errorCode) : (e.message ?? "Error al cargar módulos")
-      setError(message)
-    } finally {
-      setLoading(false)
-    }
-  }, [page, search, limit, sortDescriptor])
-
-  useEffect(() => {
-    fetchModules()
-  }, [fetchModules])
-
-  useEffect(() => {
-    setSearch(debouncedSearch)
-    setPage(1)
-  }, [debouncedSearch])
 
   const onCreate = () => {
     setEditing(null)
@@ -147,7 +101,7 @@ export default function AccessControlModulesPage() {
       })
       setIsModalOpen(false)
       setEditing(null)
-      fetchModules()
+      fetchData()
     } catch (e: any) {
       const errorCode = e.data?.errors?.code
       const message = errorCode ? getErrorMessage(errorCode) : "Error al guardar el módulo"
@@ -210,7 +164,7 @@ export default function AccessControlModulesPage() {
       await del(`${endpoints.accessControl.modules}/${moduleToDelete.id}`)
       setIsDeleteModalOpen(false)
       setModuleToDelete(null)
-      fetchModules()
+      fetchData()
       addToast({ title: "Módulo eliminado correctamente", color: "success" })
     } catch (e: any) {
       const errorCode = e.data?.errors?.code
@@ -228,7 +182,7 @@ export default function AccessControlModulesPage() {
         key: "edit",
         label: "Editar",
         icon: <Pencil size={16} />,
-        onClick: onEdit,
+        onClick: (item) => void onEdit(item),
       })
     }
     if (canAssignAction) {
@@ -236,7 +190,7 @@ export default function AccessControlModulesPage() {
         key: "actions",
         label: "Gestionar Acciones",
         icon: <Zap size={16} />,
-        onClick: onManageActions,
+        onClick: (item) => void onManageActions(item),
       })
     }
     if (canDelete) {
@@ -251,113 +205,66 @@ export default function AccessControlModulesPage() {
     return actions
   }, [canUpdate, canDelete, canAssignAction])
 
-  const topActions: TopAction[] = useMemo(() => {
-    const actions: TopAction[] = [
-      {
-        key: "refresh",
-        label: "Actualizar",
-        icon: <RefreshCw size={16} />,
-        color: "default",
-        onClick: fetchModules,
-      },
-    ]
-    if (canCreate) {
-      actions.push({
-        key: "create",
-        label: "Crear",
-        icon: <Plus size={16} />,
-        color: "primary",
-        onClick: onCreate,
-      })
-    }
-    return actions
-  }, [canCreate, fetchModules])
+  const topActions = useMemo(() => buildCrudTopActions(fetchData, canCreate, onCreate), [canCreate, fetchData])
 
   const title = useMemo(() => (editing ? "Editar módulo" : "Crear módulo"), [editing])
 
   return (
-    <div className="grid gap-4">
-      <Breadcrumbs>
-        <BreadcrumbItem>Inicio</BreadcrumbItem>
-        <BreadcrumbItem>Control de Acceso</BreadcrumbItem>
-        <BreadcrumbItem>Módulos</BreadcrumbItem>
-      </Breadcrumbs>
-
-      {!canRead ? (
-        <div className="text-center py-16">
-          <p className="text-xl font-semibold text-danger">Acceso Denegado</p>
-          <p className="text-default-500 mt-2">No tienes permisos para ver este módulo.</p>
-        </div>
-      ) : error ? (
-        <div className="text-center py-8 text-danger">
-          <p>{error}</p>
-          <Button variant="flat" className="mt-2" onPress={fetchModules}>
-            Reintentar
-          </Button>
-        </div>
-      ) : (
-        <DataTable
-          items={items}
-          columns={columns}
-          isLoading={loading}
-          rowActions={rowActions}
-          topActions={topActions}
-          searchValue={searchInput}
-          onSearchChange={setSearchInput}
-          searchPlaceholder="Buscar módulos..."
-          ariaLabel="Tabla de módulos"
-          pagination={meta ? {
-            page,
-            totalPages: meta.totalPages,
-            onChange: setPage,
-            pageSize: limit,
-            onPageSizeChange: (newLimit) => {
-              setLimit(newLimit)
-              setPage(1)
-            }
-          } : undefined}
-          sortDescriptor={sortDescriptor}
-          onSortChange={setSortDescriptor}
+    <AccessControlPageShell breadcrumbLabel="Módulos" canRead={canRead} error={error} onRetry={fetchData} modals={
+      <>
+        <ModuleModal
+          isOpen={isModalOpen}
+          title={title}
+          initial={editing}
+          isLoading={saving}
+          onClose={() => {
+            setIsModalOpen(false)
+            setEditing(null)
+          }}
+          onSave={onSave}
         />
-      )}
 
-      <ModuleModal
-        isOpen={isModalOpen}
-        title={title}
-        initial={editing}
-        isLoading={saving}
-        onClose={() => {
-          setIsModalOpen(false)
-          setEditing(null)
-        }}
-        onSave={onSave}
-      />
+        <ModuleActionsModal
+          isOpen={isActionsModalOpen}
+          module={selectedModuleForActions}
+          isLoading={saving}
+          onClose={() => {
+            setIsActionsModalOpen(false)
+            setSelectedModuleForActions(null)
+          }}
+          onAssign={onAssignAction}
+          onUnassign={onUnassignAction}
+        />
 
-      <ModuleActionsModal
-        isOpen={isActionsModalOpen}
-        module={selectedModuleForActions}
-        isLoading={saving}
-        onClose={() => {
-          setIsActionsModalOpen(false)
-          setSelectedModuleForActions(null)
-        }}
-        onAssign={onAssignAction}
-        onUnassign={onUnassignAction}
+        <ConfirmationModal
+          isOpen={isDeleteModalOpen}
+          onClose={() => {
+            setIsDeleteModalOpen(false)
+            setModuleToDelete(null)
+          }}
+          onConfirm={onConfirmDelete}
+          title="Eliminar Módulo"
+          description={`¿Estás seguro que deseas eliminar el módulo "${moduleToDelete?.name}"? Esta acción no se puede deshacer.`}
+          confirmText="Eliminar"
+          confirmColor="danger"
+          isLoading={saving}
+        />
+      </>
+    }>
+      <DataTable
+        items={items}
+        columns={columns}
+        isLoading={loading}
+        rowActions={rowActions}
+        topActions={topActions}
+        searchValue={searchInput}
+        onSearchChange={setSearchInput}
+        searchPlaceholder="Buscar módulos..."
+        ariaLabel="Tabla de módulos"
+        pagination={paginationProps}
+        sortDescriptor={sortDescriptor}
+        onSortChange={setSortDescriptor}
       />
-
-      <ConfirmationModal
-        isOpen={isDeleteModalOpen}
-        onClose={() => {
-          setIsDeleteModalOpen(false)
-          setModuleToDelete(null)
-        }}
-        onConfirm={onConfirmDelete}
-        title="Eliminar Módulo"
-        description={`¿Estás seguro que deseas eliminar el módulo "${moduleToDelete?.name}"? Esta acción no se puede deshacer.`}
-        confirmText="Eliminar"
-        confirmColor="danger"
-        isLoading={saving}
-      />
-    </div>
+    </AccessControlPageShell>
   )
 }

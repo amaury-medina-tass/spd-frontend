@@ -170,7 +170,7 @@ export default function ForgotPasswordPage() {
                                 onValueChange={setConfirmPassword}
                                 type={isConfirmVisible ? "text" : "password"}
                                 isRequired
-                                errorMessage={!passwordsMatch ? "Las contraseñas no coinciden" : ""}
+                                errorMessage={passwordsMatch ? "" : "Las contraseñas no coinciden"}
                                 isInvalid={!passwordsMatch}
                                 endContent={
                                     <Button isIconOnly size="sm" variant="light" onPress={toggleConfirmVisibility}>

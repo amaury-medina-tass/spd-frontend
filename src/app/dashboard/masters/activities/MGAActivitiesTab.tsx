@@ -1,30 +1,22 @@
 "use client"
 
-import { Button } from "@heroui/react"
-import { useCallback, useEffect, useMemo, useState } from "react"
-import { DataTable, ColumnDef, RowAction, TopAction, SortDescriptor } from "@/components/tables/DataTable"
-import { useDebounce } from "@/hooks/useDebounce"
+import { useMemo, useState } from "react"
+import { DataTable, ColumnDef, RowAction, TopAction } from "@/components/tables/DataTable"
 import { usePermissions } from "@/hooks/usePermissions"
-import { get, PaginatedData, PaginationMeta } from "@/lib/http"
+import { useDataTable } from "@/hooks/useDataTable"
+import { get } from "@/lib/http"
 import { endpoints } from "@/lib/endpoints"
-import { RefreshCw, Eye, Link2, Plus, Pencil, Download } from "lucide-react"
+import { Eye, Link2, Plus, Pencil } from "lucide-react"
+import { buildBaseTopActions } from "@/components/tables/tableActions"
 import { addToast } from "@heroui/toast"
 import type { MGAActivity } from "@/types/activity"
 import { getErrorMessage } from "@/lib/error-codes"
-import { requestExport } from "@/services/exports.service"
 import { MGAActivityModal } from "@/components/modals/masters/activities/mga/MGAActivityModal"
 import { CreateMGAActivityModal } from "@/components/modals/masters/activities/mga/CreateMGAActivityModal"
 import { ManageDetailedActivitiesModal } from "@/components/modals/masters/activities/mga/ManageDetailedActivitiesModal"
 import { getMGAActivities } from "@/services/masters/mga-activities.service"
-
-const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("es-CO", {
-        style: "currency",
-        currency: "COP",
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-    }).format(amount)
-}
+import { formatCurrency } from "@/lib/format-utils"
+import { TableErrorView, AccessDeniedView } from "@/components/tables/TableStatusViews"
 
 // Columns for MGA Activities
 const mgaActivityColumns: ColumnDef<MGAActivity>[] = [
@@ -114,107 +106,21 @@ export function MGAActivitiesTab() {
     const [selectedActivity, setSelectedActivity] = useState<MGAActivity | null>(null)
     const [isEditMode, setIsEditMode] = useState(false)
 
-    // Export State
-    const [exporting, setExporting] = useState(false)
-
-    // Table State
-    const [items, setItems] = useState<MGAActivity[]>([])
-    const [meta, setMeta] = useState<PaginationMeta | null>(null)
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState<string | null>(null)
-    const [page, setPage] = useState(1)
-    const [search, setSearch] = useState("")
-    const [limit, setLimit] = useState(5)
-    const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({
-        column: "code",
-        direction: "ascending",
+    const {
+        items, loading, error, searchInput, setSearchInput,
+        sortDescriptor, setSortDescriptor, fetchData, exporting, handleExport, paginationProps,
+    } = useDataTable<MGAActivity>({
+        fetchFn: (qs) => getMGAActivities(qs),
+        defaultSort: { column: "code", direction: "ascending" },
+        defaultLimit: 5,
+        errorMessage: "Error al cargar actividades MGA",
+        exportConfig: { system: "SPD", type: "ACTIVITIES" },
+        sortFieldMap: { "project.name": "project", "product.productName": "product" },
+        useErrorCodes: true,
     })
-    const [searchInput, setSearchInput] = useState("")
-    const debouncedSearch = useDebounce(searchInput, 400)
-
-    const fetchActivities = useCallback(async () => {
-        setLoading(true)
-        setError(null)
-        try {
-            const params = new URLSearchParams({
-                page: page.toString(),
-                limit: limit.toString(),
-            })
-            if (search.trim()) {
-                params.set("search", search.trim())
-            }
-
-            if (sortDescriptor.column) {
-                let sortBy = sortDescriptor.column as string
-                if (sortBy === "project.name") sortBy = "project"
-                if (sortBy === "product.productName") sortBy = "product"
-
-                params.set("sortBy", sortBy)
-                params.set("sortOrder", sortDescriptor.direction === "ascending" ? "ASC" : "DESC")
-            }
-
-            const result = await getMGAActivities(params.toString())
-            setItems(result.data)
-            setMeta(result.meta)
-        } catch (e: any) {
-            const errorCode = e.data?.errors?.code
-            const message = errorCode ? getErrorMessage(errorCode) : (e.message ?? "Error al cargar actividades MGA")
-            setError(message)
-        } finally {
-            setLoading(false)
-        }
-    }, [page, search, limit, sortDescriptor])
-
-    useEffect(() => {
-        fetchActivities()
-    }, [fetchActivities])
-
-    useEffect(() => {
-        setSearch(debouncedSearch)
-        setPage(1)
-    }, [debouncedSearch])
-
-    async function handleExport() {
-        try {
-            setExporting(true)
-            await requestExport({ system: "SPD", type: "ACTIVITIES" })
-            addToast({
-                title: "Exportación solicitada",
-                description: "Recibirás una notificación cuando el archivo esté listo para descargar.",
-                color: "primary",
-                timeout: 5000,
-            })
-        } catch {
-            addToast({
-                title: "Error",
-                description: "No se pudo solicitar la exportación. Intenta de nuevo.",
-                color: "danger",
-                timeout: 5000,
-            })
-        } finally {
-            setExporting(false)
-        }
-    }
 
     const topActions: TopAction[] = useMemo(() => {
-        const actions: TopAction[] = [
-            {
-                key: "refresh",
-                label: "Actualizar",
-                icon: <RefreshCw size={16} />,
-                color: "default",
-                onClick: fetchActivities,
-            },
-            {
-                key: "export",
-                label: "Exportar Actividades",
-                icon: <Download size={16} />,
-                color: "primary",
-                onClick: handleExport,
-                isLoading: exporting,
-            },
-        ]
-
+        const actions = buildBaseTopActions(fetchData, handleExport, exporting, "Exportar Actividades")
         if (canCreate) {
             actions.push({
                 key: "create",
@@ -224,9 +130,8 @@ export function MGAActivitiesTab() {
                 onClick: () => setIsCreateModalOpen(true),
             })
         }
-
         return actions
-    }, [fetchActivities, canCreate, exporting])
+    }, [fetchData, canCreate, exporting, handleExport])
 
     // View handler
     const onViewActivity = async (activity: MGAActivity) => {
@@ -248,7 +153,7 @@ export function MGAActivitiesTab() {
                 key: "view",
                 label: "Ver Detalles",
                 icon: <Eye size={16} />,
-                onClick: onViewActivity,
+                onClick: (item) => void onViewActivity(item),
             },
         ]
 
@@ -258,17 +163,19 @@ export function MGAActivitiesTab() {
                     key: "edit",
                     label: "Editar",
                     icon: <Pencil size={16} />,
-                    onClick: async (activity) => {
-                        try {
-                            const fullActivity = await get<MGAActivity>(`${endpoints.masters.mgaActivities}/${activity.id}`)
-                            setSelectedActivity(fullActivity)
-                            setIsEditMode(true)
-                            setIsModalOpen(true)
-                        } catch (e: any) {
-                            const errorCode = e.data?.errors?.code
-                            const message = errorCode ? getErrorMessage(errorCode) : "Error al obtener detalles de la actividad"
-                            addToast({ title: message, color: "danger" })
-                        }
+                    onClick: (activity) => {
+                        void (async () => {
+                            try {
+                                const fullActivity = await get<MGAActivity>(`${endpoints.masters.mgaActivities}/${activity.id}`)
+                                setSelectedActivity(fullActivity)
+                                setIsEditMode(true)
+                                setIsModalOpen(true)
+                            } catch (e: any) {
+                                const errorCode = e.data?.errors?.code
+                                const message = errorCode ? getErrorMessage(errorCode) : "Error al obtener detalles de la actividad"
+                                addToast({ title: message, color: "danger" })
+                            }
+                        })()
                     },
                 },
                 {
@@ -286,25 +193,8 @@ export function MGAActivitiesTab() {
         return actions
     }, [canUpdate])
 
-    if (error) {
-        return (
-            <div className="text-center py-8 text-danger">
-                <p>{error}</p>
-                <Button variant="flat" className="mt-2" onPress={fetchActivities}>
-                    Reintentar
-                </Button>
-            </div>
-        )
-    }
-
-    if (!canRead) {
-        return (
-            <div className="text-center py-16">
-                <p className="text-xl font-semibold text-danger">Acceso Denegado</p>
-                <p className="text-default-500 mt-2">No tienes permisos para ver este módulo.</p>
-            </div>
-        )
-    }
+    if (error) return <TableErrorView error={error} onRetry={fetchData} />
+    if (!canRead) return <AccessDeniedView />
 
     return (
         <>
@@ -318,16 +208,7 @@ export function MGAActivitiesTab() {
                 onSearchChange={setSearchInput}
                 searchPlaceholder="Buscar actividades MGA..."
                 ariaLabel="Tabla de actividades MGA"
-                pagination={meta ? {
-                    page: page,
-                    totalPages: meta.totalPages,
-                    onChange: setPage,
-                    pageSize: limit,
-                    onPageSizeChange: (newLimit) => {
-                        setLimit(newLimit)
-                        setPage(1)
-                    }
-                } : undefined}
+                pagination={paginationProps}
                 sortDescriptor={sortDescriptor}
                 onSortChange={setSortDescriptor}
             />
@@ -340,14 +221,14 @@ export function MGAActivitiesTab() {
                     setSelectedActivity(null)
                     setIsEditMode(false)
                 }}
-                onSuccess={fetchActivities}
+                onSuccess={fetchData}
                 initialEditMode={isEditMode}
             />
 
             <CreateMGAActivityModal
                 isOpen={isCreateModalOpen}
                 onClose={() => setIsCreateModalOpen(false)}
-                onSuccess={fetchActivities}
+                onSuccess={fetchData}
             />
 
             <ManageDetailedActivitiesModal
@@ -358,7 +239,7 @@ export function MGAActivitiesTab() {
                     setIsManageModalOpen(false)
                     setSelectedActivity(null)
                 }}
-                onSuccess={fetchActivities}
+                onSuccess={fetchData}
             />
         </>
     )

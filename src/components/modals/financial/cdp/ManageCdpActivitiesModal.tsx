@@ -28,7 +28,7 @@ export function ManageCdpActivitiesModal({
     positionNumber,
     onClose,
     onSuccess,
-}: Props) {
+}: Readonly<Props>) {
     const handleClose = () => {
         onSuccess?.()
         onClose()

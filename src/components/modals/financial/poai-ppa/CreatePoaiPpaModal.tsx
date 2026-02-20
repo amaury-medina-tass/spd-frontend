@@ -44,7 +44,7 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>
 
-export function CreatePoaiPpaModal({ isOpen, isLoading, onClose, onSave }: Props) {
+export function CreatePoaiPpaModal({ isOpen, isLoading, onClose, onSave }: Readonly<Props>) {
     const [projects, setProjects] = useState<ProjectSelectItem[]>([])
     const [loadingProjects, setLoadingProjects] = useState(false)
 
@@ -147,7 +147,7 @@ export function CreatePoaiPpaModal({ isOpen, isLoading, onClose, onSave }: Props
                                     selectedKeys={field.value ? [field.value.toString()] : []}
                                     onSelectionChange={(keys) => {
                                         const val = Array.from(keys)[0]?.toString()
-                                        if (val) setValue("year", parseInt(val), { shouldValidate: true })
+                                        if (val) setValue("year", Number.parseInt(val), { shouldValidate: true })
                                     }}
                                     isInvalid={!!errors.year}
                                     errorMessage={errors.year?.message}

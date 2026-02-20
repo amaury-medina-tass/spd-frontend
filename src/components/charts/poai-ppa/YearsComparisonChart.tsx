@@ -1,6 +1,6 @@
 "use client"
 
-import { Bar, BarChart, CartesianGrid, XAxis, Tooltip, Legend, ResponsiveContainer } from "recharts"
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
 import { Monitor } from "lucide-react"
 import {
     ChartConfig,
@@ -34,11 +34,11 @@ function formatCurrency(value: number) {
     return `$${value}`
 }
 
-export function YearsComparisonChart({ data }: Props) {
+export function YearsComparisonChart({ data }: Readonly<Props>) {
     const chartData = data.map(item => ({
         year: item.year.toString(),
-        projectedPoai: parseFloat(item.projectedPoai),
-        assignedPoai: parseFloat(item.assignedPoai),
+        projectedPoai: Number.parseFloat(item.projectedPoai),
+        assignedPoai: Number.parseFloat(item.assignedPoai),
     }))
 
     return (
@@ -63,6 +63,12 @@ export function YearsComparisonChart({ data }: Props) {
                             tickLine={false}
                             axisLine={false}
                             tickMargin={10}
+                        />
+                        <YAxis
+                            tickFormatter={formatCurrency}
+                            tickLine={false}
+                            axisLine={false}
+                            width={70}
                         />
                         <ChartTooltip
                             cursor={false}

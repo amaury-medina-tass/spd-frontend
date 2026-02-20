@@ -4,17 +4,16 @@ import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Selec
 import { useCallback, useEffect, useState, useMemo } from "react"
 import { IndicatorDetailedData, IndicatorDetailedVariable } from "@/types/sub/indicator-dashboard"
 import { getActionIndicatorDetailed, getIndicativeIndicatorDetailed } from "@/services/sub/variable-advances.service"
-import { Calendar, Target, TrendingUp, BarChart3, Loader2, Variable, Activity } from "lucide-react"
+import { Calendar, Target, TrendingUp, BarChart3, Variable, Activity } from "lucide-react"
 import { addToast } from "@heroui/toast"
-import { Line, LineChart, CartesianGrid, XAxis, YAxis, RadialBarChart, RadialBar, PolarAngleAxis } from "recharts"
+import { RadialBarChart, RadialBar, PolarAngleAxis } from "recharts"
 import {
     ChartConfig,
     ChartContainer,
-    ChartTooltip,
-    ChartTooltipContent,
-    ChartLegend,
-    ChartLegendContent,
 } from "@/components/ui/chart"
+import { DASHBOARD_MONTHS, DASHBOARD_MONTHS_FULL } from "@/config/dashboard-chart-config"
+import { AdvancesLineChart } from "@/components/charts/AdvancesLineChart"
+import { DashboardLoadingView, DashboardEmptyView } from "@/components/modals/shared/DashboardStatusViews"
 
 interface IndicatorDashboardModalProps {
     isOpen: boolean
@@ -23,16 +22,6 @@ interface IndicatorDashboardModalProps {
     indicatorCode?: string
     type: "action" | "indicative"
 }
-
-const MONTHS = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
-const MONTHS_FULL = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
-
-const advancesChartConfig = {
-    value: {
-        label: "Avance",
-        color: "hsl(var(--chart-1))",
-    },
-} satisfies ChartConfig
 
 const goalsChartConfig = {
     goal: {
@@ -51,13 +40,12 @@ const variableChartConfig = {
     },
 } satisfies ChartConfig
 
-export function IndicatorDashboardModal({ isOpen, onClose, indicatorId, indicatorCode, type }: IndicatorDashboardModalProps) {
+export function IndicatorDashboardModal({ isOpen, onClose, indicatorId, indicatorCode, type }: Readonly<IndicatorDashboardModalProps>) {
     const currentYear = new Date().getFullYear()
     const [year, setYear] = useState<string>(currentYear.toString())
     const [month, setMonth] = useState<string>("all")
     const [loading, setLoading] = useState(false)
     const [data, setData] = useState<IndicatorDetailedData | null>(null)
-    const [error, setError] = useState<string | null>(null)
 
     const years = useMemo(() => {
         const yearsArray = Array.from({ length: 11 }, (_, i) => new Date().getFullYear() - 5 + i)
@@ -67,14 +55,13 @@ export function IndicatorDashboardModal({ isOpen, onClose, indicatorId, indicato
     const months = useMemo(() => {
         return [
             { key: "all", label: "Todos" },
-            ...MONTHS_FULL.map((m, i) => ({ key: (i + 1).toString(), label: m }))
+            ...DASHBOARD_MONTHS_FULL.map((m, i) => ({ key: (i + 1).toString(), label: m }))
         ]
     }, [])
 
     const fetchData = useCallback(async () => {
         if (!indicatorId) return
         setLoading(true)
-        setError(null)
         try {
             let result: IndicatorDetailedData
             if (type === "action") {
@@ -85,7 +72,6 @@ export function IndicatorDashboardModal({ isOpen, onClose, indicatorId, indicato
             setData(result)
         } catch (e: any) {
             const msg = e.message || "Error al cargar datos del indicador"
-            setError(msg)
             addToast({ title: "Error", description: msg, color: "danger" })
         } finally {
             setLoading(false)
@@ -109,7 +95,7 @@ export function IndicatorDashboardModal({ isOpen, onClose, indicatorId, indicato
     }, [data])
 
     const totalGoal = useMemo(() => {
-        if (!data || !data.goals.length) return 0
+        if (!data?.goals.length) return 0
         return data.goals.reduce((sum, g) => sum + g.value, 0)
     }, [data])
 
@@ -122,7 +108,7 @@ export function IndicatorDashboardModal({ isOpen, onClose, indicatorId, indicato
     const advancesChartData = useMemo(() => {
         if (!data) return []
         return data.advances.map(adv => ({
-            month: MONTHS[adv.month - 1],
+            month: DASHBOARD_MONTHS[adv.month - 1],
             value: adv.value,
         }))
     }, [data])
@@ -134,6 +120,10 @@ export function IndicatorDashboardModal({ isOpen, onClose, indicatorId, indicato
             value: g.value,
         }))
     }, [data])
+
+    let progressColorClass = "text-danger";
+    if (progressPercentage >= 100) progressColorClass = "text-success";
+    else if (progressPercentage >= 50) progressColorClass = "text-warning";
 
     return (
         <Modal
@@ -189,16 +179,10 @@ export function IndicatorDashboardModal({ isOpen, onClose, indicatorId, indicato
                                 </Select>
                             </div>
 
-                            {loading ? (
-                                <div className="flex justify-center items-center py-16">
-                                    <Loader2 className="animate-spin h-10 w-10 text-primary" />
-                                </div>
-                            ) : !data ? (
-                                <div className="flex flex-col items-center justify-center py-16 text-default-400 border rounded-xl border-dashed">
-                                    <BarChart3 size={40} className="mb-3 opacity-50" />
-                                    <p className="text-sm font-medium">No hay datos disponibles</p>
-                                </div>
-                            ) : (
+                            {loading && (
+                                <DashboardLoadingView />
+                            )}
+                            {!loading && data && (
                                 <div className="flex flex-col gap-6">
                                     {/* Indicator Info */}
                                     <Card className="border border-divider shadow-sm">
@@ -224,7 +208,7 @@ export function IndicatorDashboardModal({ isOpen, onClose, indicatorId, indicato
                                                     </div>
                                                     <div className="text-center">
                                                         <p className="text-xs text-default-400">Cumplimiento</p>
-                                                        <p className={`text-xl font-bold ${progressPercentage >= 100 ? "text-success" : progressPercentage >= 50 ? "text-warning" : "text-danger"}`}>
+                                                        <p className={`text-xl font-bold ${progressColorClass}`}>
                                                             {progressPercentage.toFixed(0)}%
                                                         </p>
                                                     </div>
@@ -242,42 +226,7 @@ export function IndicatorDashboardModal({ isOpen, onClose, indicatorId, indicato
                                                 <h4 className="font-semibold text-sm">Avances Mensuales</h4>
                                             </CardHeader>
                                             <CardBody className="px-4 pb-4 pt-0">
-                                                {advancesChartData.length === 0 ? (
-                                                    <div className="h-[200px] flex items-center justify-center text-default-400 text-sm italic">
-                                                        Sin avances registrados
-                                                    </div>
-                                                ) : (
-                                                    <ChartContainer config={advancesChartConfig} className="h-[200px] w-full">
-                                                        <LineChart data={advancesChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                                                            <CartesianGrid vertical={false} strokeDasharray="3 3" />
-                                                            <XAxis
-                                                                dataKey="month"
-                                                                tickLine={false}
-                                                                axisLine={false}
-                                                                tickMargin={8}
-                                                                fontSize={12}
-                                                            />
-                                                            <YAxis
-                                                                tickLine={false}
-                                                                axisLine={false}
-                                                                tickMargin={8}
-                                                                fontSize={12}
-                                                            />
-                                                            <ChartTooltip
-                                                                cursor={false}
-                                                                content={<ChartTooltipContent indicator="line" />}
-                                                            />
-                                                            <Line
-                                                                type="monotone"
-                                                                dataKey="value"
-                                                                stroke="var(--color-value)"
-                                                                strokeWidth={2}
-                                                                dot={{ r: 4, fill: "var(--color-value)" }}
-                                                                activeDot={{ r: 6 }}
-                                                            />
-                                                        </LineChart>
-                                                    </ChartContainer>
-                                                )}
+                                                <AdvancesLineChart data={advancesChartData} />
                                             </CardBody>
                                         </Card>
 
@@ -367,6 +316,9 @@ export function IndicatorDashboardModal({ isOpen, onClose, indicatorId, indicato
                                     )}
                                 </div>
                             )}
+                            {!loading && !data && (
+                                <DashboardEmptyView />
+                            )}
                         </ModalBody>
                         <ModalFooter className="border-t border-divider">
                             <Button color="danger" variant="light" onPress={onCloseModal}>
@@ -381,10 +333,10 @@ export function IndicatorDashboardModal({ isOpen, onClose, indicatorId, indicato
 }
 
 // Sub-component for Variable Detail
-function VariableDetailCard({ variable }: { variable: IndicatorDetailedVariable }) {
+function VariableDetailCard({ variable }: Readonly<{ variable: IndicatorDetailedVariable }>) {
     const chartData = useMemo(() => {
         return variable.advances.map(adv => ({
-            month: MONTHS[adv.month - 1],
+            month: DASHBOARD_MONTHS[adv.month - 1],
             value: adv.value,
         }))
     }, [variable.advances])
@@ -419,36 +371,13 @@ function VariableDetailCard({ variable }: { variable: IndicatorDetailedVariable 
                         <h5 className="font-medium text-sm">Avances de la Variable</h5>
                     </CardHeader>
                     <CardBody className="px-4 pb-4 pt-0">
-                        <ChartContainer config={variableChartConfig} className="h-[180px] w-full">
-                            <LineChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                                <CartesianGrid vertical={false} strokeDasharray="3 3" />
-                                <XAxis
-                                    dataKey="month"
-                                    tickLine={false}
-                                    axisLine={false}
-                                    tickMargin={8}
-                                    fontSize={11}
-                                />
-                                <YAxis
-                                    tickLine={false}
-                                    axisLine={false}
-                                    tickMargin={8}
-                                    fontSize={11}
-                                />
-                                <ChartTooltip
-                                    cursor={false}
-                                    content={<ChartTooltipContent indicator="line" />}
-                                />
-                                <Line
-                                    type="monotone"
-                                    dataKey="value"
-                                    stroke="var(--color-value)"
-                                    strokeWidth={2}
-                                    dot={{ r: 4, fill: "var(--color-value)" }}
-                                    activeDot={{ r: 6 }}
-                                />
-                            </LineChart>
-                        </ChartContainer>
+                        <AdvancesLineChart
+                            data={chartData}
+                            config={variableChartConfig}
+                            height="h-[180px]"
+                            fontSize={11}
+                            emptyText="Sin avances registrados para esta variable"
+                        />
                     </CardBody>
                 </Card>
             ) : (

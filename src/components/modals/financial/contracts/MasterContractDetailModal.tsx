@@ -1,5 +1,6 @@
 "use client"
 
+import { formatCurrency } from "@/lib/format-utils"
 import {
     Modal,
     ModalBody,
@@ -25,11 +26,11 @@ export function MasterContractDetailModal({
     isOpen,
     contract,
     onClose,
-}: {
+}: Readonly<{
     isOpen: boolean
     contract: MasterContract | null
     onClose: () => void
-}) {
+}>) {
     if (!contract) return null
 
     const formatDate = (dateStr: string | null) => {
@@ -49,14 +50,6 @@ export function MasterContractDetailModal({
             hour: "2-digit",
             minute: "2-digit",
         })
-    }
-
-    const formatCurrency = (amount: string) => {
-        return new Intl.NumberFormat("es-CO", {
-            style: "currency",
-            currency: "COP",
-            minimumFractionDigits: 0,
-        }).format(parseFloat(amount))
     }
 
     const getStateColor = (state: string): "success" | "warning" | "danger" | "default" => {

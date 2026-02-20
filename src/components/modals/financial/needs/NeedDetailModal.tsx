@@ -1,5 +1,6 @@
 "use client"
 
+import { formatCurrency } from "@/lib/format-utils"
 import {
     Modal,
     ModalBody,
@@ -25,21 +26,12 @@ export function NeedDetailModal({
     isOpen,
     need,
     onClose,
-}: {
+}: Readonly<{
     isOpen: boolean
     need: FinancialNeed | null
     onClose: () => void
-}) {
+}>) {
     if (!need) return null
-
-    const formatCurrency = (amount: string) => {
-        return new Intl.NumberFormat("es-CO", {
-            style: "currency",
-            currency: "COP",
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
-        }).format(parseFloat(amount))
-    }
 
     const formatDateTime = (dateStr: string) => {
         return new Date(dateStr).toLocaleString("es-CO", {

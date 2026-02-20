@@ -2,7 +2,7 @@
 
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Select, SelectItem, Tabs, Tab, Table, TableHeader, TableColumn, TableBody, TableRow, TableCell, Pagination, Input, Textarea, Tooltip, Chip } from "@heroui/react"
 import { useCallback, useEffect, useState } from "react"
-import { VariableWithAdvances } from "@/types/sub/variable-advances"
+import { VariableWithAdvances, VariableAdvance } from "@/types/sub/variable-advances"
 import { getVariableAdvancesByActionIndicator, getVariableAdvancesByIndicativeIndicator, createVariableAdvance } from "@/services/sub/variable-advances.service"
 import { getCommunesSelect, Commune } from "@/services/masters/communes.service"
 import { Calendar, Search, Eye, Plus, Loader2 } from "lucide-react"
@@ -20,7 +20,47 @@ interface VariableAdvancesModalProps {
 
 const MONTHS = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
 
-export function VariableAdvancesModal({ isOpen, onClose, indicatorId, indicatorCode, type }: VariableAdvancesModalProps) {
+interface AdvanceRowProps {
+    advance: VariableAdvance
+    onViewObservations: (obs: string) => void
+}
+
+function AdvanceRow({ advance, onViewObservations }: Readonly<AdvanceRowProps>) {
+    return (
+        <TableRow className="last:border-0 border-b border-divider/50">
+            <TableCell className="font-medium text-primary">
+                {MONTHS[advance.month - 1]}
+            </TableCell>
+            <TableCell className="font-bold">
+                {Number(advance.value)}
+            </TableCell>
+            <TableCell>
+                {new Date(advance.createAt).toLocaleDateString()}
+            </TableCell>
+            <TableCell>
+                <span className="block max-w-[150px] md:max-w-xs truncate text-default-500 italic" title={advance.observations}>
+                    {advance.observations || "—"}
+                </span>
+            </TableCell>
+            <TableCell>
+                {advance.observations && (
+                    <Tooltip content="Ver observaciones">
+                        <Button
+                            isIconOnly
+                            size="sm"
+                            variant="light"
+                            onPress={() => onViewObservations(advance.observations)}
+                        >
+                            <Eye size={18} className="text-default-500" />
+                        </Button>
+                    </Tooltip>
+                )}
+            </TableCell>
+        </TableRow>
+    )
+}
+
+export function VariableAdvancesModal({ isOpen, onClose, indicatorId, indicatorCode, type }: Readonly<VariableAdvancesModalProps>) {
     const [year, setYear] = useState<number>(new Date().getFullYear())
     const [loading, setLoading] = useState(false)
     const [data, setData] = useState<VariableWithAdvances[]>([])
@@ -29,7 +69,7 @@ export function VariableAdvancesModal({ isOpen, onClose, indicatorId, indicatorC
 
     // Pagination & Search for Variables
     const [page, setPage] = useState(1)
-    const [limit, setLimit] = useState(5)
+    const [limit] = useState(5)
     const [search, setSearch] = useState("")
     const debouncedSearch = useDebounce(search, 500)
 
@@ -222,15 +262,17 @@ export function VariableAdvancesModal({ isOpen, onClose, indicatorId, indicatorC
                                     </Select>
                                 </div>
 
-                                {loading ? (
+                                {loading && (
                                     <div className="flex justify-center py-12">
                                         <Loader2 className="animate-spin h-8 w-8 text-primary" />
                                     </div>
-                                ) : data.length === 0 ? (
+                                )}
+                                {!loading && data.length === 0 && (
                                     <div className="flex flex-col items-center justify-center py-12 text-default-400 border rounded-lg border-dashed">
                                         <p className="text-sm font-medium">No se encontraron variables</p>
                                     </div>
-                                ) : (
+                                )}
+                                {!loading && data.length > 0 && (
                                     <div className="flex flex-col gap-4">
                                         <Tabs aria-label="Variables" items={data} variant="underlined" color="primary">
                                             {(item) => (
@@ -277,36 +319,7 @@ export function VariableAdvancesModal({ isOpen, onClose, indicatorId, indicatorC
                                                                     </TableHeader>
                                                                     <TableBody>
                                                                         {item.advances.map((advance) => (
-                                                                            <TableRow key={advance.id} className="last:border-0 border-b border-divider/50">
-                                                                                <TableCell className="font-medium text-primary">
-                                                                                    {MONTHS[advance.month - 1]}
-                                                                                </TableCell>
-                                                                                <TableCell className="font-bold">
-                                                                                    {Number(advance.value)}
-                                                                                </TableCell>
-                                                                                <TableCell>
-                                                                                    {new Date(advance.createAt).toLocaleDateString()}
-                                                                                </TableCell>
-                                                                                <TableCell>
-                                                                                    <span className="block max-w-[150px] md:max-w-xs truncate text-default-500 italic" title={advance.observations}>
-                                                                                        {advance.observations || "—"}
-                                                                                    </span>
-                                                                                </TableCell>
-                                                                                <TableCell>
-                                                                                    {advance.observations && (
-                                                                                        <Tooltip content="Ver observaciones">
-                                                                                            <Button
-                                                                                                isIconOnly
-                                                                                                size="sm"
-                                                                                                variant="light"
-                                                                                                onPress={() => openObsModal(advance.observations)}
-                                                                                            >
-                                                                                                <Eye size={18} className="text-default-500" />
-                                                                                            </Button>
-                                                                                        </Tooltip>
-                                                                                    )}
-                                                                                </TableCell>
-                                                                            </TableRow>
+                                                                            <AdvanceRow key={advance.id} advance={advance} onViewObservations={openObsModal} />
                                                                         ))}
                                                                     </TableBody>
                                                                 </Table>

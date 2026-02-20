@@ -13,7 +13,6 @@ import {
     AutocompleteItem,
     Switch,
     DatePicker,
-    DateValue
 } from "@heroui/react"
 import { Activity, Plus, Search } from "lucide-react"
 import { useState, useEffect, useCallback } from "react"
@@ -89,9 +88,9 @@ export function CreateMGAActivityModal({
     isOpen,
     onClose,
     onSuccess,
-}: Props) {
+}: Readonly<Props>) {
     // Form logic
-    const { control, handleSubmit, reset, setValue, watch, formState: { errors, isValid } } = useForm<FormValues>({
+    const { control, handleSubmit, reset, formState: { errors, isValid } } = useForm<FormValues>({
         resolver: zodResolver(schema) as any,
         defaultValues: {
             code: "",
@@ -512,14 +511,15 @@ export function CreateMGAActivityModal({
                                                 detailedActivities.map((item) => {
                                                     const isSelected = selectedDetailedIds.has(item.id)
                                                     return (
-                                                        <div
+                                                        <button
+                                                            type="button"
                                                             key={item.id}
                                                             onClick={() => toggleSelection(item.id)}
                                                             className={`
-                                                                cursor-pointer p-3 rounded-lg border transition-all duration-200
+                                                                w-full text-left cursor-pointer p-3 rounded-lg border transition-all duration-200 bg-transparent
                                                                 ${isSelected
                                                                     ? "bg-primary-50 border-primary-200 dark:bg-primary-900/20 dark:border-primary-800"
-                                                                    : "bg-background border-default-200 hover:border-default-300"
+                                                                    : "border-default-200 hover:border-default-300"
                                                                 }
                                                             `}
                                                         >
@@ -550,7 +550,7 @@ export function CreateMGAActivityModal({
                                                                     {formatCurrency(item.balance)}
                                                                 </span>
                                                             </div>
-                                                        </div>
+                                                        </button>
                                                     )
                                                 })
                                             )}

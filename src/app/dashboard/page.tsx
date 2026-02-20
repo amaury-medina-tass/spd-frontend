@@ -4,7 +4,8 @@ import React, { useState, useCallback } from 'react';
 import Map, { Source, Layer, Marker } from 'react-map-gl/maplibre';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { PieChart, ListChecks, X, MapPin } from 'lucide-react';
+import { X, MapPin } from 'lucide-react';
+import { PlanTypeSelector } from '@/components/tabs/PlanTypeSelector';
 import { Button } from '@heroui/react';
 import { DashboardIndicativePlanTab } from '@/components/dashboard/DashboardIndicativePlanTab';
 import { DashboardActionPlanTab } from '@/components/dashboard/DashboardActionPlanTab';
@@ -84,8 +85,6 @@ function Home() {
 
   // Locations and georeferencing state
   const [variableLocations, setVariableLocations] = useState<VariableLocationData[]>([]);
-  const [selectedIndicatorId, setSelectedIndicatorId] = useState<string | null>(null);
-  const [loadingLocations, setLoadingLocations] = useState(false);
 
   // Variable advances visualization state
   const [selectedVariableForAdvances, setSelectedVariableForAdvances] = useState<{
@@ -117,16 +116,12 @@ function Home() {
     setIsVariablesModalOpen(true);
     
     // Load locations for georeferencing
-    setSelectedIndicatorId(indicator.id);
-    setLoadingLocations(true);
     try {
       const locations = await getIndicatorVariablesLocations(indicator.id, selectedTab);
       setVariableLocations(locations);
     } catch (error) {
       console.error('Error loading variable locations:', error);
       setVariableLocations([]);
-    } finally {
-      setLoadingLocations(false);
     }
   }, [selectedTab]);
 
@@ -153,8 +148,8 @@ function Home() {
           <Map
             mapLib={maplibregl}
             initialViewState={{
-              longitude: -75.5700,
-              latitude: 6.2700,
+              longitude: -75.57,
+              latitude: 6.27,
               zoom: 10.7
             }}
             style={{ width: '100%', height: '100%' }}
@@ -164,8 +159,8 @@ function Home() {
             cursor="pointer"
             minZoom={10.7}
             maxBounds={[
-              [-76.00, 5.90], // Southwest coordinates
-              [-75.10, 6.60]  // Northeast coordinates
+              [-76, 5.9], // Southwest coordinates
+              [-75.1, 6.6]  // Northeast coordinates
             ]}
           >
             {COMMUNE_DATA.map((region) => (
@@ -221,7 +216,8 @@ function Home() {
           <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Leyenda de Zonas</h3>
           <div className="flex flex-wrap gap-2">
             {COMMUNE_DATA.map((region) => (
-              <div
+              <button
+                type="button"
                 key={region.id}
                 onClick={() => setSelectedCommune(region.id)}
                 className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium cursor-pointer transition-all ${selectedCommune === region.id
@@ -236,7 +232,7 @@ function Home() {
                 <span className={selectedCommune === region.id ? 'text-white' : 'text-gray-700'}>
                   {region.name.replace(/Comuna \d+ - /, '')}
                 </span>
-              </div>
+              </button>
             ))}
           </div>
         </div>
@@ -276,29 +272,7 @@ function Home() {
             </div>
 
             {/* Tab Pills */}
-            <div className="flex gap-3">
-              <div
-                onClick={() => setSelectedTab('indicative')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full cursor-pointer transition-all ${selectedTab === 'indicative'
-                  ? 'bg-primary text-white shadow-sm'
-                  : 'bg-default-100 text-default-600 hover:bg-default-200'
-                  }`}
-              >
-                <PieChart size={16} />
-                <span className="text-sm font-medium">Plan Indicativo</span>
-              </div>
-
-              <div
-                onClick={() => setSelectedTab('action')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full cursor-pointer transition-all ${selectedTab === 'action'
-                  ? 'bg-primary text-white shadow-sm'
-                  : 'bg-default-100 text-default-600 hover:bg-default-200'
-                  }`}
-              >
-                <ListChecks size={16} />
-                <span className="text-sm font-medium">Plan de Acción</span>
-              </div>
-            </div>
+            <PlanTypeSelector selectedTab={selectedTab} onSelectTab={setSelectedTab} />
           </div>
         </div>
 

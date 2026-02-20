@@ -17,7 +17,7 @@ interface VariableAdvancesChartsSectionProps {
     onClose: () => void
 }
 
-export function VariableAdvancesChartsSection({ variableId, variableCode, variableName, onClose }: VariableAdvancesChartsSectionProps) {
+export function VariableAdvancesChartsSection({ variableId, variableCode, variableName, onClose }: Readonly<VariableAdvancesChartsSectionProps>) {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [advancesWithLocations, setAdvancesWithLocations] = useState<VariableAdvanceWithLocation[]>([])
@@ -315,8 +315,8 @@ export function VariableAdvancesChartsSection({ variableId, variableCode, variab
                                     <Chip size="sm" variant="flat" color="warning">{variableLocations.length}</Chip>
                                 </div>
                                 <div className="space-y-3">
-                                    {variableLocations.map((loc, idx) => (
-                                        <div key={idx} className="flex justify-between items-center p-3 bg-warning-50 rounded-lg">
+                                    {variableLocations.map((loc) => (
+                                        <div key={`${loc.communeCode}-${loc.communeName}-${loc.address ?? ''}`} className="flex justify-between items-center p-3 bg-warning-50 rounded-lg">
                                             <div className="flex items-center gap-3">
                                                 <MapPin size={20} className={loc.latitude && loc.longitude ? "text-success" : "text-default-400"} />
                                                 <div>
@@ -353,12 +353,12 @@ export function VariableAdvancesChartsSection({ variableId, variableCode, variab
                                     <Chip size="sm" variant="flat" color="secondary">{Object.keys(locationStats).length}</Chip>
                                 </div>
                                 <div className="space-y-3">
-                                    {Object.values(locationStats).map((loc, idx) => (
-                                        <div key={idx} className="flex justify-between items-center p-3 bg-default-50 rounded-lg">
+                                    {Object.values(locationStats).map((loc) => (
+                                        <div key={loc.communeCode} className="flex justify-between items-center p-3 bg-default-50 rounded-lg">
                                             <div className="flex items-center gap-3">
                                                 <MapPin size={20} className="text-secondary" />
                                                 <div>
-                                                    <p className="font-semibold">{loc.communeCode !== "N/A" ? `${loc.communeCode} - ` : ""}{loc.communeName}</p>
+                                                    <p className="font-semibold">{loc.communeCode === "N/A" ? "" : `${loc.communeCode} - `}{loc.communeName}</p>
                                                     <p className="text-xs text-default-500">{loc.totalAdvances} avance(s) asociado(s)</p>
                                                 </div>
                                             </div>

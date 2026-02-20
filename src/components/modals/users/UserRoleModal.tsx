@@ -13,7 +13,7 @@ import {
     Spinner,
 } from "@heroui/react"
 import { useState } from "react"
-import type { Role, UserWithRoles } from "@/types/user"
+import type { UserWithRoles } from "@/types/user"
 
 export function UserRoleModal({
     isOpen,
@@ -22,14 +22,14 @@ export function UserRoleModal({
     onClose,
     onSave,
     onUnassign,
-}: {
+}: Readonly<{
     isOpen: boolean
     user: UserWithRoles | null
     isLoading?: boolean
     onClose: () => void
     onSave: (roleId: string) => void
     onUnassign: (roleId: string) => void
-}) {
+}>) {
     const [roleId, setRoleId] = useState("")
 
     const availableRoles = user?.missingRoles ?? []

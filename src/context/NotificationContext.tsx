@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useCallback, useContext, useEffect, useRef, useState, createElement } from "react"
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, createElement } from "react"
 import { io, Socket } from "socket.io-client"
 import { addToast } from "@heroui/toast"
 import { get, patch } from "@/lib/http"
@@ -72,10 +72,86 @@ function triggerDownload(url: string, fileName: string) {
   link.download = fileName
   document.body.appendChild(link)
   link.click()
-  document.body.removeChild(link)
+  link.remove()
 }
 
-export function NotificationProvider({ children }: Props) {
+function handleNotificationEvent(
+  data: WsNotification,
+  isCancelled: () => boolean,
+  setUnreadCount: React.Dispatch<React.SetStateAction<number>>,
+  setNotifications: React.Dispatch<React.SetStateAction<PersistedNotification[]>>,
+) {
+  setUnreadCount((prev) => prev + 1)
+
+  get<PersistedNotification[]>(endpoints.notifications.list + "?limit=30")
+    .then(notifications => {
+      if (!isCancelled()) {
+        setNotifications(notifications ?? [])
+      }
+    })
+    .catch(() => {
+      // Ignore errors - notifications will refresh next time panel opens
+    })
+
+  const isExportCompleted = data.event === "Files.ExportCompleted"
+
+  let color: "success" | "warning" | "danger" | "primary" = "primary"
+  if (data.event.includes("Completed") || data.event.includes("Created") || data.event.includes("Approved")) {
+    color = "success"
+  } else if (data.event.includes("Failed")) {
+    color = "danger"
+  } else if (data.event.includes("Sync")) {
+    color = "warning"
+  }
+
+  if (isExportCompleted && data.data?.downloadUrl) {
+    const downloadUrl = data.data.downloadUrl as string
+    const fileName = (data.data.fileName as string) || "export.xlsx"
+
+    addToast({
+      title: data.title,
+      description: data.message,
+      color: "success",
+      timeout: 15000,
+      endContent: createElement(
+        "button",
+        {
+          onClick: () => triggerDownload(downloadUrl, fileName),
+          className: "ml-2 px-3 py-1 text-xs font-semibold rounded-md bg-white/20 hover:bg-white/30 text-white transition-colors whitespace-nowrap",
+        },
+        "Descargar"
+      ),
+    })
+  } else {
+    addToast({
+      title: data.title,
+      description: data.message,
+      color,
+      timeout: 8000,
+    })
+  }
+}
+
+function attachSocketListeners(
+  socket: Socket,
+  isCancelled: () => boolean,
+  setConnected: (v: boolean) => void,
+  setUnreadCount: React.Dispatch<React.SetStateAction<number>>,
+  setNotifications: React.Dispatch<React.SetStateAction<PersistedNotification[]>>,
+) {
+  socket.on("connect", () => {
+    if (!isCancelled()) setConnected(true)
+  })
+  socket.on("disconnect", () => {
+    if (!isCancelled()) setConnected(false)
+  })
+  socket.on("notification", (data: WsNotification) => {
+    if (isCancelled()) return
+    handleNotificationEvent(data, isCancelled, setUnreadCount, setNotifications)
+  })
+}
+
+export function NotificationProvider({ children }: Readonly<Props>) {
   const socketRef = useRef<Socket | null>(null)
   const [connected, setConnected] = useState(false)
   const [notifications, setNotifications] = useState<PersistedNotification[]>([])
@@ -136,6 +212,7 @@ export function NotificationProvider({ children }: Props) {
   // WebSocket connection
   useEffect(() => {
     let cancelled = false
+    const isCancelled = () => cancelled
 
     async function connect() {
       let token: string | null = null
@@ -158,71 +235,7 @@ export function NotificationProvider({ children }: Props) {
       })
 
       socketRef.current = socket
-
-      socket.on("connect", () => {
-        if (!cancelled) setConnected(true)
-      })
-
-      socket.on("disconnect", () => {
-        if (!cancelled) setConnected(false)
-      })
-
-      socket.on("notification", (data: WsNotification) => {
-        if (cancelled) return
-
-        // Increment unread count immediately
-        setUnreadCount((prev) => prev + 1)
-
-        // Refresh notifications in background (no loading state)
-        get<PersistedNotification[]>(endpoints.notifications.list + "?limit=30")
-          .then(notifications => {
-            if (!cancelled) {
-              setNotifications(notifications ?? [])
-            }
-          })
-          .catch(() => {
-            // Ignore errors - notifications will refresh next time panel opens
-          })
-
-        const isExportCompleted = data.event === "Files.ExportCompleted"
-
-        // Determine toast color
-        let color: "success" | "warning" | "danger" | "primary" = "primary"
-        if (data.event.includes("Completed") || data.event.includes("Created") || data.event.includes("Approved")) {
-          color = "success"
-        } else if (data.event.includes("Failed")) {
-          color = "danger"
-        } else if (data.event.includes("Sync")) {
-          color = "warning"
-        }
-
-        if (isExportCompleted && data.data?.downloadUrl) {
-          const downloadUrl = data.data.downloadUrl as string
-          const fileName = (data.data.fileName as string) || "export.xlsx"
-
-          addToast({
-            title: data.title,
-            description: data.message,
-            color: "success",
-            timeout: 15000,
-            endContent: createElement(
-              "button",
-              {
-                onClick: () => triggerDownload(downloadUrl, fileName),
-                className: "ml-2 px-3 py-1 text-xs font-semibold rounded-md bg-white/20 hover:bg-white/30 text-white transition-colors whitespace-nowrap",
-              },
-              "Descargar"
-            ),
-          })
-        } else {
-          addToast({
-            title: data.title,
-            description: data.message,
-            color,
-            timeout: 8000,
-          })
-        }
-      })
+      attachSocketListeners(socket, isCancelled, setConnected, setUnreadCount, setNotifications)
     }
 
     connect()
@@ -237,18 +250,20 @@ export function NotificationProvider({ children }: Props) {
     }
   }, [])
 
+  const contextValue = useMemo(() => ({
+    connected,
+    notifications,
+    unreadCount,
+    clearNotifications,
+    markAsRead,
+    markAllAsRead,
+    refreshNotifications,
+    loading,
+  }), [connected, notifications, unreadCount, clearNotifications, markAsRead, markAllAsRead, refreshNotifications, loading])
+
   return (
     <NotificationContext.Provider
-      value={{
-        connected,
-        notifications,
-        unreadCount,
-        clearNotifications,
-        markAsRead,
-        markAllAsRead,
-        refreshNotifications,
-        loading,
-      }}
+      value={contextValue}
     >
       {children}
     </NotificationContext.Provider>

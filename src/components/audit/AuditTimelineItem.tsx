@@ -40,55 +40,47 @@ const DOT_COLORS: Record<string, string> = {
   default: "bg-default-400",
 }
 
-export function AuditTimelineItem({ log, onClick, isLast = false }: AuditTimelineItemProps) {
+function formatIdsList(ids: string[]): string {
+  if (ids.length <= 2) return ids.join(", ")
+  return `${ids[0]}, ${ids[1]} y ${ids.length - 2} más`
+}
+
+function getMetadataText(metadata: AuditLog["metadata"]): string | null {
+  if (!metadata) return null
+  if (metadata.added && metadata.addedIds) return formatIdsList(metadata.addedIds)
+  if (metadata.removed && metadata.removedIds) return formatIdsList(metadata.removedIds)
+  if (metadata.email) return metadata.email
+  return null
+}
+
+function getAuditDetailText(log: AuditLog): string | null {
+  if (log.changes && log.changes.length > 0) {
+    if (log.changes.length === 1) {
+      const change = log.changes[0]
+      return `${change.fieldLabel}: ${change.oldValue} → ${change.newValue}`
+    }
+    return `${log.changes.length} campos modificados`
+  }
+  return getMetadataText(log.metadata)
+}
+
+export function AuditTimelineItem({ log, onClick, isLast = false }: Readonly<AuditTimelineItemProps>) {
   const actionColor = getActionColor(log.action)
   const dotColor = DOT_COLORS[actionColor] || DOT_COLORS.default
-
-  // Build detail text based on what data we have
-  const getDetailText = (): string | null => {
-    // For changes, show what changed
-    if (log.changes && log.changes.length > 0) {
-      const change = log.changes[0]
-      if (log.changes.length === 1) {
-        return `${change.fieldLabel}: ${change.oldValue} → ${change.newValue}`
-      }
-      return `${log.changes.length} campos modificados`
-    }
-
-    // For permissions
-    if (log.metadata) {
-      if (log.metadata.added && log.metadata.addedIds) {
-        const ids = log.metadata.addedIds as string[]
-        if (ids.length <= 2) {
-          return ids.join(", ")
-        }
-        return `${ids[0]}, ${ids[1]} y ${ids.length - 2} más`
-      }
-      if (log.metadata.removed && log.metadata.removedIds) {
-        const ids = log.metadata.removedIds as string[]
-        if (ids.length <= 2) {
-          return ids.join(", ")
-        }
-        return `${ids[0]}, ${ids[1]} y ${ids.length - 2} más`
-      }
-      // Show email if available
-      if (log.metadata.email) {
-        return log.metadata.email as string
-      }
-    }
-
-    return null
-  }
-
-  const detailText = getDetailText()
+  const detailText = getAuditDetailText(log)
 
   return (
     <div
-      className="flex gap-3 group cursor-pointer hover:bg-default-100/50 rounded-md py-2.5 px-2 -mx-2 transition-colors"
-      onClick={() => onClick?.(log)}
+      className="relative flex gap-3 group cursor-pointer hover:bg-default-100/50 rounded-md py-2.5 px-2 -mx-2 transition-colors"
     >
+      <button
+        type="button"
+        className="absolute inset-0 z-0 bg-transparent border-none cursor-pointer rounded-md"
+        onClick={() => onClick?.(log)}
+        aria-label={`Ver detalle: ${log.actionLabel} en ${getEntityTypeLabel(log.entityType)}`}
+      />
       {/* Timeline dot and line */}
-      <div className="flex flex-col items-center pt-1.5 flex-shrink-0">
+      <div className="relative z-10 flex flex-col items-center pt-1.5 flex-shrink-0 pointer-events-none">
         <div className={`w-2 h-2 rounded-full ${dotColor}`} />
         {!isLast && (
           <div className="w-px flex-1 bg-default-200 mt-1.5" />
@@ -96,7 +88,7 @@ export function AuditTimelineItem({ log, onClick, isLast = false }: AuditTimelin
       </div>
 
       {/* Content */}
-      <div className="flex-1 min-w-0 pb-3">
+      <div className="relative z-10 flex-1 min-w-0 pb-3 pointer-events-none">
         {/* Main row */}
         <div className="flex items-start gap-2">
           <div className="flex-1 min-w-0">
@@ -144,7 +136,7 @@ export function AuditTimelineItem({ log, onClick, isLast = false }: AuditTimelin
   )
 }
 
-function CopyIdButton({ id }: { id: string }) {
+function CopyIdButton({ id }: Readonly<{ id: string }>) {
   const [copied, setCopied] = useState(false)
 
   const handleCopy = () => {
@@ -160,7 +152,7 @@ function CopyIdButton({ id }: { id: string }) {
   return (
     <Tooltip content="Copiar ID del registro" delay={0} closeDelay={0}>
       <button
-        className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-default-200 rounded-full text-default-400 hover:text-default-600 focus:opacity-100"
+        className="pointer-events-auto opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-default-200 rounded-full text-default-400 hover:text-default-600 focus:opacity-100"
         onClick={(e) => {
           e.stopPropagation()
           handleCopy()

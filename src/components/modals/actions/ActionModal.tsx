@@ -10,7 +10,6 @@ import {
     ModalFooter,
     ModalHeader,
     Spinner,
-    Switch,
     Textarea,
 } from "@heroui/react"
 import { useEffect, useState } from "react"
@@ -23,14 +22,14 @@ export function ActionModal({
     isLoading = false,
     onClose,
     onSave,
-}: {
+}: Readonly<{
     isOpen: boolean
     title: string
     initial: Action | null
     isLoading?: boolean
     onClose: () => void
     onSave: (payload: { code_action: string; name: string; description?: string }) => void
-}) {
+}>) {
     const [codeAction, setCodeAction] = useState("")
     const [name, setName] = useState("")
     const [description, setDescription] = useState("")
@@ -51,7 +50,7 @@ export function ActionModal({
                     <Input
                         label="Código"
                         value={codeAction}
-                        onValueChange={(value) => setCodeAction(value.toUpperCase().replace(/\s/g, "_"))}
+                        onValueChange={(value) => setCodeAction(value.toUpperCase().replaceAll(/\s/g, "_"))}
                         isDisabled={isLoading || isEditing}
                         description={isEditing ? "El código no puede ser modificado" : "Código único de la acción (ej: READ, CREATE)"}
                     />

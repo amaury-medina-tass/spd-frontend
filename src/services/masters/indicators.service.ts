@@ -1,4 +1,4 @@
-import { get, post, put, del, PaginatedData, patch } from "@/lib/http"
+import { get, post, del, PaginatedData, patch } from "@/lib/http"
 import { endpoints } from "@/lib/endpoints"
 import { CreateIndicatorDTO, Indicator, IndicatorCatalogs, UpdateIndicatorDTO, ActionPlanIndicator, CreateActionPlanIndicatorDTO, UpdateActionPlanIndicatorDTO, ActionPlanIndicatorQuadrenniumGoal, ActionPlanIndicatorGoal } from "@/types/masters/indicators"
 

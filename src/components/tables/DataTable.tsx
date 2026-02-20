@@ -5,7 +5,6 @@ import {
     Chip,
     Input,
     Pagination,
-    Spinner,
     Dropdown,
     DropdownTrigger,
     DropdownMenu,
@@ -99,7 +98,7 @@ export function DataTable<T extends { id: string }>({
     pagination,
     emptyContent,
     ariaLabel = "Tabla de datos",
-}: DataTableProps<T>) {
+}: Readonly<DataTableProps<T>>) {
     const hasActions = rowActions && rowActions.length > 0
 
     const handleSort = (columnKey: string) => {
@@ -258,19 +257,21 @@ export function DataTable<T extends { id: string }>({
 
                         {/* Body */}
                         <tbody className="divide-y divide-default-100">
-                            {isLoading ? (
+                            {isLoading && (
                                 <tr>
                                     <td colSpan={columns.length + (hasActions ? 1 : 0)}>
                                         {loadingContent}
                                     </td>
                                 </tr>
-                            ) : items.length === 0 ? (
+                            )}
+                            {!isLoading && items.length === 0 && (
                                 <tr>
                                     <td colSpan={columns.length + (hasActions ? 1 : 0)}>
                                         {emptyContent ?? defaultEmptyContent}
                                     </td>
                                 </tr>
-                            ) : (
+                            )}
+                            {!isLoading && items.length > 0 && (
                                 items.map((item, index) => (
                                     <tr
                                         key={`${item.id}-${index}`}
@@ -305,7 +306,7 @@ export function DataTable<T extends { id: string }>({
                                                             list: "py-1",
                                                         }}
                                                     >
-                                                        {rowActions!.map((action) => (
+                                                        {rowActions.map((action) => (
                                                             <DropdownItem
                                                                 key={action.key}
                                                                 color={action.color}

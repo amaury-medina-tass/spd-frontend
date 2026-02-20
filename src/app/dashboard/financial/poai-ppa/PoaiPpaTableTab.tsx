@@ -1,6 +1,6 @@
 "use client"
 
-import { Button, Select, SelectItem, Input } from "@heroui/react"
+import { Button, Select, SelectItem } from "@heroui/react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { DataTable, ColumnDef, RowAction, TopAction, SortDescriptor } from "@/components/tables/DataTable"
 import { useDebounce } from "@/hooks/useDebounce"
@@ -24,7 +24,7 @@ const columns: ColumnDef<PoaiPpa>[] = [
         label: "POAI Proyectado",
         sortable: true,
         render: (record) => {
-            const value = parseFloat(record.projectedPoai)
+            const value = Number.parseFloat(record.projectedPoai)
             return new Intl.NumberFormat("es-CO", {
                 style: "currency",
                 currency: "COP",
@@ -37,7 +37,7 @@ const columns: ColumnDef<PoaiPpa>[] = [
         label: "POAI Asignado",
         sortable: true,
         render: (record) => {
-            const value = parseFloat(record.assignedPoai)
+            const value = Number.parseFloat(record.assignedPoai)
             return new Intl.NumberFormat("es-CO", {
                 style: "currency",
                 currency: "COP",
@@ -123,7 +123,7 @@ export function PoaiPpaTableTab() {
                 params.set("projectId", projectFilter)
             }
             if (sortDescriptor.column) {
-                params.set("sortBy", sortDescriptor.column as string)
+                params.set("sortBy", sortDescriptor.column)
                 params.set("sortOrder", sortDescriptor.direction === "ascending" ? "ASC" : "DESC")
             }
 
@@ -155,7 +155,7 @@ export function PoaiPpaTableTab() {
                 label: "Actualizar",
                 icon: <RefreshCw size={16} />,
                 color: "default",
-                onClick: fetchRecords,
+                onClick: () => void fetchRecords(),
             },
         ]
         if (canCreate) {
@@ -257,7 +257,7 @@ export function PoaiPpaTableTab() {
                 key: "view",
                 label: "Ver Detalles",
                 icon: <Eye size={16} />,
-                onClick: onViewRecord,
+                onClick: (item) => void onViewRecord(item),
             },
         ]
         if (canUpdate) {
@@ -265,7 +265,7 @@ export function PoaiPpaTableTab() {
                 key: "edit",
                 label: "Editar",
                 icon: <Pencil size={16} />,
-                onClick: onEditRecord,
+                onClick: (item) => void onEditRecord(item),
             })
         }
         if (canDelete) {

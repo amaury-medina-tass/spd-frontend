@@ -1,56 +1,22 @@
 "use client"
 
-import { Button, Breadcrumbs, BreadcrumbItem, Chip, Tooltip } from "@heroui/react"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { DataTable, ColumnDef, RowAction, TopAction, SortDescriptor } from "@/components/tables/DataTable"
-import { useDebounce } from "@/hooks/useDebounce"
+import { Breadcrumbs, BreadcrumbItem, Chip } from "@heroui/react"
+import { useMemo, useState } from "react"
+import { DataTable, ColumnDef, RowAction, TopAction } from "@/components/tables/DataTable"
 import { usePermissions } from "@/hooks/usePermissions"
+import { useDataTable } from "@/hooks/useDataTable"
 import { MasterContractDetailModal } from "@/components/modals/financial/contracts/MasterContractDetailModal"
-import { get, PaginatedData, PaginationMeta } from "@/lib/http"
+import { get, PaginatedData } from "@/lib/http"
 import { endpoints } from "@/lib/endpoints"
-import { Eye, RefreshCw, Briefcase, Download } from "lucide-react"
+import { Eye, Briefcase } from "lucide-react"
+import { buildBaseTopActions } from "@/components/tables/tableActions"
 import { addToast } from "@heroui/toast"
 import type { MasterContract } from "@/types/financial"
 import { getErrorMessage } from "@/lib/error-codes"
 import { MasterContractCdpsModal } from "@/components/modals/financial/contracts/MasterContractCdpsModal"
-import { requestExport } from "@/services/exports.service"
-
-const formatCurrency = (amount: string) => {
-    return new Intl.NumberFormat("es-CO", {
-        style: "currency",
-        currency: "COP",
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-    }).format(parseFloat(amount))
-}
-
-function ObjectCell({ text }: { text: string }) {
-    const textRef = useRef<HTMLSpanElement>(null)
-    const [isTruncated, setIsTruncated] = useState(false)
-
-    useEffect(() => {
-        const element = textRef.current
-        if (element) {
-            setIsTruncated(element.scrollHeight > element.clientHeight)
-        }
-    }, [text])
-
-    const content = (
-        <span ref={textRef} className="line-clamp-2 max-w-md">
-            {text}
-        </span>
-    )
-
-    if (isTruncated) {
-        return (
-            <Tooltip content={text} delay={300} closeDelay={0}>
-                <span className="cursor-help">{content}</span>
-            </Tooltip>
-        )
-    }
-
-    return content
-}
+import { formatCurrency } from "@/lib/format-utils"
+import { TruncatedCell } from "@/components/tables/TruncatedCell"
+import { TableErrorView, AccessDeniedView } from "@/components/tables/TableStatusViews"
 
 const columns: ColumnDef<MasterContract>[] = [
     { key: "number", label: "Número", sortable: true },
@@ -58,7 +24,7 @@ const columns: ColumnDef<MasterContract>[] = [
         key: "object",
         label: "Objeto",
         sortable: true,
-        render: (contract) => <ObjectCell text={contract.object} />,
+        render: (contract) => <TruncatedCell text={contract.object} />,
     },
     {
         key: "totalValue",
@@ -79,7 +45,6 @@ const columns: ColumnDef<MasterContract>[] = [
             let color: "success" | "warning" | "danger" | "default" = "default"
             if (stateLower === "legalizado" || stateLower === "active") color = "success"
             else if (stateLower === "pendiente" || stateLower === "pending") color = "warning"
-            else if (stateLower === "terminado" || stateLower === "closed") color = "default"
 
             return (
                 <Chip
@@ -120,73 +85,25 @@ const columns: ColumnDef<MasterContract>[] = [
 ]
 
 export default function MasterContractsPage() {
-    // Permissions
     const { canRead } = usePermissions("/financial/master-contracts")
-
-    // Data State
-    const [items, setItems] = useState<MasterContract[]>([])
-    const [meta, setMeta] = useState<PaginationMeta | null>(null)
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState<string | null>(null)
-
-    // Filter & Pagination State
-    const [page, setPage] = useState(1)
-    const [search, setSearch] = useState("")
-    const [limit, setLimit] = useState(5)
-    const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({
-        column: "totalValue",
-        direction: "descending",
-    })
-    const [searchInput, setSearchInput] = useState("")
-    const debouncedSearch = useDebounce(searchInput, 400)
 
     // Modal State
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
     const [selectedContract, setSelectedContract] = useState<MasterContract | null>(null)
-
     const [isCdpsModalOpen, setIsCdpsModalOpen] = useState(false)
     const [selectedContractForCdps, setSelectedContractForCdps] = useState<MasterContract | null>(null)
 
-    // Export State
-    const [exporting, setExporting] = useState(false)
-
-    const fetchContracts = useCallback(async () => {
-        setLoading(true)
-        setError(null)
-        try {
-            const params = new URLSearchParams({
-                page: page.toString(),
-                limit: limit.toString(),
-            })
-            if (search.trim()) {
-                params.set("search", search.trim())
-            }
-
-            if (sortDescriptor.column) {
-                params.set("sortBy", sortDescriptor.column as string)
-                params.set("sortOrder", sortDescriptor.direction === "ascending" ? "ASC" : "DESC")
-            }
-
-            const result = await get<PaginatedData<MasterContract>>(`${endpoints.financial.masterContracts}?${params}`)
-            setItems(result.data)
-            setMeta(result.meta)
-        } catch (e: any) {
-            const errorCode = e.data?.errors?.code
-            const message = errorCode ? getErrorMessage(errorCode) : (e.message ?? "Error al cargar contratos marco")
-            setError(message)
-        } finally {
-            setLoading(false)
-        }
-    }, [page, search, limit, sortDescriptor])
-
-    useEffect(() => {
-        fetchContracts()
-    }, [fetchContracts])
-
-    useEffect(() => {
-        setSearch(debouncedSearch)
-        setPage(1)
-    }, [debouncedSearch])
+    const {
+        items, loading, error, searchInput, setSearchInput,
+        sortDescriptor, setSortDescriptor, fetchData, exporting, handleExport, paginationProps,
+    } = useDataTable<MasterContract>({
+        fetchFn: (qs) => get<PaginatedData<MasterContract>>(`${endpoints.financial.masterContracts}?${qs}`),
+        defaultSort: { column: "totalValue", direction: "descending" },
+        defaultLimit: 5,
+        errorMessage: "Error al cargar contratos marco",
+        exportConfig: { system: "SPD", type: "CONTRACTS" },
+        useErrorCodes: true,
+    })
 
     const onViewDetails = async (contract: MasterContract) => {
         try {
@@ -208,9 +125,8 @@ export default function MasterContractsPage() {
                 key: "view",
                 label: "Ver Detalles",
                 icon: <Eye size={16} />,
-                onClick: onViewDetails,
-            })
-            actions.push({
+                onClick: (item) => void onViewDetails(item),
+            }, {
                 key: "view-cdps",
                 label: "Ver CDPs",
                 icon: <Briefcase size={16} />,
@@ -223,35 +139,10 @@ export default function MasterContractsPage() {
         return actions
     }, [canRead])
 
-    const topActions: TopAction[] = useMemo(() => {
-        return [
-            {
-                key: "refresh",
-                label: "Actualizar",
-                icon: <RefreshCw size={16} />,
-                color: "default",
-                onClick: fetchContracts,
-            },
-            {
-                key: "export",
-                label: "Exportar Contratos",
-                icon: <Download size={16} />,
-                color: "primary",
-                onClick: async () => {
-                    try {
-                        setExporting(true)
-                        await requestExport({ system: "SPD", type: "CONTRACTS" })
-                        addToast({ title: "Exportación solicitada", description: "Recibirás una notificación cuando el archivo esté listo para descargar.", color: "primary", timeout: 5000 })
-                    } catch {
-                        addToast({ title: "Error", description: "No se pudo solicitar la exportación. Intenta de nuevo.", color: "danger", timeout: 5000 })
-                    } finally {
-                        setExporting(false)
-                    }
-                },
-                isLoading: exporting,
-            },
-        ]
-    }, [fetchContracts, exporting])
+    const topActions: TopAction[] = useMemo(
+        () => buildBaseTopActions(fetchData, handleExport, exporting, "Exportar Contratos"),
+        [fetchData, handleExport, exporting]
+    )
 
     return (
         <div className="grid gap-4">
@@ -261,19 +152,10 @@ export default function MasterContractsPage() {
                 <BreadcrumbItem>Contratos Marco</BreadcrumbItem>
             </Breadcrumbs>
 
-            {!canRead ? (
-                <div className="text-center py-16">
-                    <p className="text-xl font-semibold text-danger">Acceso Denegado</p>
-                    <p className="text-default-500 mt-2">No tienes permisos para ver este módulo.</p>
-                </div>
-            ) : error ? (
-                <div className="text-center py-8 text-danger">
-                    <p>{error}</p>
-                    <Button variant="flat" className="mt-2" onPress={fetchContracts}>
-                        Reintentar
-                    </Button>
-                </div>
-            ) : (
+            {canRead && error && (
+                <TableErrorView error={error} onRetry={fetchData} />
+            )}
+            {canRead && !error && (
                 <DataTable
                     items={items}
                     columns={columns}
@@ -284,19 +166,13 @@ export default function MasterContractsPage() {
                     onSearchChange={setSearchInput}
                     searchPlaceholder="Buscar contratos marco..."
                     ariaLabel="Tabla de contratos marco"
-                    pagination={meta ? {
-                        page,
-                        totalPages: meta.totalPages,
-                        onChange: setPage,
-                        pageSize: limit,
-                        onPageSizeChange: (newLimit) => {
-                            setLimit(newLimit)
-                            setPage(1)
-                        }
-                    } : undefined}
+                    pagination={paginationProps}
                     sortDescriptor={sortDescriptor}
                     onSortChange={setSortDescriptor}
                 />
+            )}
+            {!canRead && (
+                <AccessDeniedView />
             )}
 
             <MasterContractDetailModal

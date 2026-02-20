@@ -1,6 +1,8 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { formatCurrency } from "@/lib/format-utils"
+import { modalTabsClassNames, TabTitle } from "@/components/tabs/modal-tabs-config"
 import {
     Modal,
     ModalBody,
@@ -47,12 +49,12 @@ export function CdpPositionDetailModal({
     positionId,
     initialData,
     onClose,
-}: {
+}: Readonly<{
     isOpen: boolean
     positionId: string | null
     initialData: CdpPositionDetail | null
     onClose: () => void
-}) {
+}>) {
     const [selectedTab, setSelectedTab] = useState<TabKey>("info")
 
     // Activities state
@@ -68,15 +70,6 @@ export function CdpPositionDetailModal({
 
     // Position data (from initial data or refreshed)
     const [position, setPosition] = useState<CdpPositionDetail | null>(initialData)
-
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat("es-CO", {
-            style: "currency",
-            currency: "COP",
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
-        }).format(amount)
-    }
 
     // Fetch activities with pagination/search
     const fetchActivities = useCallback(async () => {
@@ -207,20 +200,11 @@ export function CdpPositionDetailModal({
                         selectedKey={selectedTab}
                         onSelectionChange={(key) => setSelectedTab(key as TabKey)}
                         variant="underlined"
-                        classNames={{
-                            tabList: "gap-6",
-                            cursor: "bg-primary",
-                            tab: "px-0 h-10",
-                        }}
+                        classNames={modalTabsClassNames}
                     >
                         <Tab
                             key="info"
-                            title={
-                                <div className="flex items-center gap-2">
-                                    <Info size={16} />
-                                    <span>Información General</span>
-                                </div>
-                            }
+                            title={<TabTitle icon={<Info size={16} />}>Información General</TabTitle>}
                         >
                             <div className="space-y-6 pt-4">
                                 {/* CDP Info Section */}
@@ -367,12 +351,7 @@ export function CdpPositionDetailModal({
                         {position.masterContract && (
                             <Tab
                                 key="masterContract"
-                                title={
-                                    <div className="flex items-center gap-2">
-                                        <FileText size={16} />
-                                        <span>Contrato Marco</span>
-                                    </div>
-                                }
+                                title={<TabTitle icon={<FileText size={16} />}>Contrato Marco</TabTitle>}
                             >
                                 <div className="space-y-6 pt-4">
                                     <div>

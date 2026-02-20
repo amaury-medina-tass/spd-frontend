@@ -16,7 +16,7 @@ import {
     DatePicker,
     DateValue,
 } from "@heroui/react"
-import { parseDate, getLocalTimeZone, today } from "@internationalized/date"
+import { getLocalTimeZone, today } from "@internationalized/date"
 import { ArrowLeftRight } from "lucide-react"
 import { useState, useEffect, useCallback } from "react"
 import { useDebounce } from "@/hooks/useDebounce"
@@ -62,7 +62,7 @@ export function CreateBudgetModificationModal({
     detailedActivityName,
     onClose,
     onSave,
-}: Props) {
+}: Readonly<Props>) {
     const [modificationType, setModificationType] = useState<BudgetModificationType | "">("")
     const [value, setValue] = useState("")
     const [description, setDescription] = useState("")
@@ -122,7 +122,7 @@ export function CreateBudgetModificationModal({
         if (modificationType === "TRANSFER") {
             payload.newRubricId = rubricId
         } else {
-            payload.value = parseFloat(value) || 0
+            payload.value = Number.parseFloat(value) || 0
             payload.legalDocument = legalDocument.trim()
             if (dateIssue) {
                 // Formatting DateValue to ISO string
@@ -139,7 +139,7 @@ export function CreateBudgetModificationModal({
         if (modificationType === "TRANSFER") {
             return !!rubricId
         } else {
-            return value !== "" && parseFloat(value) > 0 && !!legalDocument.trim() && !!dateIssue
+            return value !== "" && Number.parseFloat(value) > 0 && !!legalDocument.trim() && !!dateIssue
         }
     }
 
@@ -222,9 +222,9 @@ export function CreateBudgetModificationModal({
                                         <Input
                                             label="Valor"
                                             placeholder="0"
-                                            value={value ? new Intl.NumberFormat('es-CO').format(parseFloat(value.replace(/[^\d]/g, '')) || 0) : ''}
+                                            value={value ? new Intl.NumberFormat('es-CO').format(Number.parseFloat(value.replaceAll(/[^\d]/g, '')) || 0) : ''}
                                             onValueChange={(val) => {
-                                                const numericValue = val.replace(/[^\d]/g, '')
+                                                const numericValue = val.replaceAll(/[^\d]/g, '')
                                                 setValue(numericValue)
                                             }}
                                             isRequired

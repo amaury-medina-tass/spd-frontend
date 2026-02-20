@@ -1,6 +1,6 @@
 "use client"
 
-import { Card, CardBody, CardHeader, Divider } from "@heroui/react"
+import { Card, CardBody, Divider } from "@heroui/react"
 import {
     DollarSign,
     TrendingUp,
@@ -12,18 +12,11 @@ import {
     FolderKanban,
 } from "lucide-react"
 import type { DashboardGlobalData } from "@/types/dashboard"
+import { formatCurrency } from "@/lib/format-utils"
 
 type Props = {
     data: DashboardGlobalData
 }
-
-const formatCurrency = (value: number) =>
-    new Intl.NumberFormat("es-CO", {
-        style: "currency",
-        currency: "COP",
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-    }).format(value)
 
 const kpis = (data: DashboardGlobalData) => [
     {
@@ -77,7 +70,7 @@ const counts = (data: DashboardGlobalData) => [
     { label: "Contratos Marco", value: data.totalContracts, icon: FileSignature, color: "text-amber-600" },
 ]
 
-export function GlobalKPIs({ data }: Props) {
+export function GlobalKPIs({ data }: Readonly<Props>) {
     return (
         <div className="space-y-4">
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">

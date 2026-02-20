@@ -64,7 +64,7 @@ export function CleanTable<T extends { id: string | number }>({
     renderMobileItem,
     hideHeader = false,
     className
-}: Props<T>) {
+}: Readonly<Props<T>>) {
 
     // Default empty content if none provided
     const defaultEmptyContent = (
@@ -126,13 +126,15 @@ export function CleanTable<T extends { id: string | number }>({
             {/* Mobile View */}
             {renderMobileItem && (
                 <div className="md:hidden space-y-3">
-                    {isLoading ? (
+                    {isLoading && (
                         <div className="flex justify-center py-8">
                             {loadingContent}
                         </div>
-                    ) : items.length === 0 ? (
+                    )}
+                    {!isLoading && items.length === 0 && (
                         emptyContent || defaultEmptyContent
-                    ) : (
+                    )}
+                    {!isLoading && items.length > 0 && (
                         items.map((item) => (
                             <div key={item.id}>
                                 {renderMobileItem(item)}

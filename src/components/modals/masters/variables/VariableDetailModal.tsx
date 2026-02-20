@@ -13,11 +13,11 @@ export function VariableDetailModal({
     isOpen,
     variable,
     onClose,
-}: {
+}: Readonly<{
     isOpen: boolean
     variable: Variable | null
     onClose: () => void
-}) {
+}>) {
     if (!variable) return null
 
     return (

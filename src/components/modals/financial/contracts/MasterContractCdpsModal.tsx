@@ -1,5 +1,6 @@
 "use client"
 
+import { formatCurrency } from "@/lib/format-utils"
 import {
     Modal,
     ModalBody,
@@ -17,7 +18,7 @@ import { endpoints } from "@/lib/endpoints"
 import { useCallback, useEffect, useState } from "react"
 import { CleanTable, ColumnDef } from "@/components/tables/CleanTable"
 import { useDebounce } from "@/hooks/useDebounce"
-import { FileText, DollarSign, Receipt, Hash, Briefcase, BookOpen, ClipboardList, Info, Search } from "lucide-react"
+import { FileText, DollarSign, Receipt, Hash, Briefcase, BookOpen, Search } from "lucide-react"
 
 const columns: ColumnDef[] = [
     { name: "N° CDP", uid: "cdpNumber", width: 140 },
@@ -34,12 +35,12 @@ export function MasterContractCdpsModal({
     masterContractId,
     masterContractNumber,
     onClose,
-}: {
+}: Readonly<{
     isOpen: boolean
     masterContractId: string | null
     masterContractNumber: string | null
     onClose: () => void
-}) {
+}>) {
     // Data State
     const [items, setItems] = useState<MasterContractCdpPosition[]>([])
     const [meta, setMeta] = useState<PaginationMeta | null>(null)
@@ -111,15 +112,6 @@ export function MasterContractCdpsModal({
         }
     }, [fetchCdps, isOpen, masterContractId])
 
-
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat("es-CO", {
-            style: "currency",
-            currency: "COP",
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
-        }).format(amount)
-    }
 
     const renderCell = (item: MasterContractCdpPosition, columnKey: React.Key) => {
         switch (columnKey) {

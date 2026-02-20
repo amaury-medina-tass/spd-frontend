@@ -28,7 +28,8 @@ export const getVariableAdvancesWithLocations = async (variableId: string, year?
     if (year) params.append('year', year.toString())
     if (month) params.append('month', month.toString())
     const query = params.toString()
-    return await get<VariableAdvancesWithLocationsResponse>(`${endpoints.sub.variableAdvances.withLocations(variableId)}${query ? `?${query}` : ''}`)
+    const queryString = query ? `?${query}` : ''
+    return await get<VariableAdvancesWithLocationsResponse>(`${endpoints.sub.variableAdvances.withLocations(variableId)}${queryString}`)
 }
 
 import { IndicatorDetailedData } from "@/types/sub/indicator-dashboard"

@@ -2,15 +2,12 @@
 
 import {
     Bar,
-    BarChart,
     CartesianGrid,
     Line,
-    LineChart,
     XAxis,
-    ResponsiveContainer,
     ComposedChart
 } from "recharts"
-import { BarChart3, Activity } from "lucide-react"
+import { Activity } from "lucide-react"
 import {
     ChartConfig,
     ChartContainer,
@@ -37,11 +34,11 @@ const chartConfig = {
     },
 } satisfies ChartConfig
 
-export function DashboardCharts({ data }: Props) {
+export function DashboardCharts({ data }: Readonly<Props>) {
     const chartData = data.map(item => ({
         year: item.year.toString(),
         projectCount: item.projectCount,
-        executionRate: parseFloat(item.executionRate.toFixed(1)),
+        executionRate: Number.parseFloat(item.executionRate.toFixed(1)),
     }))
 
     return (

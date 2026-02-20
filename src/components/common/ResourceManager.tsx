@@ -1,9 +1,8 @@
 "use client"
 
-import { Input, Button } from "@heroui/react"
+import { Input, Button, SortDescriptor } from "@heroui/react"
 import { Search, RefreshCw, Plus } from "lucide-react"
 import { CleanTable, ColumnDef } from "@/components/tables/CleanTable"
-import { SortDescriptor } from "@heroui/react"
 
 interface Props<T> {
     // Search Props
@@ -59,7 +58,7 @@ export function ResourceManager<T extends { id: string | number }>({
     topContent,
     className,
     ...tableProps
-}: Props<T>) {
+}: Readonly<Props<T>>) {
     return (
         <div className={`space-y-4 ${className || ""}`}>
             <div className="flex items-center justify-between gap-3">
@@ -88,7 +87,7 @@ export function ResourceManager<T extends { id: string | number }>({
                             onPress={onRefresh}
                             isIconOnly={!onCreate}
                         >
-                            {!onCreate ? null : "Actualizar"} 
+                            {onCreate ? "Actualizar" : null} 
                         </Button>
                     )}
 

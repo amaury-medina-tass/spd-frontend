@@ -23,14 +23,14 @@ export function ModuleModal({
   isLoading = false,
   onClose,
   onSave,
-}: {
+}: Readonly<{
   isOpen: boolean
   title: string
   initial: Module | null
   isLoading?: boolean
   onClose: () => void
   onSave: (payload: { name: string; description?: string; path: string }) => void
-}) {
+}>) {
   const { control, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {

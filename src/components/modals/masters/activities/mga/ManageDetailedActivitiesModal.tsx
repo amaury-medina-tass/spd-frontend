@@ -28,7 +28,7 @@ export function ManageDetailedActivitiesModal({
     mgaActivityCode,
     onClose,
     onSuccess,
-}: Props) {
+}: Readonly<Props>) {
     const handleClose = () => {
         onSuccess?.()
         onClose()

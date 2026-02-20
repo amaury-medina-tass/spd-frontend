@@ -1,6 +1,8 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { formatCurrency } from "@/lib/format-utils"
+import { modalTabsClassNames, TabTitle } from "@/components/tabs/modal-tabs-config"
 import {
     Modal,
     ModalBody,
@@ -51,7 +53,7 @@ export function MGAActivityModal({
     onClose,
     onSuccess,
     initialEditMode = false,
-}: Props) {
+}: Readonly<Props>) {
     const [selectedTab, setSelectedTab] = useState<TabKey>("info")
     const [isEditMode, setIsEditMode] = useState(false)
     const [saving, setSaving] = useState(false)
@@ -70,15 +72,6 @@ export function MGAActivityModal({
     const [loadingActivities, setLoadingActivities] = useState(false)
 
     const debouncedSearch = useDebounce(activitySearchInput, 400)
-
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat("es-CO", {
-            style: "currency",
-            currency: "COP",
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
-        }).format(amount)
-    }
 
     const formatDateTime = (dateStr: string) => {
         if (!dateStr) return "N/A"
@@ -215,20 +208,11 @@ export function MGAActivityModal({
                         selectedKey={selectedTab}
                         onSelectionChange={(key) => setSelectedTab(key as TabKey)}
                         variant="underlined"
-                        classNames={{
-                            tabList: "gap-6",
-                            cursor: "bg-primary",
-                            tab: "px-0 h-10",
-                        }}
+                        classNames={modalTabsClassNames}
                     >
                         <Tab
                             key="info"
-                            title={
-                                <div className="flex items-center gap-2">
-                                    <Info size={16} />
-                                    <span>Información General</span>
-                                </div>
-                            }
+                            title={<TabTitle icon={<Info size={16} />}>Información General</TabTitle>}
                         >
                             <div className="space-y-6 pt-4">
                                 {/* Información Básica */}
@@ -459,11 +443,12 @@ export function MGAActivityModal({
 
                                     {/* Table Body */}
                                     <div className="min-h-[200px]">
-                                        {loadingActivities ? (
+                                        {loadingActivities && (
                                             <div className="flex items-center justify-center py-8">
                                                 <Spinner size="sm" />
                                             </div>
-                                        ) : detailedActivities.length > 0 ? (
+                                        )}
+                                        {!loadingActivities && detailedActivities.length > 0 && (
                                             <div className="divide-y divide-default-100 dark:divide-default-700/50">
                                                 {detailedActivities.map((da) => (
                                                     <div
@@ -485,7 +470,8 @@ export function MGAActivityModal({
                                                     </div>
                                                 ))}
                                             </div>
-                                        ) : (
+                                        )}
+                                        {!loadingActivities && detailedActivities.length === 0 && (
                                             <div className="flex items-center justify-center py-8 text-default-400">
                                                 <p className="text-small">
                                                     {activitySearch ? "Sin resultados para la búsqueda" : "Sin actividades detalladas asociadas"}

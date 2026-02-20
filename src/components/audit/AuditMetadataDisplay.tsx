@@ -12,8 +12,10 @@ interface AuditMetadataDisplayProps {
 function formatMetadataValue(value: unknown): string {
   if (value === null || value === undefined) return "—"
   if (typeof value === "boolean") return value ? "Sí" : "No"
-  if (typeof value === "object" && !Array.isArray(value)) return JSON.stringify(value, null, 2)
-  return String(value)
+  if (typeof value === "object") return JSON.stringify(value, null, 2)
+  if (typeof value === "string") return value
+  if (typeof value === "number" || typeof value === "bigint") return value.toString()
+  return String(value as Exclude<unknown, object>)
 }
 
 function isArrayOfStrings(value: unknown): value is string[] {
@@ -21,15 +23,15 @@ function isArrayOfStrings(value: unknown): value is string[] {
 }
 
 // Keys that should be rendered as lists
-const LIST_KEYS = ["addedIds", "removedIds"]
+const LIST_KEYS = new Set(["addedIds", "removedIds"])
 
 // Keys that should be hidden if we have permission changes
-const PERMISSION_SUMMARY_KEYS = ["added", "removed", "total"]
+const PERMISSION_SUMMARY_KEYS = new Set(["added", "removed", "total"])
 
 export function AuditMetadataDisplay({
   metadata,
   defaultExpanded = false,
-}: AuditMetadataDisplayProps) {
+}: Readonly<AuditMetadataDisplayProps>) {
   const entries = Object.entries(metadata)
 
   if (entries.length === 0) {
@@ -54,8 +56,8 @@ export function AuditMetadataDisplay({
 
   // Filter entries for "other metadata"
   const otherEntries = entries.filter(([key]) => {
-    if (LIST_KEYS.includes(key)) return false
-    if (hasPermissionChanges && PERMISSION_SUMMARY_KEYS.includes(key)) return false
+    if (LIST_KEYS.has(key)) return false
+    if (hasPermissionChanges && PERMISSION_SUMMARY_KEYS.has(key)) return false
     return true
   })
 
@@ -70,12 +72,12 @@ export function AuditMetadataDisplay({
           <div className="flex gap-2 flex-wrap">
             {addedCount > 0 && (
               <Chip color="success" variant="flat" size="sm" startContent={<Plus size={12} />}>
-                {addedCount} agregado{addedCount !== 1 ? "s" : ""}
+                {addedCount} agregado{addedCount === 1 ? "" : "s"}
               </Chip>
             )}
             {removedCount > 0 && (
               <Chip color="warning" variant="flat" size="sm" startContent={<Minus size={12} />}>
-                {removedCount} removido{removedCount !== 1 ? "s" : ""}
+                {removedCount} removido{removedCount === 1 ? "" : "s"}
               </Chip>
             )}
             {totalCount !== undefined && (

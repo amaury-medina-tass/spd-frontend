@@ -19,7 +19,8 @@ export const getDashboardGlobal = async (year?: number, month?: number) => {
     if (year) params.set("year", year.toString())
     if (month) params.set("month", month.toString())
     const query = params.toString()
-    return get<DashboardGlobalData>(`${endpoints.financial.dashboard.global}${query ? `?${query}` : ""}`)
+    const queryString = query ? `?${query}` : ""
+    return get<DashboardGlobalData>(`${endpoints.financial.dashboard.global}${queryString}`)
 }
 
 export const getDashboardNeeds = async (params: string) => {

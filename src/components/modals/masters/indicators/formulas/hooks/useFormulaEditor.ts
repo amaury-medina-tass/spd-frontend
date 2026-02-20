@@ -13,6 +13,289 @@ import {
 } from "@/utils/formula";
 import { getIndicatorFormulaData } from "@/services/masters/formulas.service";
 
+// ---- Standalone helpers to reduce cognitive complexity ----
+
+interface EditorContextItem {
+    type: 'function' | 'paren';
+    name?: string;
+    argIndex: number;
+}
+
+function updateEditorContextStack(step: FormulaStep, stack: EditorContextItem[]): void {
+    if (step.type === 'function') {
+        stack.push({ type: 'function', name: step.value.id, argIndex: 0 });
+        return;
+    }
+    if (step.type === 'parenthesis' && step.value === '(') {
+        stack.push({ type: 'paren', argIndex: 0 });
+        return;
+    }
+    if (step.type === 'parenthesis' && step.value === ')' && stack.length > 0) {
+        stack.pop();
+        return;
+    }
+    if (step.type === 'separator' && stack.length > 0) {
+        stack.at(-1)!.argIndex++;
+    }
+}
+
+function buildEditorContextStack(steps: FormulaStep[]): EditorContextItem[] {
+    const stack: EditorContextItem[] = [];
+    for (const s of steps) {
+        updateEditorContextStack(s, stack);
+    }
+    return stack;
+}
+
+function computeEntityOperatorFlags(lastStep: FormulaStep | undefined): { canAddEntity: boolean; canAddOperator: boolean } {
+    if (!lastStep) return { canAddEntity: true, canAddOperator: false };
+    const ENTITY_TRIGGERS = ['operator', 'comparison', 'separator'];
+    const isEntityContext = ENTITY_TRIGGERS.includes(lastStep.type)
+        || (lastStep.type === 'parenthesis' && lastStep.value === '(')
+        || lastStep.type === 'function';
+    return isEntityContext
+        ? { canAddEntity: true, canAddOperator: false }
+        : { canAddEntity: false, canAddOperator: true };
+}
+
+const SCOPE_BOUNDARY_TYPES = new Set(['function', 'separator']);
+
+function countComparisonsAtLevel(steps: FormulaStep[]): number {
+    let count = 0;
+    let depth = 0;
+    for (let i = steps.length - 1; i >= 0; i--) {
+        const s = steps[i];
+        if (s.type === 'parenthesis') {
+            if (s.value === ')') { depth++; continue; }
+            if (depth === 0) break;
+            depth--; continue;
+        }
+        if (depth > 0) continue;
+        if (SCOPE_BOUNDARY_TYPES.has(s.type)) break;
+        if (s.type === 'comparison') count++;
+    }
+    return count;
+}
+
+function computeCanAddUnary(lastStep: FormulaStep | undefined): boolean {
+    if (!lastStep) return true;
+    return lastStep.type === 'function'
+        || (lastStep.type === 'parenthesis' && lastStep.value === '(')
+        || lastStep.type === 'separator';
+}
+
+const RESTRICTED_FUNCTIONS = new Set(['AVG', 'MAX', 'MIN', 'SUM']);
+
+function isRestrictedFunction(ctx: EditorContext | null): boolean {
+    return ctx?.type === 'function' && RESTRICTED_FUNCTIONS.has(ctx.name || '');
+}
+
+function isIfConditionArg(ctx: EditorContext | null): boolean {
+    return ctx?.type === 'function' && ctx.name === 'IF' && ctx.argIndex === 0;
+}
+
+function isIfLastArg(ctx: EditorContext | null): boolean {
+    return ctx?.type === 'function' && ctx.name === 'IF' && (ctx.argIndex ?? 0) >= 2;
+}
+
+function computeValidationState(steps: FormulaStep[]): ValidationState {
+    const lastStep = steps.at(-1);
+    const contextStack = buildEditorContextStack(steps);
+    const currentContext = contextStack.at(-1) ?? null;
+    const isInsideFunction = contextStack.some(c => c.type === 'function');
+    const openParens = steps.filter(s => (s.type === 'parenthesis' && s.value === '(') || s.type === 'function').length;
+    const closeParens = steps.filter(s => s.type === 'parenthesis' && s.value === ')').length;
+
+    const { canAddEntity, canAddOperator: rawCanAddOperator } = computeEntityOperatorFlags(lastStep);
+    let canAddOperator = rawCanAddOperator;
+    let canAddSeparator = rawCanAddOperator && isInsideFunction;
+    const canAddCloseParen = rawCanAddOperator && openParens > closeParens;
+
+    if (isRestrictedFunction(currentContext)) {
+        canAddOperator = false;
+    }
+
+    const inIfCondition = isIfConditionArg(currentContext);
+    const canAddComparisonOperator = inIfCondition && countComparisonsAtLevel(steps) === 0;
+
+    if (isIfLastArg(currentContext)) {
+        canAddSeparator = false;
+    }
+
+    return {
+        canAddEntity,
+        canAddOperator,
+        canAddMathOperator: canAddOperator && !isInsideFunction,
+        canAddOpenParen: canAddEntity,
+        canAddCloseParen,
+        canAddSeparator,
+        isInsideFunction,
+        currentContext,
+        canAddUnaryOperator: computeCanAddUnary(lastStep),
+        isInIfCondition: !!inIfCondition,
+        canAddComparisonOperator
+    };
+}
+
+function mapRawVariables(rawVars: any[]): Variable[] {
+    return rawVars.map((v: any) => ({
+        id: v.id,
+        code: v.code,
+        name: v.name,
+        description: v.description,
+        formula: [],
+        goals: v.goals?.map((g: any) => ({
+            idMeta: g.id,
+            valorMeta: g.value,
+            year: g.year,
+            label: `Meta [${g.year}]`
+        })) || [],
+        quadrenniums: v.quadrenniums?.map((q: any) => ({
+            id: q.id,
+            startYear: q.startYear,
+            endYear: q.endYear,
+            value: q.value,
+            label: `Cuatrenio [${q.startYear}-${q.endYear}]`
+        })) || []
+    }));
+}
+
+function mapIndicatorGoals(rawGoals: any[]): GoalIndicator[] {
+    return rawGoals.map((g: any) => ({
+        idMeta: g.id,
+        valorMeta: g.value,
+        year: g.year,
+        label: `Meta Ind [${g.year}]`
+    }));
+}
+
+function mapIndicatorQuads(rawQuads: any[]): IndicatorQuadrennium[] {
+    return rawQuads.map((q: any) => ({
+        id: q.id,
+        startYear: q.startYear,
+        endYear: q.endYear,
+        value: q.value,
+        label: `Cuatrenio Ind [${q.startYear}-${q.endYear}]`
+    }));
+}
+
+function traverseAndExtractFormulas(
+    node: any,
+    extracted: Record<string, FormulaStep[]>,
+    mappedVariables: Variable[],
+    indGoals: GoalIndicator[],
+    indQuads: IndicatorQuadrennium[]
+): void {
+    if (!node) return;
+    if (node.kind === 'ref' && node.value && node.subFormula) {
+        const steps = convertAstToSteps(node.subFormula, mappedVariables, [], indGoals, [], indQuads);
+        extracted[node.value] = steps;
+        const v = mappedVariables.find(x => x.id === node.value);
+        if (v) v.formula = steps;
+        traverseAndExtractFormulas(node.subFormula, extracted, mappedVariables, indGoals, indQuads);
+    }
+    if (node.left) traverseAndExtractFormulas(node.left, extracted, mappedVariables, indGoals, indQuads);
+    if (node.right) traverseAndExtractFormulas(node.right, extracted, mappedVariables, indGoals, indQuads);
+    if (node.args && Array.isArray(node.args)) {
+        node.args.forEach((arg: any) => traverseAndExtractFormulas(arg, extracted, mappedVariables, indGoals, indQuads));
+    }
+}
+
+interface ProcessedFormulaData {
+    mappedVariables: Variable[];
+    indGoals: GoalIndicator[];
+    indQuads: IndicatorQuadrennium[];
+    baseline?: string;
+    existingFormulaId: string | null;
+    mainFormulaSteps: FormulaStep[];
+    variableFormulas: Record<string, FormulaStep[]>;
+}
+
+function processFormulaApiData(data: any): ProcessedFormulaData | null {
+    if (!data) return null;
+
+    const mappedVariables = mapRawVariables(data.variables || []);
+    const indGoals = mapIndicatorGoals(data.indicator?.goals || []);
+    const indQuads = mapIndicatorQuads(data.indicator?.quadrenniums || []);
+
+    const result: ProcessedFormulaData = {
+        mappedVariables,
+        indGoals,
+        indQuads,
+        baseline: data.indicator?.baseline,
+        existingFormulaId: null,
+        mainFormulaSteps: [],
+        variableFormulas: {},
+    };
+
+    const formulas = data.indicator?.formulas;
+    if (!formulas || !Array.isArray(formulas) || formulas.length === 0) return result;
+
+    result.existingFormulaId = formulas[0].id;
+
+    if (formulas[0].expression) {
+        result.mainFormulaSteps = parseFormulaString(
+            formulas[0].expression, mappedVariables, [], indGoals, new Map(), indQuads
+        );
+    }
+
+    if (formulas[0].ast) {
+        const extracted: Record<string, FormulaStep[]> = {};
+        traverseAndExtractFormulas(formulas[0].ast, extracted, mappedVariables, indGoals, indQuads);
+        result.variableFormulas = extracted;
+        result.mappedVariables = [...mappedVariables];
+    }
+
+    return result;
+}
+
+function serializeStep(s: FormulaStep): string {
+    switch (s.type) {
+        case 'variable': return `[${s.value.id}]`;
+        case 'goal_variable': return `[MV:${s.value.idMeta}]`;
+        case 'goal_indicator': return `[MI:${s.value.idMeta}]`;
+        case 'quadrennium_variable': return `[QV:${s.value.id}]`;
+        case 'quadrennium_indicator': return `[QI:${s.value.id}]`;
+        case 'baseline': return `[LINEA_BASE]`;
+        case 'advance': return `[AV:${s.value.year}:${s.value.months.join('-')}]`;
+        case 'function': return `${s.value.id}(`;
+        case 'operator': return s.value.symbol;
+        case 'comparison': return s.value.symbol;
+        case 'constant': return s.value;
+        case 'parenthesis': return s.value;
+        case 'separator': return ',';
+        default: return '';
+    }
+}
+
+function hydrateStep(
+    step: FormulaStep,
+    variableFormulas: Record<string, FormulaStep[]>,
+    visitedIds: Set<string>
+): FormulaStep {
+    if (step.type !== 'variable') return step;
+    const varId = step.value.id;
+    if (visitedIds.has(varId)) return step;
+    const currentFormula = variableFormulas[varId] || step.value.formula || [];
+    const nextVisited = new Set(visitedIds);
+    nextVisited.add(varId);
+    return {
+        ...step,
+        value: {
+            ...step.value,
+            formula: hydrateSteps(currentFormula, variableFormulas, nextVisited)
+        }
+    };
+}
+
+function hydrateSteps(
+    steps: FormulaStep[],
+    variableFormulas: Record<string, FormulaStep[]>,
+    visitedIds = new Set<string>()
+): FormulaStep[] {
+    return steps.map(step => hydrateStep(step, variableFormulas, visitedIds));
+}
+
 export interface UseFormulaEditorOptions {
     indicatorId: string;
     isOpen: boolean;
@@ -67,114 +350,11 @@ export function useFormulaEditor({ indicatorId, isOpen, onSave, type = 'action' 
     const [advanceMonths, setAdvanceMonths] = useState<Set<string>>(new Set());
 
     // Derived: Current Steps
-    const currentSteps = activeTab === "variables"
-        ? (selectedVariableId ? (variableFormulas[selectedVariableId] || []) : [])
-        : mainFormulaSteps;
+    const variableSteps = selectedVariableId ? (variableFormulas[selectedVariableId] || []) : [];
+    const currentSteps = activeTab === "variables" ? variableSteps : mainFormulaSteps;
 
     // Derived: Validation State
-    const validationState = useMemo((): ValidationState => {
-        const steps = currentSteps;
-        const lastStep = steps[steps.length - 1];
-
-        let contextStack: { type: 'function' | 'paren', name?: string, argIndex: number }[] = [];
-
-        for (const s of steps) {
-            if (s.type === 'function') {
-                contextStack.push({ type: 'function', name: s.value.id, argIndex: 0 });
-            } else if (s.type === 'parenthesis' && s.value === '(') {
-                contextStack.push({ type: 'paren', argIndex: 0 });
-            } else if (s.type === 'parenthesis' && s.value === ')') {
-                if (contextStack.length > 0) contextStack.pop();
-            } else if (s.type === 'separator') {
-                if (contextStack.length > 0) {
-                    contextStack[contextStack.length - 1].argIndex++;
-                }
-            }
-        }
-
-        const currentContext = contextStack.length > 0 ? contextStack[contextStack.length - 1] : null;
-        const isInsideFunction = contextStack.some(c => c.type === 'function');
-        const openParens = steps.filter(s => (s.type === 'parenthesis' && s.value === '(') || s.type === 'function').length;
-        const closeParens = steps.filter(s => s.type === 'parenthesis' && s.value === ')').length;
-
-        let canAddEntity = false;
-        let canAddOperator = false;
-
-        if (!lastStep) {
-            canAddEntity = true;
-        } else {
-            const type = lastStep.type;
-            if (type === 'operator' || type === 'comparison' || type === 'separator' || (type === 'parenthesis' && lastStep.value === '(') || type === 'function') {
-                canAddEntity = true;
-            } else {
-                canAddOperator = true;
-            }
-        }
-
-        let canAddSeparator = canAddOperator && isInsideFunction;
-        const canAddCloseParen = canAddOperator && openParens > closeParens;
-
-        const RESTRICTED_OPERATOR_FUNCTIONS = ['AVG', 'MAX', 'MIN', 'SUM'];
-        if (currentContext && currentContext.type === 'function' && RESTRICTED_OPERATOR_FUNCTIONS.includes(currentContext.name || '')) {
-            canAddOperator = false;
-        }
-
-        const isInIfCondition = currentContext && currentContext.type === 'function' && currentContext.name === 'IF' && currentContext.argIndex === 0;
-
-        let canAddComparisonOperator = false;
-        if (isInIfCondition) {
-            let comparisonCount = 0;
-            let bracketDepth = 0;
-
-            for (let i = steps.length - 1; i >= 0; i--) {
-                const s = steps[i];
-                if (s.type === 'parenthesis' && s.value === ')') bracketDepth++;
-                if (s.type === 'parenthesis' && s.value === '(') {
-                    if (bracketDepth === 0) break;
-                    bracketDepth--;
-                }
-                if (s.type === 'function') {
-                    if (bracketDepth === 0) break;
-                }
-                if (s.type === 'separator' && bracketDepth === 0) break;
-
-                if (bracketDepth === 0 && s.type === 'comparison') {
-                    comparisonCount++;
-                }
-            }
-            canAddComparisonOperator = comparisonCount === 0;
-        }
-
-        if (currentContext && currentContext.type === 'function' && currentContext.name === 'IF') {
-            if (currentContext.argIndex >= 2) {
-                canAddSeparator = false;
-            }
-        }
-
-        let canAddUnaryOperator = false;
-        if (!lastStep) {
-            canAddUnaryOperator = true;
-        } else {
-            const type = lastStep.type;
-            if (type === 'function' || (type === 'parenthesis' && lastStep.value === '(') || type === 'separator') {
-                canAddUnaryOperator = true;
-            }
-        }
-
-        return {
-            canAddEntity,
-            canAddOperator,
-            canAddMathOperator: canAddOperator && !isInsideFunction,
-            canAddOpenParen: canAddEntity,
-            canAddCloseParen,
-            canAddSeparator,
-            isInsideFunction,
-            currentContext,
-            canAddUnaryOperator,
-            isInIfCondition: !!isInIfCondition,
-            canAddComparisonOperator
-        };
-    }, [currentSteps]);
+    const validationState = useMemo(() => computeValidationState(currentSteps), [currentSteps]);
 
     // Fetch Data
     const fetchData = useCallback(async (year: string) => {
@@ -182,103 +362,16 @@ export function useFormulaEditor({ indicatorId, isOpen, onSave, type = 'action' 
         setIsLoading(true);
         try {
             const data = await getIndicatorFormulaData(indicatorId, year, type);
+            const processed = processFormulaApiData(data);
 
-            if (data) {
-                const fetchedVariables = data.variables || [];
-                setBaseline(data.indicator?.baseline);
-                const mappedVariables: Variable[] = fetchedVariables.map((v: any) => ({
-                    id: v.id,
-                    code: v.code,
-                    name: v.name,
-                    description: v.description,
-                    formula: [],
-                    goals: v.goals?.map((g: any) => ({
-                        idMeta: g.id,
-                        valorMeta: g.value,
-                        year: g.year,
-                        label: `Meta [${g.year}]`
-                    })) || [],
-                    quadrenniums: v.quadrenniums?.map((q: any) => ({
-                        id: q.id,
-                        startYear: q.startYear,
-                        endYear: q.endYear,
-                        value: q.value,
-                        label: `Cuatrenio [${q.startYear}-${q.endYear}]`
-                    })) || []
-                }));
-
-                const indGoals = data.indicator?.goals?.map((g: any) => ({
-                    idMeta: g.id,
-                    valorMeta: g.value,
-                    year: g.year,
-                    label: `Meta Ind [${g.year}]`
-                })) || [];
-                setGoalIndicators(indGoals);
-
-                const indQuads = data.indicator?.quadrenniums?.map((q: any) => ({
-                    id: q.id,
-                    startYear: q.startYear,
-                    endYear: q.endYear,
-                    value: q.value,
-                    label: `Cuatrenio Ind [${q.startYear}-${q.endYear}]`
-                })) || [];
-                setIndicatorQuadrenniums(indQuads);
-
-                setVariables(mappedVariables);
-
-                const formulas = data.indicator?.formulas;
-                if (formulas && Array.isArray(formulas) && formulas.length > 0) {
-                    setExistingFormulaId(formulas[0].id);
-                    if (formulas[0].expression) {
-                        const parsed = parseFormulaString(
-                            formulas[0].expression,
-                            mappedVariables,
-                            [],
-                            indGoals,
-                            new Map(),
-                            indQuads
-                        );
-                        setMainFormulaSteps(parsed);
-                    }
-
-                    const extractedFormulas: Record<string, FormulaStep[]> = {};
-
-                    const traverseAndExtract = (node: any) => {
-                        if (!node) return;
-
-                        if (node.kind === 'ref' && node.value && node.subFormula) {
-                            const steps = convertAstToSteps(
-                                node.subFormula,
-                                mappedVariables,
-                                [],
-                                indGoals,
-                                [],
-                                indQuads
-                            );
-                            extractedFormulas[node.value] = steps;
-
-                            const v = mappedVariables.find(x => x.id === node.value);
-                            if (v) v.formula = steps;
-
-                            traverseAndExtract(node.subFormula);
-                        }
-
-                        if (node.left) traverseAndExtract(node.left);
-                        if (node.right) traverseAndExtract(node.right);
-                        if (node.args && Array.isArray(node.args)) {
-                            node.args.forEach((arg: any) => traverseAndExtract(arg));
-                        }
-                    };
-
-                    if (formulas[0].ast) {
-                        traverseAndExtract(formulas[0].ast);
-                        setVariableFormulas(extractedFormulas);
-                        setVariables([...mappedVariables]);
-                    }
-                } else {
-                    setExistingFormulaId(null);
-                    setMainFormulaSteps([]);
-                }
+            if (processed) {
+                setBaseline(processed.baseline);
+                setGoalIndicators(processed.indGoals);
+                setIndicatorQuadrenniums(processed.indQuads);
+                setVariables(processed.mappedVariables);
+                setExistingFormulaId(processed.existingFormulaId);
+                setMainFormulaSteps(processed.mainFormulaSteps);
+                setVariableFormulas(processed.variableFormulas);
             }
         } catch (error) {
             console.error("Error fetching indicator data:", error);
@@ -334,7 +427,7 @@ export function useFormulaEditor({ indicatorId, isOpen, onSave, type = 'action' 
     const insertStep = useCallback((step: FormulaStep) => {
         const current = getCurrentSteps();
         const newSteps = [...current];
-        const insertPos = cursorIndex !== null ? cursorIndex : newSteps.length;
+        const insertPos = cursorIndex ?? newSteps.length;
         newSteps.splice(insertPos, 0, step);
         updateCurrentSteps(newSteps);
         setCursorIndex(insertPos + 1);
@@ -385,48 +478,11 @@ export function useFormulaEditor({ indicatorId, isOpen, onSave, type = 'action' 
     }, []);
 
     const serializeFormula = useCallback((steps: FormulaStep[]) => {
-        return steps.map(s => {
-            if (s.type === 'variable') return `[${s.value.id}]`;
-            if (s.type === 'goal_variable') return `[MV:${s.value.idMeta}]`;
-            if (s.type === 'goal_indicator') return `[MI:${s.value.idMeta}]`;
-            if (s.type === 'quadrennium_variable') return `[QV:${s.value.id}]`;
-            if (s.type === 'quadrennium_indicator') return `[QI:${s.value.id}]`;
-            if (s.type === 'baseline') return `[LINEA_BASE]`;
-            if (s.type === 'advance') return `[AV:${s.value.year}:${s.value.months.join('-')}]`;
-            if (s.type === 'function') return `${s.value.id}(`;
-            if (s.type === 'operator') return s.value.symbol;
-            if (s.type === 'comparison') return s.value.symbol;
-            if (s.type === 'constant') return s.value;
-            if (s.type === 'parenthesis') return s.value;
-            if (s.type === 'separator') return ',';
-            return '';
-        }).join('');
+        return steps.map(serializeStep).join('');
     }, []);
 
     const getHydratedSteps = useCallback((steps: FormulaStep[], visitedIds = new Set<string>()): FormulaStep[] => {
-        return steps.map(step => {
-            if (step.type === 'variable') {
-                const varId = step.value.id;
-
-                if (visitedIds.has(varId)) {
-                    return step;
-                }
-
-                const currentFormula = variableFormulas[varId] || step.value.formula || [];
-
-                const nextVisited = new Set(visitedIds);
-                nextVisited.add(varId);
-
-                return {
-                    ...step,
-                    value: {
-                        ...step.value,
-                        formula: getHydratedSteps(currentFormula, nextVisited)
-                    }
-                };
-            }
-            return step;
-        });
+        return hydrateSteps(steps, variableFormulas, visitedIds);
     }, [variableFormulas]);
 
     const handleSave = useCallback(() => {

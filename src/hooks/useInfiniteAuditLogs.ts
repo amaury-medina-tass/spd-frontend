@@ -52,14 +52,14 @@ export function useInfiniteAuditLogs(defaultFilters?: Partial<AuditFilters>): Us
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [error, setError] = useState<Error | null>(null)
   const [page, setPage] = useState(1)
-  const [filters, setFiltersState] = useState<AuditFilters>(mergedDefaults)
+  const [filters, setFilters] = useState<AuditFilters>(mergedDefaults)
   
   // Track if we're currently fetching to prevent duplicate requests
   const isFetchingRef = useRef(false)
 
   // Sync default filters when they change (e.g. tab switch)
   useEffect(() => {
-    setFiltersState(prev => ({ ...prev, ...defaultFilters }))
+    setFilters(prev => ({ ...prev, ...defaultFilters }))
   }, [defaultFilters?.system])
 
   const fetchLogs = useCallback(async (pageNum: number, isRefresh: boolean = false) => {
@@ -83,29 +83,18 @@ export function useInfiniteAuditLogs(defaultFilters?: Partial<AuditFilters>): Us
       })
       
       // Add filters
-      if (filters.search.trim()) {
-        params.set("search", filters.search.trim())
-      }
-      if (filters.action) {
-        params.set("action", filters.action)
-      }
-      if (filters.entityType) {
-        params.set("entityType", filters.entityType)
-      }
-      if (filters.system) {
-        params.set("system", filters.system)
-      }
-      if (filters.startDate) {
-        params.set("startDate", filters.startDate)
-      }
-      if (filters.endDate) {
-        params.set("endDate", filters.endDate)
-      }
-      if (filters.sortBy) {
-        params.set("sortBy", filters.sortBy)
-      }
-      if (filters.sortOrder) {
-        params.set("sortOrder", filters.sortOrder)
+      const filterEntries: [string, string][] = [
+        ["search", filters.search.trim()],
+        ["action", filters.action],
+        ["entityType", filters.entityType],
+        ["system", filters.system],
+        ["startDate", filters.startDate],
+        ["endDate", filters.endDate],
+        ["sortBy", filters.sortBy],
+        ["sortOrder", filters.sortOrder],
+      ]
+      for (const [key, value] of filterEntries) {
+        if (value) params.set(key, value)
       }
 
       const result = await get<PaginatedData<AuditLog>>(`${endpoints.audit}?${params}`)
@@ -148,13 +137,13 @@ export function useInfiniteAuditLogs(defaultFilters?: Partial<AuditFilters>): Us
   }, [fetchLogs, isLoading, isLoadingMore, meta?.hasNextPage, page])
 
   // Set filters
-  const setFilters = useCallback((newFilters: Partial<AuditFilters>) => {
-    setFiltersState(prev => ({ ...prev, ...newFilters }))
+  const updateFilters = useCallback((newFilters: Partial<AuditFilters>) => {
+    setFilters(prev => ({ ...prev, ...newFilters }))
   }, [])
 
   // Reset filters
   const resetFilters = useCallback(() => {
-    setFiltersState(mergedDefaults)
+    setFilters(mergedDefaults)
   }, [mergedDefaults])
 
   const hasMore = meta?.hasNextPage ?? false
@@ -169,7 +158,7 @@ export function useInfiniteAuditLogs(defaultFilters?: Partial<AuditFilters>): Us
     loadMore,
     refresh,
     filters,
-    setFilters,
+    setFilters: updateFilters,
     resetFilters,
   }
 }

@@ -13,7 +13,8 @@ import {
 } from "@heroui/react"
 import { useEffect, useState, useMemo } from "react"
 import type { User } from "@/types/user"
-import { Eye, EyeOff, RefreshCw } from "lucide-react"
+import { PasswordEndContent, PasswordVisibilityToggle } from "@/components/inputs/PasswordEndContent"
+import { generatePassword as generateSecurePassword } from "@/lib/password-utils"
 
 export function UserInfoModal({
     isOpen,
@@ -22,14 +23,14 @@ export function UserInfoModal({
     onClose,
     onSave,
     isLoading,
-}: {
+}: Readonly<{
     isOpen: boolean
     title: string
     initial: User | null
     onClose: () => void
     onSave: (payload: any) => void
     isLoading?: boolean
-}) {
+}>) {
     const [firstName, setFirstName] = useState("")
     const [lastName, setLastName] = useState("")
     const [documentNumber, setDocumentNumber] = useState("")
@@ -63,25 +64,8 @@ export function UserInfoModal({
         }
     }, [isOpen, initial])
 
-    const generatePassword = () => {
-        const lowercase = "abcdefghijklmnopqrstuvwxyz"
-        const uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        const numbers = "0123456789"
-        const special = "!@#$%^&*"
-        const allChars = lowercase + uppercase + numbers + special
-
-        let pass = ""
-        pass += lowercase.charAt(Math.floor(Math.random() * lowercase.length))
-        pass += uppercase.charAt(Math.floor(Math.random() * uppercase.length))
-        pass += numbers.charAt(Math.floor(Math.random() * numbers.length))
-        pass += special.charAt(Math.floor(Math.random() * special.length))
-
-        for (let i = 4; i < 12; i++) {
-            pass += allChars.charAt(Math.floor(Math.random() * allChars.length))
-        }
-
-        pass = pass.split('').sort(() => 0.5 - Math.random()).join('')
-
+    const handleGeneratePassword = () => {
+        const pass = generateSecurePassword()
         setPassword(pass)
         setConfirmPassword(pass)
     }
@@ -93,7 +77,7 @@ export function UserInfoModal({
 
     const emailIsValid = useMemo(() => {
         if (email === "") return false
-        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+        return /^[^\s@]+@[^\s@.]+(?:\.[^\s@.]+)+$/.test(email)
     }, [email])
 
     const passwordErrors = useMemo(() => {
@@ -102,7 +86,7 @@ export function UserInfoModal({
         if (password.length < 8) errors.push("Mínimo 8 caracteres")
         if (!/[A-Z]/.test(password)) errors.push("Una mayúscula")
         if (!/[a-z]/.test(password)) errors.push("Una minúscula")
-        if (!/[0-9]/.test(password)) errors.push("Un número")
+        if (!/\d/.test(password)) errors.push("Un número")
         if (!/[!@#$%^&*]/.test(password)) errors.push("Un carácter especial (!@#$%^&*)")
         return errors
     }, [password])
@@ -116,7 +100,7 @@ export function UserInfoModal({
             documentNumber.trim() !== "" &&
             emailIsValid &&
             (initial ? true : passwordIsValid) &&
-            (!password ? true : passwordIsValid) &&
+            (password ? passwordIsValid : true) &&
             passwordsMatch
         )
     }, [firstName, lastName, documentNumber, emailIsValid, password, passwordIsValid, passwordsMatch, initial])
@@ -161,7 +145,7 @@ export function UserInfoModal({
                     <Input
                         label="Documento"
                         value={documentNumber}
-                        onValueChange={(value) => setDocumentNumber(value.replace(/\D/g, ""))}
+                        onValueChange={(value) => setDocumentNumber(value.replaceAll(/\D/g, ""))}
                         isRequired
                         inputMode="numeric"
                         pattern="[0-9]*"
@@ -200,22 +184,11 @@ export function UserInfoModal({
                                     isInvalid={!passwordIsValid && password !== ""}
                                     errorMessage={(!passwordIsValid && password !== "") ? (
                                         <ul className="list-disc pl-4 text-tiny">
-                                            {passwordErrors.map((err, i) => <li key={i}>{err}</li>)}
+                                            {passwordErrors.map((err) => <li key={err}>{err}</li>)}
                                         </ul>
                                     ) : ""}
                                     endContent={
-                                        <div className="flex gap-1 items-center">
-                                            <Button isIconOnly size="sm" variant="light" onPress={togglePasswordVisibility}>
-                                                {isPasswordVisible ? (
-                                                    <EyeOff size={18} className="text-default-400 pointer-events-none" />
-                                                ) : (
-                                                    <Eye size={18} className="text-default-400 pointer-events-none" />
-                                                )}
-                                            </Button>
-                                            <Button isIconOnly size="sm" variant="light" onPress={generatePassword} title="Generar contraseña">
-                                                <RefreshCw size={18} className="text-default-400" />
-                                            </Button>
-                                        </div>
+                                        <PasswordEndContent isVisible={isPasswordVisible} onToggle={togglePasswordVisibility} onGenerate={handleGeneratePassword} />
                                     }
                                 />
                                 <Input
@@ -223,16 +196,10 @@ export function UserInfoModal({
                                     value={confirmPassword}
                                     onValueChange={setConfirmPassword}
                                     type={isConfirmPasswordVisible ? "text" : "password"}
-                                    errorMessage={!passwordsMatch ? "Las contraseñas no coinciden" : ""}
+                                    errorMessage={passwordsMatch ? "" : "Las contraseñas no coinciden"}
                                     isInvalid={!passwordsMatch}
                                     endContent={
-                                        <Button isIconOnly size="sm" variant="light" onPress={toggleConfirmPasswordVisibility}>
-                                            {isConfirmPasswordVisible ? (
-                                                <EyeOff size={18} className="text-default-400 pointer-events-none" />
-                                            ) : (
-                                                <Eye size={18} className="text-default-400 pointer-events-none" />
-                                            )}
-                                        </Button>
+                                        <PasswordVisibilityToggle isVisible={isConfirmPasswordVisible} onToggle={toggleConfirmPasswordVisibility} />
                                     }
                                 />
                             </div>

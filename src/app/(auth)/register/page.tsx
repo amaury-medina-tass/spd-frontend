@@ -1,16 +1,18 @@
 "use client"
 
-import { Button, Card, CardBody, CardHeader, Input, Link, InputOtp } from "@heroui/react"
+import { Button, Card, CardBody, CardHeader, Input, Link } from "@heroui/react"
 import { useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
-import { post, HttpError } from "@/lib/http"
+import { post } from "@/lib/http"
 import { endpoints } from "@/lib/endpoints"
 import { useAuth } from "@/components/auth/useAuth"
 import { ThemeToggle } from "@/components/layout/ThemeToggle"
-import { Eye, EyeOff, RefreshCw } from "lucide-react"
+import { PasswordEndContent, PasswordVisibilityToggle } from "@/components/inputs/PasswordEndContent"
 import { getErrorMessage } from "@/lib/error-codes"
 import { addToast } from "@heroui/toast"
+import { VerifyEmailStep } from "@/components/auth/VerifyEmailStep"
+import { generatePassword as generateSecurePassword } from "@/lib/password-utils"
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -24,7 +26,6 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
-  const [code, setCode] = useState("")
 
   const [isPasswordVisible, setIsPasswordVisible] = useState(false)
   const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false)
@@ -34,25 +35,8 @@ export default function RegisterPage() {
   const togglePasswordVisibility = () => setIsPasswordVisible(!isPasswordVisible)
   const toggleConfirmPasswordVisibility = () => setIsConfirmPasswordVisible(!isConfirmPasswordVisible)
 
-  const generatePassword = () => {
-    const lowercase = "abcdefghijklmnopqrstuvwxyz"
-    const uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    const numbers = "0123456789"
-    const special = "!@#$%^&*"
-    const allChars = lowercase + uppercase + numbers + special
-
-    let pass = ""
-    pass += lowercase.charAt(Math.floor(Math.random() * lowercase.length))
-    pass += uppercase.charAt(Math.floor(Math.random() * uppercase.length))
-    pass += numbers.charAt(Math.floor(Math.random() * numbers.length))
-    pass += special.charAt(Math.floor(Math.random() * special.length))
-
-    for (let i = 4; i < 12; i++) {
-      pass += allChars.charAt(Math.floor(Math.random() * allChars.length))
-    }
-
-    pass = pass.split('').sort(() => 0.5 - Math.random()).join('')
-
+  const handleGeneratePassword = () => {
+    const pass = generateSecurePassword()
     setPassword(pass)
     setConfirmPassword(pass)
   }
@@ -105,53 +89,11 @@ export default function RegisterPage() {
     }
   }
 
-  const onVerify = async () => {
-    if (!code) return
-    setLoading(true)
-    try {
-      await post(endpoints.auth.verifyEmail, { email, code })
-
-      // Auto-login
-      await post(endpoints.auth.login, { email, password })
-      await refreshMe()
-
-      addToast({
-        title: "Cuenta verificada e iniciada correctamente",
-        color: "success",
-      })
-      router.push("/dashboard")
-
-    } catch (e: any) {
-      const errorCode = e.data?.errors?.code
-      const message = errorCode ? getErrorMessage(errorCode) : "Error al verificar código"
-
-      addToast({
-        title: message,
-        color: "danger",
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const onResend = async () => {
-    setLoading(true)
-    try {
-      await post(endpoints.auth.resendVerification, { email })
-      addToast({
-        title: "Código reenviado correctamente",
-        color: "success",
-      })
-    } catch (e: any) {
-      const errorCode = e.data?.errors?.code
-      const message = errorCode ? getErrorMessage(errorCode) : (e.data?.message ?? "Error al reenviar código")
-      addToast({
-        title: message,
-        color: "danger",
-      })
-    } finally {
-      setLoading(false)
-    }
+  const onVerified = async () => {
+    await post(endpoints.auth.login, { email, password })
+    await refreshMe()
+    addToast({ title: "Cuenta verificada e iniciada correctamente", color: "success" })
+    router.push("/dashboard")
   }
 
   return (
@@ -194,18 +136,7 @@ export default function RegisterPage() {
                   onValueChange={setPassword}
                   isRequired
                   endContent={
-                    <div className="flex gap-1 items-center">
-                      <Button isIconOnly size="sm" variant="light" onPress={togglePasswordVisibility}>
-                        {isPasswordVisible ? (
-                          <EyeOff size={18} className="text-default-400 pointer-events-none" />
-                        ) : (
-                          <Eye size={18} className="text-default-400 pointer-events-none" />
-                        )}
-                      </Button>
-                      <Button isIconOnly size="sm" variant="light" onPress={generatePassword} title="Generar contraseña">
-                        <RefreshCw size={18} className="text-default-400" />
-                      </Button>
-                    </div>
+                    <PasswordEndContent isVisible={isPasswordVisible} onToggle={togglePasswordVisibility} onGenerate={handleGeneratePassword} />
                   }
                 />
                 <Input
@@ -213,17 +144,11 @@ export default function RegisterPage() {
                   type={isConfirmPasswordVisible ? "text" : "password"}
                   value={confirmPassword}
                   onValueChange={setConfirmPassword}
-                  errorMessage={!passwordsMatch ? "Las contraseñas no coinciden" : ""}
+                  errorMessage={passwordsMatch ? "" : "Las contraseñas no coinciden"}
                   isInvalid={!passwordsMatch}
                   isRequired
                   endContent={
-                    <Button isIconOnly size="sm" variant="light" onPress={toggleConfirmPasswordVisibility}>
-                      {isConfirmPasswordVisible ? (
-                        <EyeOff size={18} className="text-default-400 pointer-events-none" />
-                      ) : (
-                        <Eye size={18} className="text-default-400 pointer-events-none" />
-                      )}
-                    </Button>
+                    <PasswordVisibilityToggle isVisible={isConfirmPasswordVisible} onToggle={toggleConfirmPasswordVisibility} />
                   }
                 />
               </div>
@@ -240,30 +165,12 @@ export default function RegisterPage() {
               </p>
             </>
           ) : (
-            <>
-              <p className="text-sm text-default-500 text-center">
-                Ingresa el código que enviamos a <strong>{email}</strong>
-              </p>
-
-              <div className="flex justify-center my-4">
-                <InputOtp
-                  length={6}
-                  value={code}
-                  onValueChange={setCode}
-                  isDisabled={loading}
-                />
-              </div>
-
-              <Button color="primary" isLoading={loading} onPress={onVerify} isDisabled={!code}>
-                Verificar Correo
-              </Button>
-
-              <div className="flex justify-center mt-4">
-                <Button variant="light" size="sm" onPress={onResend} isDisabled={loading}>
-                  ¿No recibiste el código? Reenviar
-                </Button>
-              </div>
-            </>
+            <VerifyEmailStep
+              email={email}
+              onVerified={onVerified}
+              loading={loading}
+              setLoading={setLoading}
+            />
           )}
         </CardBody>
       </Card>

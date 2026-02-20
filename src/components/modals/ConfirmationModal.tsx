@@ -32,7 +32,7 @@ export function ConfirmationModal({
     confirmText = "Confirmar",
     cancelText = "Cancelar",
     confirmColor = "primary",
-}: ConfirmationModalProps) {
+}: Readonly<ConfirmationModalProps>) {
     return (
         <Modal
             isOpen={isOpen}

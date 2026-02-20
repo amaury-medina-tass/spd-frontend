@@ -22,14 +22,14 @@ export function ModuleActionsModal({
     onClose,
     onAssign,
     onUnassign,
-}: {
+}: Readonly<{
     isOpen: boolean
     module: ModuleWithActions | null
     isLoading?: boolean
     onClose: () => void
     onAssign: (actionId: string) => void
     onUnassign: (actionId: string) => void
-}) {
+}>) {
     const [actionId, setActionId] = useState("")
 
     const availableActions = module?.missingActions ?? []

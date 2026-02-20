@@ -27,7 +27,7 @@ interface IndicatorVariablesModalProps {
     onViewVariableAdvances?: (variableId: string, variableCode: string, variableName: string) => void
 }
 
-export function IndicatorVariablesModal({ isOpen, onClose, indicatorId, indicatorCode, type, onViewVariableAdvances }: IndicatorVariablesModalProps) {
+export function IndicatorVariablesModal({ isOpen, onClose, indicatorId, indicatorCode, type, onViewVariableAdvances }: Readonly<IndicatorVariablesModalProps>) {
     const [variables, setVariables] = useState<VariableData[]>([])
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
@@ -62,6 +62,12 @@ export function IndicatorVariablesModal({ isOpen, onClose, indicatorId, indicato
         }
     }, [isOpen, indicatorId, fetchVariables])
 
+    const getMatchTypeLabel = (matchType: string) => {
+        if (matchType === 'direct') return 'Directa';
+        if (matchType === 'location') return 'Por Ubicación';
+        return matchType;
+    };
+
     return (
         <Modal isOpen={isOpen} onClose={onClose} size="2xl" scrollBehavior="inside">
             <ModalContent>
@@ -74,19 +80,22 @@ export function IndicatorVariablesModal({ isOpen, onClose, indicatorId, indicato
                     )}
                 </ModalHeader>
                 <ModalBody className="pb-6">
-                    {loading ? (
+                    {loading && (
                         <div className="flex justify-center py-8">
                             <Spinner size="lg" />
                         </div>
-                    ) : error ? (
+                    )}
+                    {!loading && error && (
                         <div className="text-center py-8 text-danger">
                             <p>{error}</p>
                         </div>
-                    ) : variables.length === 0 ? (
+                    )}
+                    {!loading && !error && variables.length === 0 && (
                         <div className="text-center py-8 text-default-500">
                             <p>No hay variables asociadas a este indicador en esta ubicación.</p>
                         </div>
-                    ) : (
+                    )}
+                    {!loading && !error && variables.length > 0 && (
                         <Table aria-label="Tabla de variables asociadas" removeWrapper>
                             <TableHeader>
                                 <TableColumn>Código</TableColumn>
@@ -103,7 +112,7 @@ export function IndicatorVariablesModal({ isOpen, onClose, indicatorId, indicato
                                         <TableCell>{item.variable.name}</TableCell>
                                         <TableCell>
                                             <span className={`px-2 py-1 text-xs font-medium rounded-full ${item.matchType === 'direct' ? 'bg-primary/10 text-primary' : 'bg-secondary/10 text-secondary'}`}>
-                                                {item.matchType === 'direct' ? 'Directa' : item.matchType === 'location' ? 'Por Ubicación' : item.matchType}
+                                                {getMatchTypeLabel(item.matchType)}
                                             </span>
                                         </TableCell>
                                         <TableCell>

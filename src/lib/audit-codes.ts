@@ -386,173 +386,29 @@ export const ACTION_LABELS: Record<string, string> = {
   [AuditActions.SAP_SYNC_FAILED]: "Sincronización SAP Fallida",
 }
 
-// === Colores por acción ===
-export const ACTION_COLORS: Record<string, "default" | "primary" | "secondary" | "success" | "warning" | "danger"> = {
-  // Auth — Usuarios
-  [AuditActions.USER_CREATED]: "success",
-  [AuditActions.USER_UPDATED]: "primary",
-  [AuditActions.USER_DELETED]: "danger",
-  [AuditActions.USER_ACTIVATED]: "success",
-  [AuditActions.USER_DEACTIVATED]: "warning",
+// === Colores por acción (derivados automáticamente del sufijo) ===
+type AuditActionColor = "default" | "primary" | "secondary" | "success" | "warning" | "danger"
 
-  // Auth — Roles
-  [AuditActions.ROLE_ASSIGNED]: "success",
-  [AuditActions.ROLE_UNASSIGNED]: "warning",
-  [AuditActions.ROLE_CREATED]: "success",
-  [AuditActions.ROLE_UPDATED]: "primary",
-  [AuditActions.ROLE_DELETED]: "danger",
-
-  // Auth — Permisos
-  [AuditActions.PERMISSION_GRANTED]: "success",
-  [AuditActions.PERMISSION_REVOKED]: "warning",
-
-  // Auth
-  [AuditActions.LOGIN_SUCCESS]: "success",
-  [AuditActions.LOGIN_FAILED]: "danger",
+const ACTION_COLOR_OVERRIDES: Partial<Record<string, AuditActionColor>> = {
   [AuditActions.LOGOUT]: "secondary",
-  [AuditActions.PASSWORD_CHANGED]: "primary",
-  [AuditActions.PASSWORD_RESET_REQUESTED]: "warning",
-
-  // Auth — Módulos
-  [AuditActions.MODULE_CREATED]: "success",
-  [AuditActions.MODULE_UPDATED]: "primary",
-  [AuditActions.MODULE_DELETED]: "danger",
-
-  // Auth — Acciones
-  [AuditActions.ACTION_CREATED]: "success",
-  [AuditActions.ACTION_UPDATED]: "primary",
-  [AuditActions.ACTION_DELETED]: "danger",
-
-  // Masters — Variables
-  [AuditActions.VARIABLE_CREATED]: "success",
-  [AuditActions.VARIABLE_UPDATED]: "primary",
-  [AuditActions.VARIABLE_DELETED]: "danger",
-  [AuditActions.VARIABLE_LOCATION_ADDED]: "success",
-  [AuditActions.VARIABLE_LOCATION_REMOVED]: "warning",
-  [AuditActions.VARIABLE_GOAL_CREATED]: "success",
-  [AuditActions.VARIABLE_GOAL_UPDATED]: "primary",
-  [AuditActions.VARIABLE_GOAL_DELETED]: "danger",
-  [AuditActions.VARIABLE_QUADRENNIUM_CREATED]: "success",
-  [AuditActions.VARIABLE_QUADRENNIUM_UPDATED]: "primary",
-  [AuditActions.VARIABLE_QUADRENNIUM_DELETED]: "danger",
-
-  // Masters — Ubicaciones
-  [AuditActions.LOCATION_CREATED]: "success",
-
-  // Masters — Actividades MGA
-  [AuditActions.MGA_ACTIVITY_CREATED]: "success",
-  [AuditActions.MGA_ACTIVITY_UPDATED]: "primary",
-  [AuditActions.MGA_DETAILED_RELATION_ADDED]: "success",
-  [AuditActions.MGA_DETAILED_RELATION_REMOVED]: "warning",
-
-  // Masters — Actividades Detalladas
-  [AuditActions.DETAILED_ACTIVITY_CREATED]: "success",
-  [AuditActions.DETAILED_ACTIVITY_UPDATED]: "primary",
-  [AuditActions.DETAILED_ACTIVITY_DELETED]: "danger",
-
-  // Masters — Modificaciones Presupuestales
   [AuditActions.BUDGET_MODIFICATION_CREATED]: "warning",
-
-  // Masters — Fórmulas
-  [AuditActions.FORMULA_CREATED]: "success",
-  [AuditActions.FORMULA_UPDATED]: "primary",
-
-  // Masters — Indicadores Plan de Acción
-  [AuditActions.ACTION_INDICATOR_CREATED]: "success",
-  [AuditActions.ACTION_INDICATOR_UPDATED]: "primary",
-  [AuditActions.ACTION_INDICATOR_DELETED]: "danger",
-  [AuditActions.ACTION_INDICATOR_GOAL_CREATED]: "success",
-  [AuditActions.ACTION_INDICATOR_GOAL_UPDATED]: "primary",
-  [AuditActions.ACTION_INDICATOR_GOAL_DELETED]: "danger",
-  [AuditActions.ACTION_INDICATOR_QUADRENNIUM_CREATED]: "success",
-  [AuditActions.ACTION_INDICATOR_QUADRENNIUM_UPDATED]: "primary",
-  [AuditActions.ACTION_INDICATOR_QUADRENNIUM_DELETED]: "danger",
-  [AuditActions.ACTION_INDICATOR_LOCATION_ADDED]: "success",
-  [AuditActions.ACTION_INDICATOR_LOCATION_REMOVED]: "warning",
-  [AuditActions.VARIABLE_ACTION_ASSOCIATED]: "success",
-  [AuditActions.VARIABLE_ACTION_DISASSOCIATED]: "warning",
-  [AuditActions.PROJECT_ACTION_INDICATOR_ASSOCIATED]: "success",
-  [AuditActions.PROJECT_ACTION_INDICATOR_DISASSOCIATED]: "warning",
-
-  // Masters — Indicadores Plan Indicativo
-  [AuditActions.INDICATIVE_INDICATOR_CREATED]: "success",
-  [AuditActions.INDICATIVE_INDICATOR_UPDATED]: "primary",
-  [AuditActions.INDICATIVE_INDICATOR_DELETED]: "danger",
-  [AuditActions.INDICATIVE_INDICATOR_GOAL_CREATED]: "success",
-  [AuditActions.INDICATIVE_INDICATOR_GOAL_UPDATED]: "primary",
-  [AuditActions.INDICATIVE_INDICATOR_GOAL_DELETED]: "danger",
-  [AuditActions.INDICATIVE_INDICATOR_QUADRENNIUM_CREATED]: "success",
-  [AuditActions.INDICATIVE_INDICATOR_QUADRENNIUM_UPDATED]: "primary",
-  [AuditActions.INDICATIVE_INDICATOR_QUADRENNIUM_DELETED]: "danger",
-  [AuditActions.INDICATIVE_INDICATOR_LOCATION_ADDED]: "success",
-  [AuditActions.INDICATIVE_INDICATOR_LOCATION_REMOVED]: "warning",
-  [AuditActions.VARIABLE_INDICATIVE_ASSOCIATED]: "success",
-  [AuditActions.VARIABLE_INDICATIVE_DISASSOCIATED]: "warning",
-
-  // Financial
-  [AuditActions.PROJECT_CREATED]: "success",
-  [AuditActions.FUNDING_SOURCE_CREATED]: "success",
-  [AuditActions.FUNDING_SOURCE_UPDATED]: "primary",
-  [AuditActions.FUNDING_SOURCE_DELETED]: "danger",
-  [AuditActions.POAI_PPA_CREATED]: "success",
-  [AuditActions.POAI_PPA_UPDATED]: "primary",
-  [AuditActions.POAI_PPA_DELETED]: "danger",
-  [AuditActions.CDP_POSITION_OBSERVATIONS_UPDATED]: "primary",
-  [AuditActions.CDP_POSITION_ACTIVITY_ASSOCIATED]: "success",
-  [AuditActions.CDP_POSITION_ACTIVITY_DISASSOCIATED]: "warning",
   [AuditActions.CDP_FUNDING_CONSUMED]: "warning",
-
-  // Sub — Avances
-  [AuditActions.VARIABLE_ADVANCE_CREATED]: "success",
-  [AuditActions.VARIABLE_ADVANCE_UPDATED]: "primary",
-  [AuditActions.INDICATOR_ADVANCE_CREATED]: "success",
-  [AuditActions.INDICATOR_ADVANCE_UPDATED]: "primary",
-
-  // Rubros
-  [AuditActions.RUBRIC_CREATED]: "success",
-  [AuditActions.RUBRIC_UPDATED]: "primary",
-  [AuditActions.RUBRIC_DELETED]: "danger",
-
-  // Productos
-  [AuditActions.PRODUCT_CREATED]: "success",
-  [AuditActions.PRODUCT_UPDATED]: "primary",
-  [AuditActions.PRODUCT_DELETED]: "danger",
-
-  // Contratistas
-  [AuditActions.CONTRACTOR_CREATED]: "success",
-  [AuditActions.CONTRACTOR_UPDATED]: "primary",
-  [AuditActions.CONTRACTOR_DELETED]: "danger",
-
-  // Contratos Marco
-  [AuditActions.MASTER_CONTRACT_CREATED]: "success",
-  [AuditActions.MASTER_CONTRACT_UPDATED]: "primary",
-  [AuditActions.MASTER_CONTRACT_DELETED]: "danger",
-
-  // Necesidades
-  [AuditActions.NEED_CREATED]: "success",
-  [AuditActions.NEED_UPDATED]: "primary",
-  [AuditActions.NEED_DELETED]: "danger",
-
-  // Estudios Previos
-  [AuditActions.PREVIOUS_STUDY_CREATED]: "success",
-  [AuditActions.PREVIOUS_STUDY_UPDATED]: "primary",
-  [AuditActions.PREVIOUS_STUDY_DELETED]: "danger",
-
-  // Dependencias
-  [AuditActions.DEPENDENCY_CREATED]: "success",
-  [AuditActions.DEPENDENCY_UPDATED]: "primary",
-  [AuditActions.DEPENDENCY_DELETED]: "danger",
-
-  // CDPs
-  [AuditActions.CDP_CREATED]: "success",
-  [AuditActions.CDP_UPDATED]: "primary",
-  [AuditActions.CDP_DELETED]: "danger",
-
-  // SAP Sync
   [AuditActions.SAP_SYNC_REQUESTED]: "secondary",
-  [AuditActions.SAP_SYNC_COMPLETED]: "success",
-  [AuditActions.SAP_SYNC_FAILED]: "danger",
 }
+
+function deriveActionColor(action: string): AuditActionColor {
+  const override = ACTION_COLOR_OVERRIDES[action]
+  if (override) return override
+  if (/_CREATED$|_ADDED$|_ASSIGNED$|_ASSOCIATED$|_ACTIVATED$|_COMPLETED$|_GRANTED$|_SUCCESS$/.test(action)) return "success"
+  if (/_UPDATED$|_CHANGED$/.test(action)) return "primary"
+  if (/_DELETED$|_FAILED$/.test(action)) return "danger"
+  if (/_REMOVED$|_UNASSIGNED$|_DISASSOCIATED$|_REVOKED$|_DEACTIVATED$|_REQUESTED$/.test(action)) return "warning"
+  return "default"
+}
+
+export const ACTION_COLORS: Record<string, AuditActionColor> = Object.fromEntries(
+  Object.values(AuditActions).map((action) => [action, deriveActionColor(action)])
+)
 
 // === Labels legibles por campo ===
 export const FIELD_LABELS: Record<string, string> = {
@@ -802,7 +658,7 @@ export function getActionLabel(action: string): string {
   return ACTION_LABELS[action] ?? action
 }
 
-export function getActionColor(action: string): "default" | "primary" | "secondary" | "success" | "warning" | "danger" {
+export function getActionColor(action: string): AuditActionColor {
   return ACTION_COLORS[action] ?? "default"
 }
 
@@ -815,6 +671,6 @@ export function getEntityTypeLabel(entityType: string): string {
 }
 
 export function getMetadataLabel(key: string): string {
-  return METADATA_LABELS[key] ?? key.replace(/([A-Z])/g, " $1").replace(/^./, (s) => s.toUpperCase()).trim()
+  return METADATA_LABELS[key] ?? key.replaceAll(/([A-Z])/g, " $1").replace(/^./, (s) => s.toUpperCase()).trim()
 }
 

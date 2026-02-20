@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { formatCurrency } from "@/lib/format-utils"
 import {
     Modal,
     ModalBody,
@@ -18,12 +19,10 @@ import {
     Search,
     Receipt,
     Hash,
-    Briefcase,
-    DollarSign,
     FileText,
     BookOpen,
 } from "lucide-react"
-import type { NeedCdpPosition, NeedCdpPositionsResponse } from "@/types/financial"
+import type { NeedCdpPositionsResponse } from "@/types/financial"
 import { get } from "@/lib/http"
 import { endpoints } from "@/lib/endpoints"
 import { useDebounce } from "@/hooks/useDebounce"
@@ -32,11 +31,11 @@ export function NeedCdpPositionsModal({
     isOpen,
     needId,
     onClose,
-}: {
+}: Readonly<{
     isOpen: boolean
     needId: string | null
     onClose: () => void
-}) {
+}>) {
     // Data State
     const [data, setData] = useState<NeedCdpPositionsResponse | null>(null)
     const [loading, setLoading] = useState(false)
@@ -50,21 +49,12 @@ export function NeedCdpPositionsModal({
     // but standard tables usually have them. The custom grid in CdpPositionDetailModal 
     // does NOT have sorting headers. I'll stick to the visual style first.
     // If I need sorting, I'll add clickable headers.
-    const [sortDescriptor, setSortDescriptor] = useState<{ column: string, direction: 'ASC' | 'DESC' }>({
+    const [sortDescriptor] = useState<{ column: string, direction: 'ASC' | 'DESC' }>({
         column: 'cdpNumber',
         direction: 'DESC'
     })
 
     const debouncedSearch = useDebounce(searchInput, 400)
-
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat("es-CO", {
-            style: "currency",
-            currency: "COP",
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
-        }).format(amount)
-    }
 
     const fetchData = useCallback(async () => {
         if (!needId) return
@@ -185,12 +175,13 @@ export function NeedCdpPositionsModal({
 
                                     {/* Body */}
                                     <div className="flex-1 bg-content1">
-                                        {loading && !data ? (
+                                        {loading && !data && (
                                             <div className="flex flex-col items-center justify-center h-full gap-3 text-default-400 py-12">
                                                 <Spinner size="lg" />
                                                 <p className="text-small">Cargando posiciones...</p>
                                             </div>
-                                        ) : data?.data && data.data.length > 0 ? (
+                                        )}
+                                        {!(loading && !data) && data?.data && data.data.length > 0 && (
                                             <div className="divide-y divide-default-100 dark:divide-default-700/50">
                                                 {data.data.map((item, idx) => (
                                                     <div
@@ -249,7 +240,8 @@ export function NeedCdpPositionsModal({
                                                     </div>
                                                 ))}
                                             </div>
-                                        ) : (
+                                        )}
+                                        {!(loading && !data) && !(data?.data && data.data.length > 0) && (
                                             <div className="flex flex-col items-center justify-center h-full gap-2 text-default-400 py-12">
                                                 <BookOpen size={48} className="opacity-50" />
                                                 <p className="text-medium font-medium">No se encontraron posiciones</p>
@@ -264,7 +256,7 @@ export function NeedCdpPositionsModal({
                         </div>
 
                         {/* Pagination & Limit */}
-                        {data && data.meta && (
+                        {data?.meta && (
                             <div className="flex flex-col sm:flex-row justify-between items-center gap-4 border-t border-dashed border-default-200 dark:border-default-700 pt-4">
                                 <span className="text-small text-default-400">
                                     Total: {data.meta.total} registros

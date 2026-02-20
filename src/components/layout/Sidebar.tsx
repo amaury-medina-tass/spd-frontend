@@ -224,7 +224,8 @@ export function Sidebar() {
   }
 
   // Define styles based on state
-  const sidebarWidth = isMobile ? "w-64" : (isOpen ? "w-64" : "w-20");
+  const collapsedWidth = isOpen ? "w-64" : "w-20";
+  const sidebarWidth = isMobile ? "w-64" : collapsedWidth;
 
   const sidebarClasses = `
     h-full bg-background flex flex-col flex-shrink-0
@@ -320,6 +321,7 @@ export function Sidebar() {
         {/* Backdrop */}
         {isOpen && (
           <div
+            aria-hidden="true"
             className="fixed inset-0 z-40 bg-black/50 transition-opacity duration-300"
             onClick={closeSidebar}
           />

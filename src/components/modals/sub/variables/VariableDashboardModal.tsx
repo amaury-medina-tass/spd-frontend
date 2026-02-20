@@ -4,15 +4,18 @@ import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Selec
 import { useCallback, useEffect, useState, useMemo } from "react"
 import { VariableDashboardData } from "@/types/masters/variables"
 import { getVariableDashboardData } from "@/services/sub/variables.service"
-import { Calendar, Target, TrendingUp, BarChart3, Loader2, Activity, Layers } from "lucide-react"
+import { Calendar, Target, TrendingUp, BarChart3, Activity, Layers } from "lucide-react"
 import { addToast } from "@heroui/toast"
-import { Line, LineChart, CartesianGrid, XAxis, YAxis, BarChart, Bar, ResponsiveContainer } from "recharts"
+import { BarChart, Bar, CartesianGrid, XAxis, YAxis } from "recharts"
 import {
     ChartConfig,
     ChartContainer,
     ChartTooltip,
     ChartTooltipContent,
 } from "@/components/ui/chart"
+import { DASHBOARD_MONTHS } from "@/config/dashboard-chart-config"
+import { AdvancesLineChart } from "@/components/charts/AdvancesLineChart"
+import { DashboardLoadingView, DashboardEmptyView } from "@/components/modals/shared/DashboardStatusViews"
 
 interface VariableDashboardModalProps {
     isOpen: boolean
@@ -20,15 +23,6 @@ interface VariableDashboardModalProps {
     variableId: string | null
     variableCode?: string
 }
-
-const MONTHS = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
-
-const advancesChartConfig = {
-    value: {
-        label: "Avance",
-        color: "hsl(var(--chart-1))",
-    },
-} satisfies ChartConfig
 
 const goalsChartConfig = {
     value: {
@@ -44,13 +38,12 @@ const quadrenniumsChartConfig = {
     },
 } satisfies ChartConfig
 
-export function VariableDashboardModal({ isOpen, onClose, variableId, variableCode }: VariableDashboardModalProps) {
+export function VariableDashboardModal({ isOpen, onClose, variableId, variableCode }: Readonly<VariableDashboardModalProps>) {
     const currentYear = new Date().getFullYear()
     const [year, setYear] = useState<string>(currentYear.toString())
     const [month, setMonth] = useState<string>("all")
     const [loading, setLoading] = useState(false)
     const [data, setData] = useState<VariableDashboardData | null>(null)
-    const [error, setError] = useState<string | null>(null)
 
     const years = useMemo(() => {
         const yearsArray = Array.from({ length: 11 }, (_, i) => new Date().getFullYear() - 5 + i)
@@ -60,13 +53,11 @@ export function VariableDashboardModal({ isOpen, onClose, variableId, variableCo
     const fetchData = useCallback(async () => {
         if (!variableId) return
         setLoading(true)
-        setError(null)
         try {
             const result = await getVariableDashboardData(variableId, year, month)
             setData(result)
         } catch (e: any) {
             const msg = e.message || "Error al cargar datos de la variable"
-            setError(msg)
             addToast({ title: "Error", description: msg, color: "danger" })
         } finally {
             setLoading(false)
@@ -88,9 +79,9 @@ export function VariableDashboardModal({ isOpen, onClose, variableId, variableCo
         if (!data) return []
         // Fill missing months with 0 or null if needed, logic here assumes we show what we have
         return data.advances.map(adv => ({
-            month: MONTHS[adv.month - 1],
+            month: DASHBOARD_MONTHS[adv.month - 1],
             value: adv.value,
-        })).sort((a, b) => MONTHS.indexOf(a.month) - MONTHS.indexOf(b.month))
+        })).sort((a, b) => DASHBOARD_MONTHS.indexOf(a.month) - DASHBOARD_MONTHS.indexOf(b.month))
     }, [data])
 
     const goalsChartData = useMemo(() => {
@@ -98,7 +89,7 @@ export function VariableDashboardModal({ isOpen, onClose, variableId, variableCo
         return data.goals.map(g => ({
             year: g.year.toString(),
             value: g.value,
-        })).sort((a, b) => parseInt(a.year) - parseInt(b.year))
+        })).sort((a, b) => Number.parseInt(a.year) - Number.parseInt(b.year))
     }, [data])
 
     const quadrenniumsChartData = useMemo(() => {
@@ -106,7 +97,7 @@ export function VariableDashboardModal({ isOpen, onClose, variableId, variableCo
         return data.quadrenniums.map(q => ({
             range: `${q.startYear}-${q.endYear}`,
             value: q.value,
-        })).sort((a, b) => parseInt(a.range.split('-')[0]) - parseInt(b.range.split('-')[0]))
+        })).sort((a, b) => Number.parseInt(a.range.split('-')[0]) - Number.parseInt(b.range.split('-')[0]))
     }, [data])
 
     return (
@@ -160,7 +151,7 @@ export function VariableDashboardModal({ isOpen, onClose, variableId, variableCo
                                 >
                                     {[
                                         { key: "all", label: "Todos" },
-                                        ...MONTHS.map((m, i) => ({ key: (i + 1).toString(), label: m }))
+                                        ...DASHBOARD_MONTHS.map((m, i) => ({ key: (i + 1).toString(), label: m }))
                                     ].map((m) => (
                                         <SelectItem key={m.key}>
                                             {m.label}
@@ -169,16 +160,10 @@ export function VariableDashboardModal({ isOpen, onClose, variableId, variableCo
                                 </Select>
                             </div>
 
-                            {loading ? (
-                                <div className="flex justify-center items-center py-16">
-                                    <Loader2 className="animate-spin h-10 w-10 text-primary" />
-                                </div>
-                            ) : !data ? (
-                                <div className="flex flex-col items-center justify-center py-16 text-default-400 border rounded-xl border-dashed">
-                                    <BarChart3 size={40} className="mb-3 opacity-50" />
-                                    <p className="text-sm font-medium">No hay datos disponibles</p>
-                                </div>
-                            ) : (
+                            {loading && (
+                                <DashboardLoadingView />
+                            )}
+                            {!loading && data && (
                                 <div className="flex flex-col gap-6">
                                     {/* Variable Info */}
                                     <Card className="border border-divider shadow-sm">
@@ -207,42 +192,12 @@ export function VariableDashboardModal({ isOpen, onClose, variableId, variableCo
                                                 <h4 className="font-semibold text-sm">Avances Mensuales ({year})</h4>
                                             </CardHeader>
                                             <CardBody className="px-4 pb-4 pt-0">
-                                                {advancesChartData.length === 0 ? (
-                                                    <div className="h-[250px] flex items-center justify-center text-default-400 text-sm italic">
-                                                        Sin avances registrados para este año
-                                                    </div>
-                                                ) : (
-                                                    <ChartContainer config={advancesChartConfig} className="h-[250px] w-full">
-                                                        <LineChart data={advancesChartData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
-                                                            <CartesianGrid vertical={false} strokeDasharray="3 3" />
-                                                            <XAxis
-                                                                dataKey="month"
-                                                                tickLine={false}
-                                                                axisLine={false}
-                                                                tickMargin={8}
-                                                                fontSize={12}
-                                                            />
-                                                            <YAxis
-                                                                tickLine={false}
-                                                                axisLine={false}
-                                                                tickMargin={8}
-                                                                fontSize={12}
-                                                            />
-                                                            <ChartTooltip
-                                                                cursor={false}
-                                                                content={<ChartTooltipContent indicator="line" />}
-                                                            />
-                                                            <Line
-                                                                type="monotone"
-                                                                dataKey="value"
-                                                                stroke="var(--color-value)"
-                                                                strokeWidth={2}
-                                                                dot={{ r: 4, fill: "var(--color-value)" }}
-                                                                activeDot={{ r: 6 }}
-                                                            />
-                                                        </LineChart>
-                                                    </ChartContainer>
-                                                )}
+                                                <AdvancesLineChart
+                                                    data={advancesChartData}
+                                                    height="h-[250px]"
+                                                    emptyText="Sin avances registrados para este año"
+                                                    leftMargin={10}
+                                                />
                                             </CardBody>
                                         </Card>
 
@@ -322,6 +277,9 @@ export function VariableDashboardModal({ isOpen, onClose, variableId, variableCo
                                         </Card>
                                     </div>
                                 </div>
+                            )}
+                            {!loading && !data && (
+                                <DashboardEmptyView />
                             )}
                         </ModalBody>
                         <ModalFooter className="border-t border-divider">

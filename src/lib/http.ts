@@ -98,7 +98,7 @@ async function request<T>(
       credentials: "include",
       headers: {
         ...(options?.body ? { "Content-Type": "application/json" } : {}),
-        ...(options?.headers ?? {}),
+        ...options?.headers,
       },
       body: options?.body ? JSON.stringify(options.body) : undefined,
       signal: options?.signal,

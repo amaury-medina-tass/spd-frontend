@@ -1,6 +1,6 @@
 "use client"
 
-import { Button, Breadcrumbs, BreadcrumbItem, Tooltip } from "@heroui/react"
+import { Button, Breadcrumbs, BreadcrumbItem } from "@heroui/react"
 import { useCallback, useEffect, useState } from "react"
 import { DataTable, ColumnDef, RowAction, SortDescriptor } from "@/components/tables/DataTable"
 import { useDebounce } from "@/hooks/useDebounce"
@@ -155,7 +155,7 @@ export default function FinancialCdpsPage() {
       key: "view",
       label: "Ver Detalle",
       icon: <Eye size={18} />,
-      onClick: (item) => fetchPositionDetail(item.id),
+      onClick: (item) => void fetchPositionDetail(item.id),
     },
     {
       key: "manage-activities",
@@ -179,7 +179,7 @@ export default function FinancialCdpsPage() {
       {error ? (
         <div className="text-center py-8 text-danger">
           <p>{error}</p>
-          <Button variant="flat" className="mt-2" onPress={fetchCdps}>
+          <Button variant="flat" className="mt-2" onPress={() => void fetchCdps()}>
             Reintentar
           </Button>
         </div>
@@ -194,14 +194,14 @@ export default function FinancialCdpsPage() {
               label: "Actualizar",
               icon: <RefreshCw size={16} />,
               color: "default",
-              onClick: fetchCdps,
+              onClick: () => void fetchCdps(),
             },
             {
               key: "export",
               label: "Exportar CDPs",
               icon: <Download size={16} />,
               color: "primary",
-              onClick: handleExport,
+              onClick: () => void handleExport(),
               isLoading: exporting,
             },
           ]}

@@ -14,7 +14,7 @@ import {
     CardBody,
 } from "@heroui/react"
 import { Link2, X, Plus, FolderKanban, CheckCircle2 } from "lucide-react"
-import { useState, useEffect, useCallback, useMemo } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { addToast } from "@heroui/toast"
 import { Variable } from "@/types/variable"
 import {
@@ -42,7 +42,7 @@ export function ManageIndicatorVariablesModal({
     indicatorCode,
     onClose,
     type,
-}: Props) {
+}: Readonly<Props>) {
     const [loadingAssociated, setLoadingAssociated] = useState(true)
     const [loadingAvailable, setLoadingAvailable] = useState(true)
     const [associated, setAssociated] = useState<Variable[]>([])

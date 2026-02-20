@@ -6,7 +6,7 @@ import { AuthGuard } from "@/components/auth/AuthGuard"
 import { SidebarProvider } from "@/context/SidebarContext"
 import { NotificationProvider } from "@/context/NotificationContext"
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+export default function DashboardLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <AuthGuard>
       <NotificationProvider>

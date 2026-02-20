@@ -26,13 +26,13 @@ export function RolePermissionsModal({
     isLoading = false,
     onClose,
     onSave,
-}: {
+}: Readonly<{
     isOpen: boolean
     permissionsData: RolePermissionsData | null
     isLoading?: boolean
     onClose: () => void
     onSave: (permissions: PermissionsState) => void
-}) {
+}>) {
     const [permissions, setPermissions] = useState<PermissionsState>({})
 
     useEffect(() => {
@@ -106,6 +106,10 @@ export function RolePermissionsModal({
                                 const allowedCount = getModuleAllowedCount(modulePath)
                                 const totalCount = moduleData.actions.length
 
+                                let chipColor: "success" | "warning" | "default" = "default"
+                                if (isFullyAllowed) chipColor = "success"
+                                else if (isPartiallyAllowed) chipColor = "warning"
+
                                 return (
                                     <AccordionItem
                                         key={modulePath}
@@ -126,7 +130,7 @@ export function RolePermissionsModal({
                                                 <Chip
                                                     size="sm"
                                                     variant="flat"
-                                                    color={isFullyAllowed ? "success" : isPartiallyAllowed ? "warning" : "default"}
+                                                    color={chipColor}
                                                 >
                                                     {allowedCount}/{totalCount}
                                                 </Chip>
@@ -138,10 +142,11 @@ export function RolePermissionsModal({
                                     >
                                         <div className="flex flex-wrap gap-2 pb-2">
                                             {moduleData.actions.map((action) => (
-                                                <div
+                                                <button
                                                     key={action.actionId}
+                                                    type="button"
                                                     onClick={() => !isLoading && handlePermissionChange(modulePath, action.actionId, !action.allowed)}
-                                                    className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 cursor-pointer transition-all ${action.allowed
+                                                    className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 cursor-pointer transition-all bg-transparent ${action.allowed
                                                         ? "border-primary bg-primary/10 hover:bg-primary/20"
                                                         : "border-default-200 bg-default-50 hover:bg-default-100"
                                                         }`}
@@ -154,7 +159,7 @@ export function RolePermissionsModal({
                                                         className="pointer-events-none"
                                                     />
                                                     <span className="text-sm font-medium">{action.name}</span>
-                                                </div>
+                                                </button>
                                             ))}
                                         </div>
                                     </AccordionItem>

@@ -32,7 +32,7 @@ export function BudgetModificationHistoryModal({
     detailedActivityId,
     detailedActivityName,
     onClose,
-}: Props) {
+}: Readonly<Props>) {
     const [items, setItems] = useState<BudgetModification[]>([])
     const [meta, setMeta] = useState<PaginationMeta | null>(null)
     const [loading, setLoading] = useState(false)
@@ -85,7 +85,7 @@ export function BudgetModificationHistoryModal({
 
     const renderCell = useCallback((item: BudgetModification, columnKey: React.Key) => {
         switch (columnKey) {
-            case "modificationType":
+            case "modificationType": {
                 const types: Record<string, string> = {
                     ADDITION: "Adición",
                     REDUCTION: "Reducción",
@@ -106,6 +106,7 @@ export function BudgetModificationHistoryModal({
                         {types[item.modificationType] || item.modificationType}
                     </Chip>
                 )
+            }
             case "rubricInfo":
                 if (item.modificationType === "TRANSFER") {
                     return (
@@ -131,19 +132,19 @@ export function BudgetModificationHistoryModal({
                     style: "currency",
                     currency: "COP",
                     minimumFractionDigits: 0,
-                }).format(parseFloat(item.value))
+                }).format(Number.parseFloat(item.value))
             case "previousBalance":
                 return new Intl.NumberFormat("es-CO", {
                     style: "currency",
                     currency: "COP",
                     minimumFractionDigits: 0,
-                }).format(parseFloat(item.previousBalance))
+                }).format(Number.parseFloat(item.previousBalance))
             case "newBalance":
                 return new Intl.NumberFormat("es-CO", {
                     style: "currency",
                     currency: "COP",
                     minimumFractionDigits: 0,
-                }).format(parseFloat(item.newBalance))
+                }).format(Number.parseFloat(item.newBalance))
             case "dateIssue":
                 return (
                     <div className="flex flex-col">

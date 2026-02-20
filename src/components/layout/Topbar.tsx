@@ -44,21 +44,22 @@ function triggerDownload(url: string, fileName: string) {
   link.download = fileName
   document.body.appendChild(link)
   link.click()
-  document.body.removeChild(link)
+  link.remove()
 }
 
 function NotificationItem({
   notification,
   onMarkRead,
-}: {
+}: Readonly<{
   notification: PersistedNotification
   onMarkRead: (id: string) => void
-}) {
+}>) {
   const isExport = notification.event === "Files.ExportCompleted" && (notification.data as any)?.downloadUrl
 
   return (
-    <div
-      className={`px-4 py-3 cursor-pointer transition-all duration-200 ${
+    <button
+      type="button"
+      className={`w-full text-left px-4 py-3 cursor-pointer transition-all duration-200 bg-transparent border-none ${
         notification.is_read
           ? "opacity-60 hover:bg-default-50"
           : "hover:bg-default-100"
@@ -70,10 +71,10 @@ function NotificationItem({
       <div className="flex items-start gap-3">
         {/* Indicador de no leído */}
         <div className="pt-1.5 flex-shrink-0">
-          {!notification.is_read ? (
-            <div className="w-2 h-2 rounded-full bg-primary" />
-          ) : (
+          {notification.is_read ? (
             <div className="w-2 h-2" />
+          ) : (
+            <div className="w-2 h-2 rounded-full bg-primary" />
           )}
         </div>
         
@@ -115,7 +116,7 @@ function NotificationItem({
           )}
         </div>
       </div>
-    </div>
+    </button>
   )
 }
 
@@ -131,12 +132,15 @@ export function Topbar() {
       // incluso si falla, limpiamos front
     } finally {
       clear()
-      window.location.href = "/login"
+      globalThis.location.href = "/login"
     }
   }
 
   // Get initials for avatar
   const initials = me ? `${me.first_name.charAt(0)}${me.last_name.charAt(0)}`.toUpperCase() : ""
+
+  const sidebarToggleIcon = isOpen ? <PanelLeftClose size={20} /> : <PanelLeft size={20} />;
+  const badgeLabel = unreadCount > 99 ? "99+" : unreadCount;
 
   return (
     <Navbar isBordered maxWidth="full">
@@ -150,11 +154,7 @@ export function Topbar() {
         >
           {isMobile ? (
             <Menu size={20} />
-          ) : isOpen ? (
-            <PanelLeftClose size={20} />
-          ) : (
-            <PanelLeft size={20} />
-          )}
+          ) : sidebarToggleIcon}
         </Button>
 
         <span className="font-semibold">SPD</span>
@@ -168,7 +168,7 @@ export function Topbar() {
           <PopoverTrigger>
             <Button isIconOnly variant="light" aria-label="Notificaciones" className="relative">
               <Badge
-                content={unreadCount > 0 ? (unreadCount > 99 ? "99+" : unreadCount) : undefined}
+                content={unreadCount > 0 ? badgeLabel : undefined}
                 color="danger"
                 size="sm"
                 shape="circle"
@@ -200,16 +200,18 @@ export function Topbar() {
 
               {/* Notification List */}
               <ScrollShadow className="max-h-[400px]">
-                {loading && notifications.length === 0 ? (
+                {loading && notifications.length === 0 && (
                   <div className="flex items-center justify-center py-8">
                     <p className="text-sm text-foreground-400">Cargando...</p>
                   </div>
-                ) : notifications.length === 0 ? (
+                )}
+                {!loading && notifications.length === 0 && (
                   <div className="flex flex-col items-center justify-center py-8 gap-2">
                     <Bell className="w-8 h-8 text-foreground-300" />
                     <p className="text-sm text-foreground-400">No tienes notificaciones</p>
                   </div>
-                ) : (
+                )}
+                {notifications.length > 0 && (
                   <div className="divide-y divide-divider">
                     {notifications.map((n) => (
                       <NotificationItem

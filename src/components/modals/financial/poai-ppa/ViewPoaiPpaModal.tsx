@@ -18,7 +18,7 @@ type Props = {
 }
 
 function formatCurrency(value: string | number): string {
-    const numValue = typeof value === "string" ? parseFloat(value) : value
+    const numValue = typeof value === "string" ? Number.parseFloat(value) : value
     return new Intl.NumberFormat("es-CO", {
         style: "currency",
         currency: "COP",
@@ -33,11 +33,11 @@ function formatDate(dateStr: string): string {
     })
 }
 
-export function ViewPoaiPpaModal({ isOpen, record, onClose }: Props) {
+export function ViewPoaiPpaModal({ isOpen, record, onClose }: Readonly<Props>) {
     if (!record) return null
 
-    const projectedValue = parseFloat(record.projectedPoai)
-    const assignedValue = parseFloat(record.assignedPoai)
+    const projectedValue = Number.parseFloat(record.projectedPoai)
+    const assignedValue = Number.parseFloat(record.assignedPoai)
     const executionRate = projectedValue > 0 ? (assignedValue / projectedValue) * 100 : 0
 
     return (

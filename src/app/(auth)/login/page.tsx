@@ -1,16 +1,17 @@
 "use client"
 
-import { Button, Card, CardBody, CardHeader, Input, Link, InputOtp } from "@heroui/react"
+import { Button, Card, CardBody, CardHeader, Input, Link } from "@heroui/react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
-import { post, HttpError } from "@/lib/http"
+import { post } from "@/lib/http"
 import { endpoints } from "@/lib/endpoints"
 import { useAuth } from "@/components/auth/useAuth"
 import { ThemeToggle } from "@/components/layout/ThemeToggle"
 import { Eye, EyeOff, CircleAlert } from "lucide-react"
 import { getErrorMessage, ErrorCodes } from "@/lib/error-codes"
 import { addToast } from "@heroui/toast"
+import { VerifyEmailStep } from "@/components/auth/VerifyEmailStep"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -20,7 +21,6 @@ export default function LoginPage() {
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [code, setCode] = useState("")
   const [isVisible, setIsVisible] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -63,56 +63,15 @@ export default function LoginPage() {
     }
   }
 
-  const onVerify = async () => {
-    if (!code) return
-    setLoading(true)
-    try {
-      await post(endpoints.auth.verifyEmail, { email, code })
-
-      await post(endpoints.auth.login, {
-        email,
-        password,
-        system: process.env.NEXT_PUBLIC_SYSTEM
-      })
-      await refreshMe()
-
-      addToast({
-        title: "Cuenta verificada e iniciada correctamente",
-        color: "success",
-      })
-      router.push("/dashboard")
-
-    } catch (e: any) {
-      const errorCode = e.data?.errors?.code
-      const message = errorCode ? getErrorMessage(errorCode) : "Error al verificar código"
-
-      addToast({
-        title: message,
-        color: "danger",
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const onResend = async () => {
-    setLoading(true)
-    try {
-      await post(endpoints.auth.resendVerification, { email })
-      addToast({
-        title: "Código reenviado correctamente",
-        color: "success",
-      })
-    } catch (e: any) {
-      const errorCode = e.data?.errors?.code
-      const message = errorCode ? getErrorMessage(errorCode) : (e.data?.message ?? "Error al reenviar código")
-      addToast({
-        title: message,
-        color: "danger",
-      })
-    } finally {
-      setLoading(false)
-    }
+  const onVerified = async () => {
+    await post(endpoints.auth.login, {
+      email,
+      password,
+      system: process.env.NEXT_PUBLIC_SYSTEM
+    })
+    await refreshMe()
+    addToast({ title: "Cuenta verificada e iniciada correctamente", color: "success" })
+    router.push("/dashboard")
   }
 
   return (
@@ -182,36 +141,18 @@ export default function LoginPage() {
               </p>
             </>
           ) : (
-            <>
-              <p className="text-sm text-default-500 text-center">
-                Ingresa el código que enviamos a <strong>{email}</strong>
-              </p>
-
-              <div className="flex justify-center my-4">
-                <InputOtp
-                  length={6}
-                  value={code}
-                  onValueChange={setCode}
-                  isDisabled={loading}
-                />
-              </div>
-
-              <Button color="primary" isLoading={loading} onPress={onVerify} isDisabled={!code}>
-                Verificar Correo
-              </Button>
-
-              <div className="flex justify-center mt-4">
-                <Button variant="light" size="sm" onPress={onResend} isDisabled={loading}>
-                  ¿No recibiste el código? Reenviar
-                </Button>
-              </div>
-
+            <VerifyEmailStep
+              email={email}
+              onVerified={onVerified}
+              loading={loading}
+              setLoading={setLoading}
+            >
               <div className="text-center mt-2">
                 <Link href="#" size="sm" color="foreground" onPress={() => setStep("login")}>
                   Volver al inicio de sesión
                 </Link>
               </div>
-            </>
+            </VerifyEmailStep>
           )}
         </CardBody>
       </Card>

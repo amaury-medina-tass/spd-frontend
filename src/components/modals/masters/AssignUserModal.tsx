@@ -49,11 +49,10 @@ export function AssignUserModal({
     getAssignedUsers,
     assignUser,
     unassignUser,
-}: Props) {
+}: Readonly<Props>) {
     const [loadingAssigned, setLoadingAssigned] = useState(true)
     const [loadingAvailable, setLoadingAvailable] = useState(true)
     const [assigned, setAssigned] = useState<(User & { assignmentId?: string })[]>([])
-    const [available, setAvailable] = useState<User[]>([])
     const [searchAssigned, setSearchAssigned] = useState("")
     const [searchAvailable, setSearchAvailable] = useState("")
     const [actionLoading, setActionLoading] = useState<string | null>(null)

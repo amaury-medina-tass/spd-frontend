@@ -19,17 +19,15 @@ export default function MastersActivitiesPage() {
                 <BreadcrumbItem>Actividades</BreadcrumbItem>
             </Breadcrumbs>
 
-            {!canRead ? (
-                <div className="text-center py-16">
-                    <p className="text-xl font-semibold text-danger">Acceso Denegado</p>
-                    <p className="text-default-500 mt-2">No tienes permisos para ver este módulo.</p>
-                </div>
-            ) : (
+            {canRead ? (
                 <>
                     {/* Selection Pills */}
                     <div className="flex gap-3">
                         <div
+                            role="tab"
+                            tabIndex={0}
                             onClick={() => setSelectedTab("mga")}
+                            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setSelectedTab("mga") }}
                             className={`flex items-center gap-2 px-4 py-2 rounded-full cursor-pointer transition-all ${selectedTab === "mga"
                                 ? "bg-primary text-white shadow-sm"
                                 : "bg-default-100 text-default-600 hover:bg-default-200"
@@ -40,7 +38,10 @@ export default function MastersActivitiesPage() {
                         </div>
 
                         <div
+                            role="tab"
+                            tabIndex={0}
                             onClick={() => setSelectedTab("detailed")}
+                            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setSelectedTab("detailed") }}
                             className={`flex items-center gap-2 px-4 py-2 rounded-full cursor-pointer transition-all ${selectedTab === "detailed"
                                 ? "bg-primary text-white shadow-sm"
                                 : "bg-default-100 text-default-600 hover:bg-default-200"
@@ -55,6 +56,11 @@ export default function MastersActivitiesPage() {
                     {selectedTab === "mga" && <MGAActivitiesTab />}
                     {selectedTab === "detailed" && <DetailedActivitiesTab />}
                 </>
+            ) : (
+                <div className="text-center py-16">
+                    <p className="text-xl font-semibold text-danger">Acceso Denegado</p>
+                    <p className="text-default-500 mt-2">No tienes permisos para ver este módulo.</p>
+                </div>
             )}
         </div>
     )

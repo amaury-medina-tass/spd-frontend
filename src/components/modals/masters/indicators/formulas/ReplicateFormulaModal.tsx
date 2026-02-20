@@ -10,8 +10,48 @@ import {
     Chip,
     ScrollShadow
 } from "@heroui/react";
-import { Copy, AlertCircle, CheckCircle2, ArrowRight } from "lucide-react";
+import { Copy, AlertCircle } from "lucide-react";
 import { Variable, FormulaStep } from "@/utils/formula";
+
+function validateTargetMapping(
+    sourceSteps: FormulaStep[],
+    target: Variable
+): ValidationResult {
+    const mappedSteps: FormulaStep[] = [];
+
+    for (const step of sourceSteps) {
+        if (step.type === 'variable' && step.value.id === target.id) {
+            return { isValid: false, reason: "Referencia circular: La fórmula origen usa esta variable." };
+        }
+
+        if (step.type === 'goal_variable') {
+            const sourceYear = step.value.year;
+            const match = target.goals?.find(g => g.year === sourceYear);
+            if (!match) {
+                return { isValid: false, reason: `Falta meta para el año ${sourceYear}` };
+            }
+            mappedSteps.push({ ...step, value: { ...match, label: `Meta [${match.year}]` } });
+            continue;
+        }
+
+        if (step.type === 'quadrennium_variable') {
+            const sourceStart = step.value.startYear;
+            const sourceEnd = step.value.endYear;
+            const match = target.quadrenniums?.find(q =>
+                q.startYear === sourceStart && q.endYear === sourceEnd
+            );
+            if (!match) {
+                return { isValid: false, reason: `Falta cuatrenio ${sourceStart}-${sourceEnd}` };
+            }
+            mappedSteps.push({ ...step, value: { ...match, label: `Cuatrenio [${match.startYear}-${match.endYear}]` } });
+            continue;
+        }
+
+        mappedSteps.push(step);
+    }
+
+    return { isValid: true, mappedSteps };
+}
 
 interface ReplicateFormulaModalProps {
     isOpen: boolean;
@@ -36,76 +76,16 @@ export const ReplicateFormulaModal = ({
 }: ReplicateFormulaModalProps) => {
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-    // Clean label helper (duplicate from FormulaEditorModal or utils if possible, locally defined for now)
-    const cleanLabel = (label: string | undefined, fallback: string): string => {
-        if (!label) return fallback;
-        const colonIndex = label.lastIndexOf(':');
-        if (colonIndex > 0) return label.substring(0, colonIndex).trim();
-        return label;
-    };
-
     // Calculate validation status for all potential targets
     const validationMap = useMemo(() => {
         const map: Record<string, ValidationResult> = {};
-        if (!sourceVariable || !sourceVariable.formula) return map;
+        if (!sourceVariable?.formula) return map;
 
         const sourceSteps = sourceVariable.formula;
 
         allVariables.forEach(target => {
             if (target.id === sourceVariable.id) return;
-
-            let isValid = true;
-            let reason: string | undefined;
-            const mappedSteps: FormulaStep[] = [];
-
-            // Simulation of mapping to check validity
-            for (const step of sourceSteps) {
-                // Circular Reference Check
-                if (step.type === 'variable' && step.value.id === target.id) {
-                    isValid = false;
-                    reason = "Referencia circular: La fórmula origen usa esta variable.";
-                    break;
-                }
-
-                // Goal Matching - Match by year, not by label/value
-                if (step.type === 'goal_variable') {
-                    const sourceYear = step.value.year;
-                    // Try to find matching goal in target by year
-                    const match = target.goals?.find(g => g.year === sourceYear);
-
-                    if (!match) {
-                        isValid = false;
-                        reason = `Falta meta para el año ${sourceYear}`;
-                        break;
-                    }
-                    // If valid, we push a mapped step with the target's goal
-                    mappedSteps.push({ ...step, value: { ...match, label: `Meta [${match.year}]` } });
-                    continue;
-                }
-
-                // Quadrennium Matching - Match by startYear and endYear
-                if (step.type === 'quadrennium_variable') {
-                    const sourceStart = step.value.startYear;
-                    const sourceEnd = step.value.endYear;
-                    // Match by both start and end year
-                    const match = target.quadrenniums?.find(q =>
-                        q.startYear === sourceStart && q.endYear === sourceEnd
-                    );
-
-                    if (!match) {
-                        isValid = false;
-                        reason = `Falta cuatrenio ${sourceStart}-${sourceEnd}`;
-                        break;
-                    }
-                    mappedSteps.push({ ...step, value: { ...match, label: `Cuatrenio [${match.startYear}-${match.endYear}]` } });
-                    continue;
-                }
-
-                // Copy other steps as is
-                mappedSteps.push(step);
-            }
-
-            map[target.id] = { isValid, reason, mappedSteps: isValid ? mappedSteps : undefined };
+            map[target.id] = validateTargetMapping(sourceSteps, target);
         });
 
         return map;
@@ -136,7 +116,7 @@ export const ReplicateFormulaModal = ({
         const mappedFormulas: Record<string, FormulaStep[]> = {};
         selectedIds.forEach(id => {
             const validResult = validationMap[id];
-            if (validResult && validResult.mappedSteps) {
+            if (validResult?.mappedSteps) {
                 mappedFormulas[id] = validResult.mappedSteps;
             }
         });
@@ -196,7 +176,7 @@ export const ReplicateFormulaModal = ({
                                 return (
                                     <div
                                         key={variable.id}
-                                        className={`p-3 flex items-center gap-3 transition-colors ${!validation?.isValid ? 'opacity-60 bg-danger-50/20' : 'hover:bg-default-50'}`}
+                                        className={`p-3 flex items-center gap-3 transition-colors ${validation?.isValid ? 'hover:bg-default-50' : 'opacity-60 bg-danger-50/20'}`}
                                     >
                                         <Checkbox
                                             isSelected={isSelected}

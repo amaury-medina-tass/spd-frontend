@@ -33,14 +33,14 @@ export function RoleModal({
   isLoading = false,
   onClose,
   onSave,
-}: {
+}: Readonly<{
   isOpen: boolean
   title: string
   initial: Role | null
   isLoading?: boolean
   onClose: () => void
   onSave: (payload: { name: string; description?: string; is_active: boolean }) => void
-}) {
+}>) {
   const { control, handleSubmit, reset, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {

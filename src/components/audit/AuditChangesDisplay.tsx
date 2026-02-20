@@ -10,11 +10,13 @@ interface AuditChangesDisplayProps {
 function formatValue(value: unknown): string {
   if (value === null || value === undefined) return "—"
   if (typeof value === "boolean") return value ? "Sí" : "No"
-  if (typeof value === "object") return JSON.stringify(value)
-  return String(value)
+  if (typeof value === "object") return JSON.stringify(value, null, 2)
+  if (typeof value === "string") return value
+  if (typeof value === "number" || typeof value === "bigint") return value.toString()
+  return String(value as Exclude<unknown, object>)
 }
 
-export function AuditChangesDisplay({ changes }: AuditChangesDisplayProps) {
+export function AuditChangesDisplay({ changes }: Readonly<AuditChangesDisplayProps>) {
   if (!changes || changes.length === 0) {
     return (
       <div className="text-small text-default-400 italic">

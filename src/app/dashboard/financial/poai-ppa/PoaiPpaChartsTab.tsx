@@ -2,7 +2,6 @@
 
 import {
     Card,
-    CardBody,
     Select,
     SelectItem,
     Spinner,

@@ -29,15 +29,9 @@ const COLORS = [
     "hsl(30, 80%, 55%)",
 ]
 
-const formatCurrency = (value: number) =>
-    new Intl.NumberFormat("es-CO", {
-        style: "currency",
-        currency: "COP",
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-    }).format(value)
+import { formatCurrency } from "@/lib/format-utils"
 
-export function CdpDistributionChart({ data, title, description }: Props) {
+export function CdpDistributionChart({ data, title, description }: Readonly<Props>) {
     if (!data.length) {
         return (
             <Card>
@@ -93,8 +87,8 @@ export function CdpDistributionChart({ data, title, description }: Props) {
                             paddingAngle={2}
                             cornerRadius={4}
                         >
-                            {chartData.map((entry, i) => (
-                                <Cell key={i} fill={entry.fill} />
+                            {chartData.map((entry) => (
+                                <Cell key={entry.name} fill={entry.fill} />
                             ))}
                         </Pie>
                         <ChartLegend content={<ChartLegendContent />} />

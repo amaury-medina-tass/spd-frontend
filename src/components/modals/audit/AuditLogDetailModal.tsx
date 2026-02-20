@@ -13,7 +13,7 @@ import {
   addToast,
 } from "@heroui/react"
 import { AuditLog } from "@/types/audit"
-import { AuditActionBadge, AuditEntityBadge, AuditStatusBadge } from "@/components/audit/AuditLogBadge"
+import { AuditEntityBadge, AuditStatusBadge } from "@/components/audit/AuditLogBadge"
 import { AuditChangesDisplay } from "@/components/audit/AuditChangesDisplay"
 import { AuditMetadataDisplay } from "@/components/audit/AuditMetadataDisplay"
 import { Calendar, Database, Hash, Copy, Check, HelpCircle } from "lucide-react"
@@ -42,7 +42,7 @@ interface CopyButtonProps {
   label: string
 }
 
-function CopyButton({ text, label }: CopyButtonProps) {
+function CopyButton({ text, label }: Readonly<CopyButtonProps>) {
   const [copied, setCopied] = useState(false)
 
   const handleCopy = async (e: React.MouseEvent) => {
@@ -56,6 +56,7 @@ function CopyButton({ text, label }: CopyButtonProps) {
       })
       setTimeout(() => setCopied(false), 2000)
     } catch (err) {
+      console.error("Clipboard copy failed:", err)
       addToast({
         title: "Error al copiar",
         color: "danger",
@@ -86,7 +87,7 @@ export function AuditLogDetailModal({
   log,
   isOpen,
   onClose,
-}: AuditLogDetailModalProps) {
+}: Readonly<AuditLogDetailModalProps>) {
   if (!log) return null
 
   return (

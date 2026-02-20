@@ -28,7 +28,7 @@ const chartConfig = {
     },
 } satisfies ChartConfig
 
-export function TrendsChart({ data }: Props) {
+export function TrendsChart({ data }: Readonly<Props>) {
     const chartData = data.map(item => ({
         year: item.year.toString(),
         totalProjected: item.totalProjected,
@@ -36,7 +36,7 @@ export function TrendsChart({ data }: Props) {
     }))
 
     const totalGrowth = data.length >= 2
-        ? ((data[data.length - 1].totalAssigned - data[0].totalAssigned) / data[0].totalAssigned) * 100
+        ? ((data.at(-1)!.totalAssigned - data[0].totalAssigned) / data[0].totalAssigned) * 100
         : 0
 
     return (

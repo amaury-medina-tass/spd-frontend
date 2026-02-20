@@ -21,7 +21,7 @@ interface Props {
     onClose: () => void
 }
 
-export function ActionPlanIndicatorGoalsModal({ isOpen, indicatorId, indicatorCode, onClose }: Props) {
+export function ActionPlanIndicatorGoalsModal({ isOpen, indicatorId, indicatorCode, onClose }: Readonly<Props>) {
     return (
         <Modal
             isOpen={isOpen}

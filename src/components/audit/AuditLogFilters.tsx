@@ -31,7 +31,7 @@ export function AuditLogFilters({
   filters,
   onFilterChange,
   onReset,
-}: AuditLogFiltersProps) {
+}: Readonly<AuditLogFiltersProps>) {
   const hasActiveFilters =
     filters.search || filters.action || filters.entityType
 

@@ -11,40 +11,7 @@ export const StepChip = ({ step, onDelete }: StepChipProps) => {
     const getStepStyle = () => {
         switch (step.type) {
             case 'variable':
-                return {
-                    bg: 'bg-white dark:bg-default-50',
-                    border: 'border-default-300 dark:border-default-700',
-                    text: 'text-default-900 dark:text-default-100',
-                    icon: null
-                };
-            case 'function':
-                return {
-                    bg: 'bg-white dark:bg-default-50',
-                    border: 'border-default-300 dark:border-default-700',
-                    text: 'text-default-900 dark:text-default-100 font-bold',
-                    icon: null
-                };
-            case 'operator':
-                return {
-                    bg: 'bg-transparent',
-                    border: 'border-transparent',
-                    text: 'text-default-900 dark:text-default-100',
-                    icon: null
-                };
-            case 'comparison':
-                return {
-                    bg: 'bg-transparent',
-                    border: 'border-transparent',
-                    text: 'text-default-900 dark:text-default-100',
-                    icon: null
-                };
             case 'constant':
-                return {
-                    bg: 'bg-white dark:bg-default-50',
-                    border: 'border-default-300 dark:border-default-700',
-                    text: 'text-default-900 dark:text-default-100',
-                    icon: null
-                };
             case 'goal_variable':
             case 'goal_indicator':
             case 'quadrennium_variable':
@@ -57,6 +24,8 @@ export const StepChip = ({ step, onDelete }: StepChipProps) => {
                     text: 'text-default-900 dark:text-default-100',
                     icon: null
                 };
+            case 'operator':
+            case 'comparison':
             case 'parenthesis':
             case 'separator':
                 return {

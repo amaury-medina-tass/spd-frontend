@@ -25,7 +25,7 @@ type Props = {
     onSave: (data: EditPoaiPpaPayload) => Promise<void>
 }
 
-export function EditPoaiPpaModal({ isOpen, record, isLoading, onClose, onSave }: Props) {
+export function EditPoaiPpaModal({ isOpen, record, isLoading, onClose, onSave }: Readonly<Props>) {
     const [projectedPoai, setProjectedPoai] = useState("")
     const [assignedPoai, setAssignedPoai] = useState("")
 
@@ -40,8 +40,8 @@ export function EditPoaiPpaModal({ isOpen, record, isLoading, onClose, onSave }:
         if (!projectedPoai || !assignedPoai) return
 
         await onSave({
-            projectedPoai: parseFloat(projectedPoai),
-            assignedPoai: parseFloat(assignedPoai),
+            projectedPoai: Number.parseFloat(projectedPoai),
+            assignedPoai: Number.parseFloat(assignedPoai),
         })
     }
 

@@ -12,10 +12,9 @@ import {
     Autocomplete,
     AutocompleteItem,
     DatePicker,
-    DateValue,
 } from "@heroui/react"
 import { today, getLocalTimeZone } from "@internationalized/date"
-import { FileBarChart, Plus } from "lucide-react"
+import { Plus } from "lucide-react"
 import { useState, useEffect, useCallback } from "react"
 import { useDebounce } from "@/hooks/useDebounce"
 import { get } from "@/lib/http"
@@ -82,8 +81,8 @@ export function CreateDetailedActivityModal({
     isLoading = false,
     onClose,
     onSave,
-}: Props) {
-    const { control, handleSubmit, reset, setValue, watch, formState: { errors, isValid } } = useForm<FormValues>({
+}: Readonly<Props>) {
+    const { control, handleSubmit, reset, formState: { errors, isValid } } = useForm<FormValues>({
         resolver: zodResolver(schema) as any,
         defaultValues: {
             code: "",
@@ -173,7 +172,7 @@ export function CreateDetailedActivityModal({
     }, [debouncedRubricSearch, fetchRubrics, isOpen])
 
     const onSubmit = (data: FormValues) => {
-        const value = parseFloat(data.budgetCeiling.replace(/[^\d]/g, '')) || 0
+        const value = Number.parseFloat(data.budgetCeiling.replaceAll(/[^\d]/g, '')) || 0
         const payload: CreateDetailedActivityPayload = {
             code: data.code.trim(),
             name: data.name.trim(),
@@ -387,9 +386,9 @@ export function CreateDetailedActivityModal({
                                             {...field}
                                             label="Valor"
                                             placeholder="0"
-                                            value={field.value ? new Intl.NumberFormat('es-CO').format(parseFloat(field.value.replace(/[^\d]/g, '')) || 0) : ''}
+                                            value={field.value ? new Intl.NumberFormat('es-CO').format(Number.parseFloat(field.value.replaceAll(/[^\d]/g, '')) || 0) : ''}
                                             onValueChange={(val) => {
-                                                const numericValue = val.replace(/[^\d]/g, '')
+                                                const numericValue = val.replaceAll(/[^\d]/g, '')
                                                 field.onChange(numericValue)
                                             }}
                                             isRequired

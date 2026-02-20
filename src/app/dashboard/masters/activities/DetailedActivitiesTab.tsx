@@ -1,23 +1,23 @@
 "use client"
 
-import { Button } from "@heroui/react"
-import { useCallback, useEffect, useMemo, useState } from "react"
-import { DataTable, ColumnDef, RowAction, TopAction, SortDescriptor } from "@/components/tables/DataTable"
-import { useDebounce } from "@/hooks/useDebounce"
+import { useMemo, useState } from "react"
+import { DataTable, ColumnDef, RowAction, TopAction } from "@/components/tables/DataTable"
 import { usePermissions } from "@/hooks/usePermissions"
-import { get, post, patch, del, PaginatedData, PaginationMeta } from "@/lib/http"
+import { useDataTable } from "@/hooks/useDataTable"
+import { get, post, patch, del, PaginatedData } from "@/lib/http"
 import { endpoints } from "@/lib/endpoints"
-import { RefreshCw, Eye, Pencil, Plus, Trash2, ArrowLeftRight, Download } from "lucide-react"
+import { Eye, Pencil, Plus, Trash2, ArrowLeftRight, History } from "lucide-react"
+import { buildBaseTopActions } from "@/components/tables/tableActions"
 import { addToast } from "@heroui/toast"
 import type { DetailedActivity, FullDetailedActivity } from "@/types/activity"
 import { getErrorMessage } from "@/lib/error-codes"
-import { requestExport } from "@/services/exports.service"
 import { DetailedActivityModal } from "@/components/modals/masters/activities/detailed/DetailedActivityModal"
 import { CreateDetailedActivityModal, CreateDetailedActivityPayload } from "@/components/modals/masters/activities/detailed/CreateDetailedActivityModal"
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal"
 import { CreateBudgetModificationModal, CreateBudgetModificationPayload } from "@/components/modals/masters/activities/detailed/CreateBudgetModificationModal"
 import { BudgetModificationHistoryModal } from "@/components/modals/masters/activities/detailed/BudgetModificationHistoryModal"
-import { History } from "lucide-react"
+import { formatCurrency } from "@/lib/format-utils"
+import { TableErrorView, AccessDeniedView } from "@/components/tables/TableStatusViews"
 
 // Columns for Detailed Activities
 const detailedActivityColumns: ColumnDef<DetailedActivity>[] = [
@@ -45,27 +45,13 @@ const detailedActivityColumns: ColumnDef<DetailedActivity>[] = [
         key: "budgetCeiling",
         label: "Techo Presupuestal",
         sortable: true,
-        render: (activity) => {
-            const value = parseFloat(activity.budgetCeiling)
-            return new Intl.NumberFormat("es-CO", {
-                style: "currency",
-                currency: "COP",
-                minimumFractionDigits: 0,
-            }).format(value)
-        },
+        render: (activity) => formatCurrency(activity.budgetCeiling),
     },
     {
         key: "balance",
         label: "Saldo",
         sortable: true,
-        render: (activity) => {
-            const value = parseFloat(activity.balance)
-            return new Intl.NumberFormat("es-CO", {
-                style: "currency",
-                currency: "COP",
-                minimumFractionDigits: 0,
-            }).format(value)
-        },
+        render: (activity) => formatCurrency(activity.balance),
     },
     { key: "cpc", label: "CPC", sortable: true },
 ]
@@ -91,102 +77,20 @@ export function DetailedActivitiesTab() {
     const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false)
     const [activityForModification, setActivityForModification] = useState<DetailedActivity | null>(null)
 
-    // Export State
-    const [exporting, setExporting] = useState(false)
-
-    // Table State
-    const [items, setItems] = useState<DetailedActivity[]>([])
-    const [meta, setMeta] = useState<PaginationMeta | null>(null)
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState<string | null>(null)
-    const [page, setPage] = useState(1)
-    const [search, setSearch] = useState("")
-    const [limit, setLimit] = useState(5)
-    const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({
-        column: "code",
-        direction: "ascending",
+    const {
+        items, loading, error, searchInput, setSearchInput,
+        sortDescriptor, setSortDescriptor, fetchData, exporting, handleExport, paginationProps,
+    } = useDataTable<DetailedActivity>({
+        fetchFn: (qs) => get<PaginatedData<DetailedActivity>>(`${endpoints.masters.detailedActivities}?${qs}`),
+        defaultSort: { column: "code", direction: "ascending" },
+        defaultLimit: 5,
+        errorMessage: "Error al cargar actividades detalladas",
+        exportConfig: { system: "SPD", type: "ACTIVITIES" },
+        useErrorCodes: true,
     })
-    const [searchInput, setSearchInput] = useState("")
-    const debouncedSearch = useDebounce(searchInput, 400)
-
-    const fetchActivities = useCallback(async () => {
-        setLoading(true)
-        setError(null)
-        try {
-            const params = new URLSearchParams({
-                page: page.toString(),
-                limit: limit.toString(),
-            })
-            if (search.trim()) {
-                params.set("search", search.trim())
-            }
-
-            if (sortDescriptor.column) {
-                params.set("sortBy", sortDescriptor.column as string)
-                params.set("sortOrder", sortDescriptor.direction === "ascending" ? "ASC" : "DESC")
-            }
-
-            const result = await get<PaginatedData<DetailedActivity>>(`${endpoints.masters.detailedActivities}?${params}`)
-            setItems(result.data)
-            setMeta(result.meta)
-        } catch (e: any) {
-            const errorCode = e.data?.errors?.code
-            const message = errorCode ? getErrorMessage(errorCode) : (e.message ?? "Error al cargar actividades detalladas")
-            setError(message)
-        } finally {
-            setLoading(false)
-        }
-    }, [page, search, limit, sortDescriptor])
-
-    useEffect(() => {
-        fetchActivities()
-    }, [fetchActivities])
-
-    useEffect(() => {
-        setSearch(debouncedSearch)
-        setPage(1)
-    }, [debouncedSearch])
-
-    async function handleExport() {
-        try {
-            setExporting(true)
-            await requestExport({ system: "SPD", type: "ACTIVITIES" })
-            addToast({
-                title: "Exportación solicitada",
-                description: "Recibirás una notificación cuando el archivo esté listo para descargar.",
-                color: "primary",
-                timeout: 5000,
-            })
-        } catch {
-            addToast({
-                title: "Error",
-                description: "No se pudo solicitar la exportación. Intenta de nuevo.",
-                color: "danger",
-                timeout: 5000,
-            })
-        } finally {
-            setExporting(false)
-        }
-    }
 
     const topActions: TopAction[] = useMemo(() => {
-        const actions: TopAction[] = [
-            {
-                key: "refresh",
-                label: "Actualizar",
-                icon: <RefreshCw size={16} />,
-                color: "default",
-                onClick: fetchActivities,
-            },
-            {
-                key: "export",
-                label: "Exportar Actividades",
-                icon: <Download size={16} />,
-                color: "primary",
-                onClick: handleExport,
-                isLoading: exporting,
-            },
-        ]
+        const actions = buildBaseTopActions(fetchData, handleExport, exporting, "Exportar Actividades")
         if (canCreate) {
             actions.push({
                 key: "create",
@@ -197,7 +101,7 @@ export function DetailedActivitiesTab() {
             })
         }
         return actions
-    }, [fetchActivities, canCreate, exporting])
+    }, [fetchData, canCreate, exporting, handleExport])
 
     // View/Edit handlers
     const onViewActivity = async (activity: DetailedActivity) => {
@@ -234,7 +138,7 @@ export function DetailedActivitiesTab() {
             addToast({ title: "Actividad actualizada correctamente", color: "success" })
             setIsModalOpen(false)
             setSelectedActivity(null)
-            fetchActivities()
+            fetchData()
         } catch (e: any) {
             const errorCode = e.data?.errors?.code
             const message = errorCode ? getErrorMessage(errorCode) : "Error al actualizar la actividad"
@@ -250,7 +154,7 @@ export function DetailedActivitiesTab() {
             await post(endpoints.masters.detailedActivities, data)
             addToast({ title: "Actividad creada correctamente", color: "success" })
             setIsCreateModalOpen(false)
-            fetchActivities()
+            fetchData()
         } catch (e: any) {
             const errorCode = e.data?.errors?.code
             const message = errorCode ? getErrorMessage(errorCode) : "Error al crear la actividad"
@@ -273,7 +177,7 @@ export function DetailedActivitiesTab() {
             addToast({ title: "Actividad eliminada correctamente", color: "success" })
             setIsDeleteModalOpen(false)
             setActivityToDelete(null)
-            fetchActivities()
+            fetchData()
         } catch (e: any) {
             const errorCode = e.data?.errors?.code
             const message = errorCode ? getErrorMessage(errorCode) : "Error al eliminar la actividad"
@@ -300,7 +204,7 @@ export function DetailedActivitiesTab() {
             addToast({ title: "Modificación creada correctamente", color: "success" })
             setIsModificationModalOpen(false)
             setActivityForModification(null)
-            fetchActivities()
+            fetchData()
         } catch (e: any) {
             const errorCode = e.data?.errors?.code
             const message = errorCode ? getErrorMessage(errorCode) : "Error al crear la modificación"
@@ -316,13 +220,13 @@ export function DetailedActivitiesTab() {
                 key: "view",
                 label: "Ver Detalles",
                 icon: <Eye size={16} />,
-                onClick: onViewActivity,
+                onClick: (item) => { onViewActivity(item) },
             },
             {
                 key: "history",
                 label: "Ver Historial",
                 icon: <History size={16} />,
-                onClick: onViewHistory,
+                onClick: (item) => { onViewHistory(item) },
             },
         ]
         if (canUpdate) {
@@ -330,7 +234,7 @@ export function DetailedActivitiesTab() {
                 key: "edit",
                 label: "Editar",
                 icon: <Pencil size={16} />,
-                onClick: onEditActivity,
+                onClick: (item) => { onEditActivity(item) },
             })
         }
         if (canModifyBudget) {
@@ -354,25 +258,8 @@ export function DetailedActivitiesTab() {
         return actions
     }, [canUpdate, canDelete, canModifyBudget])
 
-    if (error) {
-        return (
-            <div className="text-center py-8 text-danger">
-                <p>{error}</p>
-                <Button variant="flat" className="mt-2" onPress={fetchActivities}>
-                    Reintentar
-                </Button>
-            </div>
-        )
-    }
-
-    if (!canRead) {
-        return (
-            <div className="text-center py-16">
-                <p className="text-xl font-semibold text-danger">Acceso Denegado</p>
-                <p className="text-default-500 mt-2">No tienes permisos para ver este módulo.</p>
-            </div>
-        )
-    }
+    if (error) return <TableErrorView error={error} onRetry={fetchData} />
+    if (!canRead) return <AccessDeniedView />
 
     return (
         <>
@@ -386,16 +273,7 @@ export function DetailedActivitiesTab() {
                 onSearchChange={setSearchInput}
                 searchPlaceholder="Buscar actividades detalladas..."
                 ariaLabel="Tabla de actividades detalladas"
-                pagination={meta ? {
-                    page: page,
-                    totalPages: meta.totalPages,
-                    onChange: setPage,
-                    pageSize: limit,
-                    onPageSizeChange: (newLimit) => {
-                        setLimit(newLimit)
-                        setPage(1)
-                    }
-                } : undefined}
+                pagination={paginationProps}
                 sortDescriptor={sortDescriptor}
                 onSortChange={setSortDescriptor}
             />

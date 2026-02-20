@@ -1,16 +1,18 @@
 "use client"
 
-import { Button, Breadcrumbs, BreadcrumbItem, Chip } from "@heroui/react"
-import { useCallback, useEffect, useMemo, useState } from "react"
-import { DataTable, ColumnDef, RowAction, TopAction, SortDescriptor } from "@/components/tables/DataTable"
-import { useDebounce } from "@/hooks/useDebounce"
+import { Chip } from "@heroui/react"
+import { useMemo, useState } from "react"
+import { DataTable, ColumnDef, RowAction } from "@/components/tables/DataTable"
 import { usePermissions } from "@/hooks/usePermissions"
+import { useDataTable } from "@/hooks/useDataTable"
 import { UserInfoModal } from "@/components/modals/users/UserInfoModal"
 import { UserRoleModal } from "@/components/modals/users/UserRoleModal"
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal"
-import { get, post, patch, del, PaginatedData, PaginationMeta } from "@/lib/http"
+import { AccessControlPageShell } from "@/components/layout/AccessControlPageShell"
+import { buildCrudTopActions } from "@/components/tables/tableActions"
+import { get, post, patch, del, PaginatedData } from "@/lib/http"
 import { endpoints } from "@/lib/endpoints"
-import { Pencil, Trash2, Plus, Shield, RefreshCw } from "lucide-react"
+import { Pencil, Trash2, Shield } from "lucide-react"
 import { addToast } from "@heroui/toast";
 import type { User, UserWithRoles } from "@/types/user"
 import { getErrorMessage } from "@/lib/error-codes"
@@ -51,26 +53,16 @@ const columns: ColumnDef<User>[] = [
 ]
 
 export default function AccessControlUsersPage() {
-  // Permissions
   const { canRead, canCreate, canUpdate, canDelete, canAssignRole } = usePermissions("/access-control/users")
 
-  // Data State
-  const [items, setItems] = useState<User[]>([])
-  const [meta, setMeta] = useState<PaginationMeta | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  // Filter & Pagination State
-  const [page, setPage] = useState(1)
-  const [search, setSearch] = useState("")
-  const [limit, setLimit] = useState(5)
-  const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({
-    column: "created_at",
-    direction: "descending",
+  const { items, loading, error, searchInput, setSearchInput, sortDescriptor, setSortDescriptor, fetchData, paginationProps } = useDataTable<User>({
+    fetchFn: (params) => get<PaginatedData<User>>(`${endpoints.accessControl.users}?${params}`),
+    defaultSort: { column: "created_at", direction: "descending" },
+    defaultLimit: 5,
+    useErrorCodes: true,
   })
-  const [searchInput, setSearchInput] = useState("")
-  const debouncedSearch = useDebounce(searchInput, 400)
+
+  const [saving, setSaving] = useState(false)
 
   // Modal State
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false)
@@ -81,44 +73,6 @@ export default function AccessControlUsersPage() {
   const [editing, setEditing] = useState<User | null>(null)
   const [selectedUserForRole, setSelectedUserForRole] = useState<UserWithRoles | null>(null)
   const [userToDelete, setUserToDelete] = useState<User | null>(null)
-
-  const fetchUsers = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: limit.toString(),
-      })
-      if (search.trim()) {
-        params.set("search", search.trim())
-      }
-
-      if (sortDescriptor.column) {
-        params.set("sortBy", sortDescriptor.column as string)
-        params.set("sortOrder", sortDescriptor.direction === "ascending" ? "ASC" : "DESC")
-      }
-
-      const result = await get<PaginatedData<User>>(`${endpoints.accessControl.users}?${params}`)
-      setItems(result.data)
-      setMeta(result.meta)
-    } catch (e: any) {
-      const errorCode = e.data?.errors?.code
-      const message = errorCode ? getErrorMessage(errorCode) : (e.message ?? "Error al cargar usuarios")
-      setError(message)
-    } finally {
-      setLoading(false)
-    }
-  }, [page, search, limit, sortDescriptor])
-
-  useEffect(() => {
-    fetchUsers()
-  }, [fetchUsers])
-
-  useEffect(() => {
-    setSearch(debouncedSearch)
-    setPage(1)
-  }, [debouncedSearch])
 
   const onCreate = () => {
     setEditing(null)
@@ -179,7 +133,7 @@ export default function AccessControlUsersPage() {
       })
       setIsInfoModalOpen(false)
       setEditing(null)
-      fetchUsers()
+      fetchData()
     } catch (e: any) {
       const errorCode = e.data?.errors?.code
       const message = errorCode ? getErrorMessage(errorCode) : "Error al guardar el usuario"
@@ -200,7 +154,7 @@ export default function AccessControlUsersPage() {
       // Refresh user roles data
       const userWithRoles = await get<UserWithRoles>(`${endpoints.accessControl.users}/${selectedUserForRole.id}/roles`)
       setSelectedUserForRole(userWithRoles)
-      fetchUsers()
+      fetchData()
       addToast({ title: "Rol asignado correctamente", color: "success" })
     } catch (e: any) {
       const errorCode = e.data?.errors?.code
@@ -220,7 +174,7 @@ export default function AccessControlUsersPage() {
       // Refresh user roles data
       const userWithRoles = await get<UserWithRoles>(`${endpoints.accessControl.users}/${selectedUserForRole.id}/roles`)
       setSelectedUserForRole(userWithRoles)
-      fetchUsers()
+      fetchData()
       addToast({ title: "Rol removido correctamente", color: "success" })
     } catch (e: any) {
       const errorCode = e.data?.errors?.code
@@ -243,7 +197,7 @@ export default function AccessControlUsersPage() {
       await del(`${endpoints.accessControl.users}/${userToDelete.id}`)
       setIsDeleteModalOpen(false)
       setUserToDelete(null)
-      fetchUsers()
+      fetchData()
       addToast({ title: "Usuario eliminado correctamente", color: "success" })
     } catch (e: any) {
       const errorCode = e.data?.errors?.code
@@ -261,7 +215,7 @@ export default function AccessControlUsersPage() {
         key: "edit",
         label: "Editar",
         icon: <Pencil size={16} />,
-        onClick: onEdit,
+        onClick: (item) => void onEdit(item),
       })
     }
     if (canAssignRole) {
@@ -269,7 +223,7 @@ export default function AccessControlUsersPage() {
         key: "role",
         label: "Gestionar Rol",
         icon: <Shield size={16} />,
-        onClick: onManageRole,
+        onClick: (item) => void onManageRole(item),
       })
     }
     if (canDelete) {
@@ -284,113 +238,66 @@ export default function AccessControlUsersPage() {
     return actions
   }, [canUpdate, canDelete, canAssignRole])
 
-  const topActions: TopAction[] = useMemo(() => {
-    const actions: TopAction[] = [
-      {
-        key: "refresh",
-        label: "Actualizar",
-        icon: <RefreshCw size={16} />,
-        color: "default",
-        onClick: fetchUsers,
-      },
-    ]
-    if (canCreate) {
-      actions.push({
-        key: "create",
-        label: "Crear",
-        icon: <Plus size={16} />,
-        color: "primary",
-        onClick: onCreate,
-      })
-    }
-    return actions
-  }, [canCreate, fetchUsers])
+  const topActions = useMemo(() => buildCrudTopActions(fetchData, canCreate, onCreate), [canCreate, fetchData])
 
   const title = useMemo(() => (editing ? "Editar usuario" : "Crear usuario"), [editing])
 
   return (
-    <div className="grid gap-4">
-      <Breadcrumbs>
-        <BreadcrumbItem>Inicio</BreadcrumbItem>
-        <BreadcrumbItem>Control de Acceso</BreadcrumbItem>
-        <BreadcrumbItem>Usuarios</BreadcrumbItem>
-      </Breadcrumbs>
-
-      {!canRead ? (
-        <div className="text-center py-16">
-          <p className="text-xl font-semibold text-danger">Acceso Denegado</p>
-          <p className="text-default-500 mt-2">No tienes permisos para ver este módulo.</p>
-        </div>
-      ) : error ? (
-        <div className="text-center py-8 text-danger">
-          <p>{error}</p>
-          <Button variant="flat" className="mt-2" onPress={fetchUsers}>
-            Reintentar
-          </Button>
-        </div>
-      ) : (
-        <DataTable
-          items={items}
-          columns={columns}
-          isLoading={loading}
-          rowActions={rowActions}
-          topActions={topActions}
-          searchValue={searchInput}
-          onSearchChange={setSearchInput}
-          searchPlaceholder="Buscar usuarios..."
-          ariaLabel="Tabla de usuarios"
-          pagination={meta ? {
-            page,
-            totalPages: meta.totalPages,
-            onChange: setPage,
-            pageSize: limit,
-            onPageSizeChange: (newLimit) => {
-              setLimit(newLimit)
-              setPage(1)
-            }
-          } : undefined}
-          sortDescriptor={sortDescriptor}
-          onSortChange={setSortDescriptor}
+    <AccessControlPageShell breadcrumbLabel="Usuarios" canRead={canRead} error={error} onRetry={fetchData} modals={
+      <>
+        <UserInfoModal
+          isOpen={isInfoModalOpen}
+          title={title}
+          initial={editing}
+          isLoading={saving}
+          onClose={() => {
+            setIsInfoModalOpen(false)
+            setEditing(null)
+          }}
+          onSave={onSaveInfo}
         />
-      )}
 
-      <UserInfoModal
-        isOpen={isInfoModalOpen}
-        title={title}
-        initial={editing}
-        isLoading={saving}
-        onClose={() => {
-          setIsInfoModalOpen(false)
-          setEditing(null)
-        }}
-        onSave={onSaveInfo}
-      />
+        <UserRoleModal
+          isOpen={isRoleModalOpen}
+          user={selectedUserForRole}
+          isLoading={saving}
+          onClose={() => {
+            setIsRoleModalOpen(false)
+            setSelectedUserForRole(null)
+          }}
+          onSave={onSaveRole}
+          onUnassign={onUnassignRole}
+        />
 
-      <UserRoleModal
-        isOpen={isRoleModalOpen}
-        user={selectedUserForRole}
-        isLoading={saving}
-        onClose={() => {
-          setIsRoleModalOpen(false)
-          setSelectedUserForRole(null)
-        }}
-        onSave={onSaveRole}
-        onUnassign={onUnassignRole}
+        <ConfirmationModal
+          isOpen={isDeleteModalOpen}
+          onClose={() => {
+            setIsDeleteModalOpen(false)
+            setUserToDelete(null)
+          }}
+          onConfirm={onConfirmDelete}
+          title="Eliminar Usuario"
+          description={`¿Estás seguro que deseas eliminar al usuario ${userToDelete?.first_name} ${userToDelete?.last_name}? Esta acción no se puede deshacer.`}
+          confirmText="Eliminar"
+          confirmColor="danger"
+          isLoading={saving}
+        />
+      </>
+    }>
+      <DataTable
+        items={items}
+        columns={columns}
+        isLoading={loading}
+        rowActions={rowActions}
+        topActions={topActions}
+        searchValue={searchInput}
+        onSearchChange={setSearchInput}
+        searchPlaceholder="Buscar usuarios..."
+        ariaLabel="Tabla de usuarios"
+        pagination={paginationProps}
+        sortDescriptor={sortDescriptor}
+        onSortChange={setSortDescriptor}
       />
-
-      <ConfirmationModal
-        isOpen={isDeleteModalOpen}
-        onClose={() => {
-          setIsDeleteModalOpen(false)
-          setUserToDelete(null)
-        }}
-        onConfirm={onConfirmDelete}
-        title="Eliminar Usuario"
-        description={`¿Estás seguro que deseas eliminar al usuario ${userToDelete?.first_name} ${userToDelete?.last_name}? Esta acción no se puede deshacer.`}
-        confirmText="Eliminar"
-        confirmColor="danger"
-        isLoading={saving}
-      />
-    </div>
+    </AccessControlPageShell>
   )
 }

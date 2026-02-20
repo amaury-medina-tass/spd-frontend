@@ -14,14 +14,11 @@ import {
     FunctionSquare,
     Hash,
     TrendingUp,
-    AlertTriangle
 } from "lucide-react";
 import {
     Variable,
     GoalIndicator,
-    GoalVariable,
     IndicatorQuadrennium,
-    VariableQuadrenium,
     FormulaStep,
     FORMULA_FUNCTIONS,
     FORMULA_OPERATORS,
@@ -88,7 +85,6 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
 
     // Filter variables that have formulas (for main formula tab)
     const variablesWithFormulas = variables.filter(v => variableHasFormula(v.id));
-    const variablesWithoutFormulas = variables.filter(v => !variableHasFormula(v.id));
 
     return (
         <div className="p-3 bg-gradient-to-r from-default-50 to-default-100/50 dark:from-default-100/10 dark:to-default-50/5 border-b border-default-200 dark:border-default-800">
@@ -130,7 +126,7 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
                                         </SelectItem>
                                     ))
                                 ) : (
-                                    <SelectItem key="none" textValue="Sin variables" isDisabled>
+                                    <SelectItem key="none" textValue="Sin variables" disabled>
                                         No hay variables con fórmula
                                     </SelectItem>
                                 )}
@@ -481,8 +477,8 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
                                 (!validationState.isInsideFunction ||
                                     (validationState.currentContext?.type === 'function' && validationState.currentContext?.name === 'IF') ||
                                     (
-                                        (currentSteps[currentSteps.length - 1]?.type !== 'parenthesis' || currentSteps[currentSteps.length - 1]?.value !== '(') &&
-                                        currentSteps[currentSteps.length - 1]?.type !== 'function'
+                                        (currentSteps.at(-1)?.type !== 'parenthesis' || currentSteps.at(-1)?.value !== '(') &&
+                                        currentSteps.at(-1)?.type !== 'function'
                                     )
                                 )
                             )}
@@ -490,21 +486,22 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
                                 const isAll = advanceMonths.has('ALL');
                                 const monthsArray = isAll
                                     ? [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
-                                    : Array.from(advanceMonths).map(m => parseInt(m)).sort((a, b) => a - b);
+                                    : Array.from(advanceMonths).map(m => Number.parseInt(m)).sort((a, b) => a - b);
 
-                                const monthNames = monthsArray.map(m => MONTHS.find(x => x.value === m)?.label).filter(Boolean);
+                                const firstMonthName = MONTHS.find(x => x.value === monthsArray[0])?.label;
 
+                                const partialLabel = monthsArray.length === 1
+                                    ? `Avance ${firstMonthName} ${advanceYear}`
+                                    : `Avance ${advanceYear} (${monthsArray.length} meses)`;
                                 const label = isAll
                                     ? `Avance ${advanceYear} (Todo el año)`
-                                    : monthsArray.length === 1
-                                        ? `Avance ${monthNames[0]} ${advanceYear}`
-                                        : `Avance ${advanceYear} (${monthsArray.length} meses)`;
+                                    : partialLabel;
 
                                 insertStep({
                                     type: 'advance',
                                     value: {
                                         id: `adv-${advanceYear}-${isAll ? 'ALL' : monthsArray.join(',')}`,
-                                        year: parseInt(advanceYear),
+                                        year: Number.parseInt(advanceYear),
                                         months: monthsArray,
                                         label
                                     }

@@ -12,13 +12,11 @@ import {
 } from "@heroui/react";
 import {
     HelpCircle,
-    Calculator,
     FunctionSquare,
     Variable,
     CheckCircle2,
     TrendingUp,
     Target,
-    AlertTriangle,
     Copy,
     Info
 } from "lucide-react";
@@ -75,8 +73,8 @@ export const FormulaGuideModal = ({ isOpen, onClose }: FormulaGuideModalProps) =
                                     <div>
                                         <h4 className="font-semibold text-foreground">Replicar (Opcional)</h4>
                                         <p className="text-sm text-default-500 mt-1">
-                                            Si varias variables comparten la misma lógica (ej. consumidos anuales), use el botón
-                                            <span className="inline-flex items-center gap-1 mx-1 bg-default-100 px-1 rounded text-xs font-medium"><Copy size={10} /> Replicar</span>
+                                            Si varias variables comparten la misma lógica (ej. consumidos anuales), use el botón{' '}
+                                            <span className="inline-flex items-center gap-1 mx-1 bg-default-100 px-1 rounded text-xs font-medium"><Copy size={10} /> Replicar</span>{' '}
                                             para copiar la fórmula a otras variables compatibles (que tengan las mismas metas/cuatrenios).
                                         </p>
                                     </div>

@@ -21,7 +21,7 @@ interface Props {
     onClose: () => void
 }
 
-export function VariableGoalsModal({ isOpen, variableId, variableCode, onClose }: Props) {
+export function VariableGoalsModal({ isOpen, variableId, variableCode, onClose }: Readonly<Props>) {
     return (
         <Modal
             isOpen={isOpen}

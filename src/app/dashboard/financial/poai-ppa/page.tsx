@@ -44,18 +44,16 @@ export default function PoaiPpaPage() {
                 <BreadcrumbItem>POAI PPA</BreadcrumbItem>
             </Breadcrumbs>
 
-            {!canRead ? (
-                <div className="text-center py-16">
-                    <p className="text-xl font-semibold text-danger">Acceso Denegado</p>
-                    <p className="text-default-500 mt-2">No tienes permisos para ver este módulo.</p>
-                </div>
-            ) : (
+            {canRead ? (
                 <>
                     {/* Selection Pills + Export Button */}
                     <div className="flex items-center justify-between">
                         <div className="flex gap-3">
                             <div
+                                role="tab"
+                                tabIndex={0}
                                 onClick={() => setSelectedTab("registro")}
+                                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setSelectedTab("registro") }}
                                 className={`flex items-center gap-2 px-4 py-2 rounded-full cursor-pointer transition-all ${selectedTab === "registro"
                                     ? "bg-primary text-white shadow-sm"
                                     : "bg-default-100 text-default-600 hover:bg-default-200"
@@ -66,7 +64,10 @@ export default function PoaiPpaPage() {
                             </div>
 
                             <div
+                                role="tab"
+                                tabIndex={0}
                                 onClick={() => setSelectedTab("graficas")}
+                                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setSelectedTab("graficas") }}
                                 className={`flex items-center gap-2 px-4 py-2 rounded-full cursor-pointer transition-all ${selectedTab === "graficas"
                                     ? "bg-primary text-white shadow-sm"
                                     : "bg-default-100 text-default-600 hover:bg-default-200"
@@ -94,6 +95,11 @@ export default function PoaiPpaPage() {
                     {selectedTab === "registro" && <PoaiPpaTableTab />}
                     {selectedTab === "graficas" && <PoaiPpaChartsTab />}
                 </>
+            ) : (
+                <div className="text-center py-16">
+                    <p className="text-xl font-semibold text-danger">Acceso Denegado</p>
+                    <p className="text-default-500 mt-2">No tienes permisos para ver este módulo.</p>
+                </div>
             )}
         </div>
     )

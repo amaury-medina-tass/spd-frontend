@@ -21,7 +21,7 @@ function formatTimestamp(timestamp: string): string {
   })
 }
 
-export function AuditLogCard({ log, onClick }: AuditLogCardProps) {
+export function AuditLogCard({ log, onClick }: Readonly<AuditLogCardProps>) {
   return (
     <Card
       isPressable={!!onClick}

@@ -53,13 +53,14 @@ import {
 } from "@/services/financial/dashboard.service"
 
 // ─── Formatters ──────────────────────────────────────────
-const formatCurrency = (value: number) =>
-    new Intl.NumberFormat("es-CO", {
-        style: "currency",
-        currency: "COP",
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-    }).format(value)
+import { formatCurrency } from "@/lib/format-utils"
+
+// ─── Helpers ─────────────────────────────────────────────
+function getProgressColor(percentage: number): "success" | "warning" | "danger" {
+    if (percentage > 70) return "success"
+    if (percentage > 40) return "warning"
+    return "danger"
+}
 
 // ─── Component ───────────────────────────────────────────
 export default function FinancialDashboardPage() {
@@ -280,7 +281,7 @@ export default function FinancialDashboardPage() {
     // ─── Column Definitions ──────────────────────────────────
     const needColumns: ColumnDef<FinancialNeed>[] = [
         { key: "code", label: "Código", sortable: true },
-        { key: "amount", label: "Monto", sortable: true, render: (n) => <span className="font-medium">{formatCurrency(parseFloat(n.amount))}</span> },
+        { key: "amount", label: "Monto", sortable: true, render: (n) => <span className="font-medium">{formatCurrency(Number.parseFloat(n.amount))}</span> },
         { key: "description", label: "Descripción", sortable: true, render: (n) => <span className="line-clamp-1 max-w-xs">{n.description}</span> },
         { key: "previousStudy.code", label: "Estudio", sortable: true, render: (n) => n.previousStudy?.code ?? "N/A" },
         {
@@ -305,29 +306,12 @@ export default function FinancialDashboardPage() {
         {
             key: "executionPercentage", label: "% Ejecución", sortable: true, render: (p) => (
                 <div className="flex items-center gap-2 min-w-[120px]">
-                    <Progress size="sm" value={p.executionPercentage} color={p.executionPercentage > 70 ? "success" : p.executionPercentage > 40 ? "warning" : "danger"} className="flex-1" />
+                    <Progress size="sm" value={p.executionPercentage} color={getProgressColor(p.executionPercentage)} className="flex-1" />
                     <span className="text-xs font-medium w-10 text-right">{p.executionPercentage}%</span>
                 </div>
             ),
         },
         { key: "mgaActivitiesCount", label: "Act. MGA", render: (p) => <Chip size="sm" variant="flat">{p.mgaActivitiesCount}</Chip> },
-    ]
-
-    const contractColumns: ColumnDef<DashboardMasterContract>[] = [
-        { key: "number", label: "Número" },
-        { key: "object", label: "Objeto", render: (c) => <span className="line-clamp-1 max-w-xs">{c.object}</span> },
-        { key: "totalValue", label: "Valor", render: (c) => formatCurrency(c.totalValue) },
-        {
-            key: "state", label: "Estado", render: (c) => {
-                const sl = (c.state ?? "").toLowerCase()
-                let color: "success" | "warning" | "danger" | "default" = "default"
-                if (sl.includes("activo") || sl.includes("vigente")) color = "success"
-                else if (sl.includes("pendiente")) color = "warning"
-                else if (sl.includes("cerrado") || sl.includes("terminado")) color = "danger"
-                return <Chip color={color} variant="flat" size="sm">{c.state ?? "N/A"}</Chip>
-            }
-        },
-        { key: "needCode", label: "Necesidad", render: (c) => c.needCode ?? "N/A" },
     ]
 
     const mgaColumns: ColumnDef<DashboardMgaActivity>[] = [
@@ -337,7 +321,7 @@ export default function FinancialDashboardPage() {
         {
             key: "executionPercentage", label: "% Ejecución", render: (a) => (
                 <div className="flex items-center gap-2 min-w-[120px]">
-                    <Progress size="sm" value={a.executionPercentage} color={a.executionPercentage > 70 ? "success" : a.executionPercentage > 40 ? "warning" : "danger"} className="flex-1" />
+                    <Progress size="sm" value={a.executionPercentage} color={getProgressColor(a.executionPercentage)} className="flex-1" />
                     <span className="text-xs font-medium w-10 text-right">{a.executionPercentage}%</span>
                 </div>
             ),
@@ -353,7 +337,7 @@ export default function FinancialDashboardPage() {
         {
             key: "executionPercentage", label: "% Ejecución", render: (a) => (
                 <div className="flex items-center gap-2 min-w-[120px]">
-                    <Progress size="sm" value={a.executionPercentage} color={a.executionPercentage > 70 ? "success" : a.executionPercentage > 40 ? "warning" : "danger"} className="flex-1" />
+                    <Progress size="sm" value={a.executionPercentage} color={getProgressColor(a.executionPercentage)} className="flex-1" />
                     <span className="text-xs font-medium w-10 text-right">{a.executionPercentage}%</span>
                 </div>
             ),
@@ -408,11 +392,12 @@ export default function FinancialDashboardPage() {
             </div>
 
             {/* KPIs */}
-            {loadingGlobal ? (
+            {loadingGlobal && (
                 <div className="flex justify-center py-12"><Spinner size="lg" /></div>
-            ) : globalData ? (
+            )}
+            {!loadingGlobal && globalData && (
                 <GlobalKPIs data={globalData} />
-            ) : null}
+            )}
 
             {/* Two-column layout: Needs + Project Budget */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -429,14 +414,14 @@ export default function FinancialDashboardPage() {
                             pagination={{
                                 page: needsMeta.page,
                                 totalPages: needsMeta.totalPages,
-                                onChange: (p: number) => fetchNeeds(p),
+                                onChange: (p: number) => void fetchNeeds(p),
                             }}
                             rowActions={[
                                 {
                                     key: "view-cdps",
                                     label: "Ver CDPs",
                                     icon: <ChevronRight className="w-4 h-4" />,
-                                    onClick: (need) => handleSelectNeed(need.id),
+                                    onClick: (need) => void handleSelectNeed(need.id),
                                 },
                             ]}
                             emptyContent="No hay necesidades registradas"
@@ -497,11 +482,13 @@ export default function FinancialDashboardPage() {
                             <h2 className="text-lg font-semibold">Actividades - CDP {selectedCdpNumber}</h2>
                         </CardHeader>
                         <CardBody className="px-6 pb-6">
-                            {loadingActivities ? (
+                            {loadingActivities && (
                                 <div className="flex justify-center py-8"><Spinner /></div>
-                            ) : activitiesByCdp.length === 0 ? (
+                            )}
+                            {!loadingActivities && activitiesByCdp.length === 0 && (
                                 <p className="text-default-400 text-center py-8">No hay actividades asociadas</p>
-                            ) : (
+                            )}
+                            {!loadingActivities && activitiesByCdp.length > 0 && (
                                 <div className="space-y-3">
                                     {activitiesByCdp.map((act) => (
                                         <div key={act.id} className="p-3 border rounded-lg">
@@ -510,14 +497,14 @@ export default function FinancialDashboardPage() {
                                                     <p className="text-sm font-medium">{act.code}</p>
                                                     <p className="text-xs text-default-500 line-clamp-1">{act.name}</p>
                                                 </div>
-                                                <Chip size="sm" variant="flat" color={act.percentage > 70 ? "success" : act.percentage > 40 ? "warning" : "danger"}>
+                                                <Chip size="sm" variant="flat" color={getProgressColor(act.percentage)}>
                                                     {act.percentage}%
                                                 </Chip>
                                             </div>
                                             <Progress
                                                 size="sm"
                                                 value={act.percentage}
-                                                color={act.percentage > 70 ? "success" : act.percentage > 40 ? "warning" : "danger"}
+                                                color={getProgressColor(act.percentage)}
                                             />
                                             <div className="flex justify-between mt-1 text-xs text-default-500">
                                                 <span>Asignado: {formatCurrency(act.assignedValue)}</span>
@@ -536,17 +523,20 @@ export default function FinancialDashboardPage() {
                             <h2 className="text-lg font-semibold">Contratos Marco - CDP {selectedCdpNumber}</h2>
                         </CardHeader>
                         <CardBody className="px-6 pb-6">
-                            {loadingContracts ? (
+                            {loadingContracts && (
                                 <div className="flex justify-center py-8"><Spinner /></div>
-                            ) : contractsByCdp.length === 0 ? (
+                            )}
+                            {!loadingContracts && contractsByCdp.length === 0 && (
                                 <p className="text-default-400 text-center py-8">No hay contratos asociados</p>
-                            ) : (
+                            )}
+                            {!loadingContracts && contractsByCdp.length > 0 && (
                                 <div className="space-y-2">
                                     {contractsByCdp.map((c) => (
-                                        <div
+                                        <button
+                                            type="button"
                                             key={c.id}
-                                            className={`p-3 border rounded-lg cursor-pointer transition-colors hover:bg-default-50 ${selectedContractId === c.id ? "border-primary bg-primary-50" : ""}`}
-                                            onClick={() => handleSelectContract(c.id, c.number)}
+                                            className={`w-full text-left bg-transparent p-3 border rounded-lg cursor-pointer transition-colors hover:bg-default-50 ${selectedContractId === c.id ? "border-primary bg-primary-50" : ""}`}
+                                            onClick={() => void handleSelectContract(c.id, c.number)}
                                         >
                                             <div className="flex justify-between items-center">
                                                 <div>
@@ -560,7 +550,7 @@ export default function FinancialDashboardPage() {
                                                     }>{c.state ?? "N/A"}</Chip>
                                                 </div>
                                             </div>
-                                        </div>
+                                        </button>
                                     ))}
                                 </div>
                             )}
@@ -590,24 +580,26 @@ export default function FinancialDashboardPage() {
                             <h2 className="text-lg font-semibold">Registros Presupuestales - Contrato #{selectedContractNumber}</h2>
                         </CardHeader>
                         <CardBody className="px-6 pb-6">
-                            {loadingBudgetRecords ? (
+                            {loadingBudgetRecords && (
                                 <div className="flex justify-center py-8"><Spinner /></div>
-                            ) : budgetRecords.length === 0 ? (
+                            )}
+                            {!loadingBudgetRecords && budgetRecords.length === 0 && (
                                 <p className="text-default-400 text-center py-8">No hay registros presupuestales</p>
-                            ) : (
+                            )}
+                            {!loadingBudgetRecords && budgetRecords.length > 0 && (
                                 <div className="space-y-3">
                                     {budgetRecords.map((br) => (
                                         <div key={br.id} className="p-3 border rounded-lg">
                                             <div className="flex justify-between items-center mb-2">
                                                 <p className="text-sm font-medium">RP #{br.number}</p>
-                                                <Chip size="sm" variant="flat" color={br.percentage > 70 ? "success" : br.percentage > 40 ? "warning" : "danger"}>
+                                                <Chip size="sm" variant="flat" color={getProgressColor(br.percentage)}>
                                                     {br.percentage}% ejecutado
                                                 </Chip>
                                             </div>
                                             <Progress
                                                 size="sm"
                                                 value={br.percentage}
-                                                color={br.percentage > 70 ? "success" : br.percentage > 40 ? "warning" : "danger"}
+                                                color={getProgressColor(br.percentage)}
                                             />
                                             <div className="flex justify-between mt-1 text-xs text-default-500">
                                                 <span>Valor: {formatCurrency(br.totalValue)}</span>
@@ -637,14 +629,14 @@ export default function FinancialDashboardPage() {
                         pagination={{
                             page: executionMeta.page,
                             totalPages: executionMeta.totalPages,
-                            onChange: (p: number) => fetchProjectExecution(p),
+                            onChange: (p: number) => void fetchProjectExecution(p),
                         }}
                         rowActions={[
                             {
                                 key: "view-mga",
                                 label: "Ver Actividades MGA",
                                 icon: <ChevronRight className="w-4 h-4" />,
-                                onClick: (proj) => handleSelectProject(proj.id, proj.code),
+                                onClick: (proj) => void handleSelectProject(proj.id, proj.code),
                             },
                         ]}
                         emptyContent="No hay proyectos registrados"
@@ -659,18 +651,20 @@ export default function FinancialDashboardPage() {
                         <h2 className="text-lg font-semibold">Actividades MGA - Proyecto {selectedProjectCode}</h2>
                     </CardHeader>
                     <CardBody className="px-6 pb-6">
-                        {loadingMga ? (
+                        {loadingMga && (
                             <div className="flex justify-center py-8"><Spinner /></div>
-                        ) : mgaActivities.length === 0 ? (
+                        )}
+                        {!loadingMga && mgaActivities.length === 0 && (
                             <p className="text-default-400 text-center py-8">No hay actividades MGA</p>
-                        ) : (
+                        )}
+                        {!loadingMga && mgaActivities.length > 0 && (
                             <DataTable
                                 items={mgaActivities}
                                 columns={mgaColumns}
                                 rowActions={[
                                     {                                        key: "view-detailed",                                        label: "Ver Actividades Detalladas",
                                         icon: <ChevronRight className="w-4 h-4" />,
-                                        onClick: (mga) => handleSelectMga(mga.id, mga.code),
+                                        onClick: (mga) => void handleSelectMga(mga.id, mga.code),
                                     },
                                 ]}
                                 emptyContent="No hay actividades MGA"
@@ -687,18 +681,20 @@ export default function FinancialDashboardPage() {
                         <h2 className="text-lg font-semibold">Actividades Detalladas - MGA {selectedMgaCode}</h2>
                     </CardHeader>
                     <CardBody className="px-6 pb-6">
-                        {loadingDetailed ? (
+                        {loadingDetailed && (
                             <div className="flex justify-center py-8"><Spinner /></div>
-                        ) : detailedActivities.length === 0 ? (
+                        )}
+                        {!loadingDetailed && detailedActivities.length === 0 && (
                             <p className="text-default-400 text-center py-8">No hay actividades detalladas</p>
-                        ) : (
+                        )}
+                        {!loadingDetailed && detailedActivities.length > 0 && (
                             <DataTable
                                 items={detailedActivities}
                                 columns={detailedColumns}
                                 rowActions={[
                                     {                                        key: "view-modifications",                                        label: "Ver Ajustes Presupuestales",
                                         icon: <ChevronRight className="w-4 h-4" />,
-                                        onClick: (act) => handleSelectActivity(act.id, act.budgetCeiling, act.balance),
+                                        onClick: (act) => void handleSelectActivity(act.id, act.budgetCeiling, act.balance),
                                     },
                                 ]}
                                 emptyContent="No hay actividades detalladas"
@@ -711,9 +707,10 @@ export default function FinancialDashboardPage() {
             {/* Budget Modifications for selected activity */}
             {selectedActivityId && (
                 <div>
-                    {loadingModifications ? (
+                    {loadingModifications && (
                         <div className="flex justify-center py-8"><Spinner /></div>
-                    ) : modifications ? (
+                    )}
+                    {!loadingModifications && modifications && (
                         <div className="space-y-4">
                             <BudgetModificationsChart
                                 data={modifications}
@@ -777,7 +774,7 @@ export default function FinancialDashboardPage() {
                                 </CardBody>
                             </Card>
                         </div>
-                    ) : null}
+                    )}
                 </div>
             )}
         </div>
